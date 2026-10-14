@@ -25,6 +25,8 @@ async def vercel_path_rewrite_middleware(request: Request, call_next):
     matched_path = request.headers.get("x-matched-path")
     if matched_path and request.scope["path"] in ("/api/index.py", "/api/index", "/api"):
         request.scope["path"] = matched_path
+    elif request.scope["path"].startswith("/api/index/"):
+        request.scope["path"] = request.scope["path"].replace("/api/index", "/api", 1)
     elif request.scope["path"].startswith("/api/index.py/"):
         request.scope["path"] = request.scope["path"].replace("/api/index.py", "/api", 1)
     
@@ -37,13 +39,4 @@ def vercel_root():
 @app.get("/api")
 def vercel_api_root():
     return {"status": "ONLINE", "service": "SmartPark Vision AI API"}
-
-@app.api_route("/{full_path:path}", methods=["GET", "POST"])
-def catch_all(full_path: str, request: Request):
-    return {
-        "full_path": full_path,
-        "url_path": request.url.path,
-        "scope_path": request.scope.get("path"),
-        "headers": dict(request.headers),
-    }
 
