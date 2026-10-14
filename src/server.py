@@ -29,7 +29,8 @@ app.add_middleware(
 )
 
 # Initialize Core Orchestrator
-DB_PATH = "smartpark_demo.db"
+default_db = "/tmp/smartpark_demo.db" if os.environ.get("VERCEL") else "smartpark_demo.db"
+DB_PATH = os.environ.get("SMARTPARK_DB_PATH", default_db)
 orchestrator = GateOrchestrator(db_path=DB_PATH, simulation_mode=True)
 
 # Pre-enroll known VIPs and Blacklists for the interactive demo
