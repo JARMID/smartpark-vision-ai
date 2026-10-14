@@ -1,0 +1,732 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartPark Vision AI - Centre de Contrôle Souverain (Algérie)</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            obsidian: '#090D16',
+            surface: '#111827',
+            surfaceBorder: '#1F2937',
+            emeraldAccent: '#10B981',
+            crimsonAlarm: '#EF4444',
+            amberWarn: '#F59E0B',
+            cyanStream: '#06B6D4',
+            plateYellow: '#FDE047',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { background-color: #090D16; color: #F9FAFB; }
+    .plate-badge {
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 2px;
+      background: linear-gradient(180deg, #FDE047 0%, #EAB308 100%);
+      color: #000000;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #CA8A04;
+      display: inline-block;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    .plate-front-badge {
+      font-family: 'JetBrains Mono', monospace;
+      letter-spacing: 2px;
+      background: #FFFFFF;
+      color: #000000;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid #D1D5DB;
+      display: inline-block;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    }
+    @keyframes pulse-ring {
+      0% { transform: scale(0.95); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+      100% { transform: scale(0.95); opacity: 0.8; }
+    }
+    .pulsing-indicator { animation: pulse-ring 2s infinite ease-in-out; }
+  </style>
+</head>
+<body class="font-sans antialiased h-screen flex flex-col overflow-hidden">
+
+  <!-- TOP APP HEADER -->
+  <header class="bg-surface border-b border-surfaceBorder px-4 py-2.5 flex items-center justify-between shrink-0">
+    <div class="flex items-center space-x-3">
+      <div class="w-8 h-8 rounded-lg bg-emeraldAccent/20 border border-emeraldAccent/40 flex items-center justify-center text-emeraldAccent font-bold">
+        <i data-lucide="shield-check" class="w-5 h-5"></i>
+      </div>
+      <div>
+        <div class="flex items-center space-x-2">
+          <span class="font-bold text-base tracking-tight text-white">SmartPark Vision AI</span>
+          <span class="text-xs px-2 py-0.5 rounded bg-emeraldAccent/10 text-emeraldAccent border border-emeraldAccent/30 font-medium">Édition Souveraine DZ</span>
+        </div>
+        <p class="text-[11px] text-gray-400">Site: Parking Alger-Centre (El-Biar) | Wilaya: 16</p>
+      </div>
+    </div>
+
+    <!-- Telemetry Badges -->
+    <div class="flex items-center space-x-3 text-xs">
+      <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
+        <span class="w-2 h-2 rounded-full bg-emeraldAccent pulsing-indicator"></span>
+        <span class="font-mono text-[11px]">UPS: 230V (100% AC)</span>
+      </div>
+      <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyanStream"></i>
+        <span class="font-mono text-[11px]">GPU: RTX 4070 (2.1GB)</span>
+      </div>
+      <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-plateYellow"></i>
+        <span class="font-mono text-[11px]">FAISS: 0.74ms</span>
+      </div>
+      <button onclick="openAnpdpModal()" class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium transition">
+        <i data-lucide="scale" class="w-3.5 h-3.5"></i>
+        <span>ANPDP Loi 25-11</span>
+      </button>
+      <div id="clock" class="font-mono text-gray-300 font-semibold px-2">17:50:00</div>
+    </div>
+  </header>
+
+  <!-- INTERACTIVE SCENARIO SIMULATION BAR (Hero Controls) -->
+  <section class="bg-gray-900/90 border-b border-surfaceBorder px-4 py-2 shrink-0 flex items-center justify-between">
+    <div class="flex items-center space-x-2">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1 flex items-center">
+        <i data-lucide="play-circle" class="w-3.5 h-3.5 mr-1 text-emeraldAccent"></i> Démo Scénarios:
+      </span>
+      <button onclick="triggerScenario('vip_entry')" class="px-2.5 py-1 rounded bg-emeraldAccent/15 hover:bg-emeraldAccent/25 text-emerald-300 border border-emeraldAccent/40 text-xs font-medium transition flex items-center space-x-1 shadow-sm">
+        <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
+        <span>[1] Entrée VIP (104822 119 16)</span>
+      </button>
+      <button onclick="triggerScenario('temporary_00')" class="px-2.5 py-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/40 text-xs font-medium transition flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+        <span>[2] Plaque Provisoire 00 (08412 00 16)</span>
+      </button>
+      <button onclick="triggerScenario('watchlist_alert')" class="px-2.5 py-1 rounded bg-crimsonAlarm/15 hover:bg-crimsonAlarm/25 text-red-300 border border-crimsonAlarm/40 text-xs font-medium transition flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-crimsonAlarm"></span>
+        <span>[3] Véhicule Volé (00551 218 16)</span>
+      </button>
+      <button onclick="triggerScenario('spoof_attack')" class="px-2.5 py-1 rounded bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/40 text-xs font-medium transition flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+        <span>[4] Fraude Photo / Écran</span>
+      </button>
+      <button onclick="triggerScenario('driver_mismatch')" class="px-2.5 py-1 rounded bg-amberWarn/15 hover:bg-amberWarn/25 text-amber-300 border border-amberWarn/40 text-xs font-medium transition flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-amberWarn"></span>
+        <span>[5] Chauffeur Inconnu</span>
+      </button>
+      <button onclick="triggerScenario('visitor_payment_exit')" class="px-2.5 py-1 rounded bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-xs font-medium transition flex items-center space-x-1">
+        <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+        <span>[6] Sortie Réglée (Chargily Pay CIB)</span>
+      </button>
+    </div>
+
+    <!-- Quick Manual Override -->
+    <div class="flex items-center space-x-2">
+      <button onclick="manualBarrierOverride(1)" class="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-white border border-gray-700 text-xs font-semibold flex items-center space-x-1 transition shadow">
+        <i data-lucide="unlock" class="w-3.5 h-3.5 text-emeraldAccent"></i>
+        <span>Ouvrir Voie 1 [Espace]</span>
+      </button>
+    </div>
+  </section>
+
+  <!-- MAIN DASHBOARD CONTENT -->
+  <main class="flex-1 flex overflow-hidden p-3 gap-3">
+
+    <!-- LEFT COLUMN: LIVE CAMERAS & STALL OCCUPANCY (65%) -->
+    <section class="flex-1 flex flex-col gap-3 min-w-0">
+
+      <!-- 4-CAMERA MATRIX -->
+      <div class="bg-surface rounded-xl border border-surfaceBorder p-2.5 flex-1 flex flex-col min-h-0">
+        <div class="flex items-center justify-between mb-2 px-1">
+          <div class="flex items-center space-x-2">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
+              <i data-lucide="video" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Flux Caméras Temps Réel (WebRTC Sub-300ms)
+            </span>
+            <span class="text-[10px] bg-cyanStream/10 text-cyanStream border border-cyanStream/30 px-1.5 py-0.5 rounded font-mono">NVDEC HW Décode</span>
+          </div>
+          <div class="text-[11px] text-gray-400 font-mono">4 Flux Actifs @ 25 FPS</div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
+          
+          <!-- CAM 1: Lane 1 Entry ALPR -->
+          <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
+              <span>CAM-01: Voie 1 (Plaque Entrée)</span>
+            </div>
+            <div id="barrier-status-pill" class="absolute top-2 right-2 z-10 bg-black/70 border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+              Barrière: <span class="text-red-400 font-bold" id="barrier-text">FERMÉE</span>
+            </div>
+            <canvas id="cam1-canvas" class="w-full h-full object-cover"></canvas>
+            <!-- Plate Detection Overlay Box -->
+            <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur border border-yellow-500/50 p-2 rounded flex items-center justify-between hidden">
+              <div>
+                <span class="text-[10px] text-gray-400 uppercase">Plaque Détectée (Conf: 98.4%)</span>
+                <div class="mt-0.5" id="cam1-plate-box"><span class="plate-badge">104822 119 16</span></div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-gray-400">Wilaya</span>
+                <div class="text-xs font-semibold text-emeraldAccent font-mono" id="cam1-wilaya">Alger (16)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CAM 2: Driver Kiosk Dual-Lens (RGB + NIR Multi-Spectral) -->
+          <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyanStream"></span>
+              <span>CAM-02: Borne (Double Optique CPL/850nm NIR)</span>
+            </div>
+            <div class="absolute top-2 right-2 z-10 bg-black/70 border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+              Filtre CPL: <span class="text-emeraldAccent font-semibold">ACTIF</span>
+            </div>
+            <canvas id="cam2-canvas" class="w-full h-full object-cover"></canvas>
+            <!-- Liveness & Face Recognition Overlay -->
+            <div id="cam2-overlay" class="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur border border-cyan-500/50 p-2 rounded flex items-center justify-between hidden">
+              <div>
+                <span class="text-[10px] text-gray-400 uppercase">Reconnaissance Faciale (ArcFace)</span>
+                <div class="text-xs font-bold text-white" id="cam2-driver-name">Amine Hadj</div>
+                <div class="text-[10px] text-cyan-300 font-mono" id="cam2-driver-dist">Distance: 0.42 (Match)</div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-gray-400">Vivacité (MiniFASNet)</span>
+                <div class="text-xs font-bold text-emeraldAccent flex items-center justify-end" id="cam2-liveness">
+                  <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> HUMAIN (98%)
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CAM 3: Lane 2 Exit ALPR -->
+          <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
+              <span>CAM-03: Voie 2 (Sortie ALPR)</span>
+            </div>
+            <div class="absolute top-2 right-2 z-10 bg-black/70 border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+              Règlement: <span class="text-teal-400 font-semibold">Chargily Pay V2</span>
+            </div>
+            <canvas id="cam3-canvas" class="w-full h-full object-cover"></canvas>
+            <div id="cam3-overlay" class="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur border border-teal-500/50 p-2 rounded flex items-center justify-between hidden">
+              <div>
+                <span class="text-[10px] text-gray-400 uppercase">Sortie Validée</span>
+                <div class="mt-0.5" id="cam3-plate-box"><span class="plate-badge">08192 120 09</span></div>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-gray-400">Règlement CIB</span>
+                <div class="text-xs font-semibold text-emeraldAccent font-mono">Payé: 200 DZD (OK)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CAM 4: Overhead Parking Stalls (Zone Overview) -->
+          <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+              <span>CAM-04: Zone A & B (Vue Aérienne Stalles)</span>
+            </div>
+            <canvas id="cam4-canvas" class="w-full h-full object-cover"></canvas>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PARKING STALL OCCUPANCY & HEATMAP (Bottom Left) -->
+      <div class="bg-surface rounded-xl border border-surfaceBorder p-3 shrink-0">
+        <div class="flex items-center justify-between mb-2">
+          <div class="flex items-center space-x-3">
+            <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
+              <i data-lucide="layout-grid" class="w-4 h-4 mr-1.5 text-emeraldAccent"></i> Plan d'Occupation des Stalles (Temps Réel)
+            </span>
+            <span class="text-xs font-mono text-emeraldAccent bg-emeraldAccent/10 px-2 py-0.5 rounded border border-emeraldAccent/30" id="occupancy-pill">
+              10 / 14 Places Occupées (71.4%)
+            </span>
+          </div>
+          <div class="flex items-center space-x-3 text-[11px] text-gray-400">
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-emeraldAccent mr-1"></span> Libre</span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-crimsonAlarm mr-1"></span> Occupée</span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-purple-500 mr-1"></span> Réservée VIP</span>
+          </div>
+        </div>
+
+        <!-- 2D Stall Map Grid -->
+        <div class="grid grid-cols-7 gap-2" id="stalls-grid">
+          <!-- Dynamically populated by JS -->
+        </div>
+      </div>
+
+    </section>
+
+    <!-- RIGHT COLUMN: REAL-TIME EVENT STREAM & AUDIT LOG (35%) -->
+    <aside class="w-96 bg-surface rounded-xl border border-surfaceBorder p-3 flex flex-col shrink-0 min-w-0">
+      <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-surfaceBorder">
+        <div class="flex items-center space-x-2">
+          <span class="text-xs font-bold uppercase tracking-wider text-gray-200 flex items-center">
+            <i data-lucide="activity" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Flux d'Événements en Direct
+          </span>
+        </div>
+        <span class="text-[10px] px-2 py-0.5 rounded bg-emeraldAccent/10 text-emeraldAccent font-mono border border-emeraldAccent/30">Connecté WSS</span>
+      </div>
+
+      <!-- Events Scroll Container -->
+      <div class="flex-1 overflow-y-auto space-y-2 pr-1 min-h-0" id="events-container">
+        <!-- Dynamically rendered event cards -->
+      </div>
+
+      <!-- Security Emergency Action Dock -->
+      <div class="mt-2.5 pt-2.5 border-t border-surfaceBorder space-y-1.5">
+        <div class="flex items-center justify-between text-xs text-gray-400">
+          <span>Commandes Rapides Clavier:</span>
+          <span class="font-mono text-[10px] text-gray-500">[Espace] Voie 1 | [1-6] Scénarios</span>
+        </div>
+        <div class="grid grid-cols-2 gap-1.5">
+          <button onclick="manualBarrierOverride(1)" class="px-2 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium border border-gray-700 flex items-center justify-center space-x-1 transition">
+            <i data-lucide="check" class="w-3.5 h-3.5 text-emeraldAccent"></i>
+            <span>Ouvrir Voie 1</span>
+          </button>
+          <button onclick="emergencyLockdown()" class="px-2 py-1.5 rounded bg-red-950/60 hover:bg-red-900/80 text-red-200 text-xs font-medium border border-red-800 flex items-center justify-center space-x-1 transition">
+            <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-crimsonAlarm"></i>
+            <span>Verrouillage Urgence</span>
+          </button>
+        </div>
+      </div>
+    </aside>
+
+  </main>
+
+  <!-- ANPDP LAW 25-11 COMPLIANCE MODAL -->
+  <div id="anpdp-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface rounded-xl border border-surfaceBorder max-w-2xl w-full p-5 shadow-2xl space-y-4">
+      <div class="flex items-center justify-between border-b border-surfaceBorder pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+            <i data-lucide="scale" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white">Dossier de Conformité Réglementaire ANPDP (Loi 18-07 & Loi 25-11)</h3>
+            <p class="text-xs text-gray-400">Autorité Nationale de Protection des Données à Caractère Personnel</p>
+          </div>
+        </div>
+        <button onclick="closeAnpdpModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs" id="anpdp-content">
+        <div class="bg-black/40 p-3 rounded border border-gray-800 space-y-1.5">
+          <div class="flex items-center justify-between">
+            <span class="font-semibold text-gray-300">Statut Souveraineté des Données (Article 44):</span>
+            <span class="text-emeraldAccent font-bold">100% CONFORME (Zéro Transfert Hors DZ)</span>
+          </div>
+          <p class="text-gray-400">Tous les flux vidéo, crops de plaques et embeddings faciaux 512-D sont stockés localement sur le serveur edge et sauvegardés sur infrastructure souveraine à Alger.</p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2">
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-gray-300 block mb-1">Analyse d'Impact (AIPD / DPIA):</span>
+            <p class="text-gray-400 text-[11px]">Réf: AIPD-ALPR-FACE-2026-DZ<br>Statut: <span class="text-emeraldAccent font-semibold">Validé par DPO</span><br>Biométrie proportionnée (vecteurs 512-D non inversibles).</p>
+          </div>
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-gray-300 block mb-1">Délai Notification Fuite (Loi 25-11):</span>
+            <p class="text-gray-400 text-[11px]">Délai légal: <span class="text-blue-400 font-semibold">5 jours calendrier</span><br>Incidents actifs: <span class="text-emeraldAccent font-semibold">0</span><br>Module de télé-déclaration ANPDP pré-rempli.</p>
+          </div>
+        </div>
+
+        <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+          <span class="font-semibold text-gray-300 block mb-1">Registre des Activités de Traitement (4 Catégories):</span>
+          <div class="grid grid-cols-4 gap-2 text-[10px] text-gray-400 font-mono mt-1">
+            <div class="bg-black/50 p-1.5 rounded">1. Plaques (30j purge)</div>
+            <div class="bg-black/50 p-1.5 rounded">2. Visages 512-D (Abonné)</div>
+            <div class="bg-black/50 p-1.5 rounded">3. Horodatages (1 an)</div>
+            <div class="bg-black/50 p-1.5 rounded">4. Logs d'Audit (2 ans)</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-surfaceBorder text-xs">
+        <span class="text-gray-500 font-mono">Certificat Réf: ANPDP-DZ-2026-CONF</span>
+        <button onclick="closeAnpdpModal()" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded font-medium transition">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT ENGINE & WEBSOCKET CLIENT -->
+  <script>
+    // Audio Synthesis (Web Audio API) for realistic gate chimes and security alerts
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playChime(success = true) {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (success) {
+        // Ascending two-tone gate chime
+        osc.frequency.setValueAtTime(587.33, now); // D5
+        osc.frequency.setValueAtTime(880.00, now + 0.12); // A5
+        gain.gain.setValueAtTime(0.15, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+        osc.start(now);
+        osc.stop(now + 0.35);
+      } else {
+        // Low security alert klaxon
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(220, now);
+        osc.frequency.setValueAtTime(160, now + 0.15);
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+        osc.start(now);
+        osc.stop(now + 0.45);
+      }
+    }
+
+    // Canvas Simulator for Camera Streams
+    function setupCameraCanvas(id, label, color) {
+      const canvas = document.getElementById(id);
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      canvas.width = 480;
+      canvas.height = 270;
+
+      let carX = -100;
+      let activeCar = false;
+      let carPlate = "";
+
+      function draw() {
+        // Dark background grid
+        ctx.fillStyle = '#050811';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Grid lines
+        ctx.strokeStyle = '#111827';
+        ctx.lineWidth = 1;
+        for (let x = 0; x < canvas.width; x += 30) {
+          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
+        }
+        for (let y = 0; y < canvas.height; y += 30) {
+          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
+        }
+
+        // Road / Lane markings
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(60, 40, canvas.width - 120, canvas.height - 80);
+        ctx.strokeStyle = '#334155';
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 40);
+        ctx.lineTo(canvas.width / 2, canvas.height - 40);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Animated car when active
+        if (activeCar) {
+          ctx.fillStyle = color;
+          ctx.fillRect(carX, canvas.height / 2 - 25, 110, 50);
+
+          // Car windshield
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(carX + 55, canvas.height / 2 - 20, 30, 40);
+
+          // Plate crop box on car
+          ctx.fillStyle = '#fde047';
+          ctx.fillRect(carX + 95, canvas.height / 2 - 6, 20, 12);
+
+          // Detection Bounding Box Overlay
+          ctx.strokeStyle = '#eab308';
+          ctx.lineWidth = 2;
+          ctx.strokeRect(carX - 5, canvas.height / 2 - 30, 120, 60);
+
+          // Corner brackets
+          ctx.fillStyle = '#eab308';
+          ctx.fillRect(carX - 5, canvas.height / 2 - 30, 6, 6);
+          ctx.fillRect(carX + 109, canvas.height / 2 - 30, 6, 6);
+          ctx.fillRect(carX - 5, canvas.height / 2 + 24, 6, 6);
+          ctx.fillRect(carX + 109, canvas.height / 2 + 24, 6, 6);
+
+          if (carX < canvas.width / 2 - 50) {
+            carX += 4;
+          }
+        }
+
+        // Live stream overlay timestamp
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px JetBrains Mono';
+        const now = new Date().toLocaleTimeString('fr-DZ');
+        ctx.fillText(`${label} | ${now} | 25 FPS`, 10, canvas.height - 10);
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      return {
+        triggerVehicle: (plate) => {
+          activeCar = true;
+          carX = -120;
+          carPlate = plate;
+          setTimeout(() => { activeCar = false; }, 6000);
+        }
+      };
+    }
+
+    const cam1 = setupCameraCanvas('cam1-canvas', 'CAM-01 [ENTREE ALPR]', '#334155');
+    const cam2 = setupCameraCanvas('cam2-canvas', 'CAM-02 [BORNE FACIALE]', '#1e293b');
+    const cam3 = setupCameraCanvas('cam3-canvas', 'CAM-03 [SORTIE ALPR]', '#334155');
+    const cam4 = setupCameraCanvas('cam4-canvas', 'CAM-04 [VUE STALLES]', '#1e293b');
+
+    // Clock
+    setInterval(() => {
+      document.getElementById('clock').innerText = new Date().toLocaleTimeString('fr-DZ');
+    }, 1000);
+
+    // Initial Stalls Rendering
+    const initialStalls = [
+      { slot_number: 'A01', status: 'occupied', plate: '104822 119 16' },
+      { slot_number: 'A02', status: 'occupied', plate: '04122 118 16' },
+      { slot_number: 'A03', status: 'vacant', plate: null },
+      { slot_number: 'A04', status: 'reserved', plate: null },
+      { slot_number: 'B01', status: 'occupied', plate: '08192 120 09' },
+      { slot_number: 'B02', status: 'vacant', plate: null },
+      { slot_number: 'B03', status: 'occupied', plate: '99120 121 16' },
+      { slot_number: 'B04', status: 'vacant', plate: null },
+      { slot_number: 'B05', status: 'occupied', plate: '03144 117 31' },
+      { slot_number: 'B06', status: 'vacant', plate: null },
+      { slot_number: 'C01', status: 'occupied', plate: '01412 322 09' },
+      { slot_number: 'C02', status: 'vacant', plate: null },
+      { slot_number: 'D01', status: 'vacant', plate: null },
+      { slot_number: 'D02', status: 'occupied', plate: '00912 116 16' },
+    ];
+
+    function renderStalls(stalls) {
+      const grid = document.getElementById('stalls-grid');
+      grid.innerHTML = '';
+      stalls.forEach(s => {
+        let bg = 'bg-emerald-950/40 border-emerald-500/40 text-emerald-300';
+        let label = 'LIBRE';
+        if (s.status === 'occupied') {
+          bg = 'bg-red-950/40 border-red-500/40 text-red-300';
+          label = s.plate || 'OCCUPÉ';
+        } else if (s.status === 'reserved') {
+          bg = 'bg-purple-950/40 border-purple-500/40 text-purple-300';
+          label = 'RÉSERVÉ';
+        }
+        grid.innerHTML += `
+          <div class="border ${bg} rounded p-1.5 flex flex-col justify-between h-14 transition hover:scale-105">
+            <span class="font-bold text-[10px] text-gray-300">${s.slot_number}</span>
+            <span class="font-mono text-[9px] truncate font-semibold">${label}</span>
+          </div>
+        `;
+      });
+    }
+    renderStalls(initialStalls);
+
+    // Initial Events
+    const initialEvents = [
+      { timestamp: '16:42:10', camera: 'CAM-01 (Entrée)', plate: '104822 119 16', wilaya: 'Alger (16)', driver: 'Amine Hadj (VIP)', status: 'cleared_vip', distance: 0.42, liveness: 0.98 },
+      { timestamp: '16:38:22', camera: 'CAM-01 (Entrée)', plate: '08192 120 09', wilaya: 'Blida (09)', driver: 'Visiteur Public', status: 'cleared_visitor', distance: null, liveness: 0.95 },
+    ];
+
+    function addEventCard(ev) {
+      const container = document.getElementById('events-container');
+      let borderClass = 'border-emerald-500/30 bg-emerald-950/20';
+      let icon = 'check-circle';
+      let iconColor = 'text-emeraldAccent';
+      let badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emeraldAccent/20 text-emeraldAccent font-semibold">ACCÈS ACCORDÉ</span>';
+
+      if (ev.status === 'denied_blacklist') {
+        borderClass = 'border-crimsonAlarm/40 bg-red-950/40';
+        icon = 'alert-triangle';
+        iconColor = 'text-crimsonAlarm';
+        badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-crimsonAlarm/30 text-red-300 font-semibold">FICHE VOL</span>';
+      } else if (ev.status === 'denied_spoof') {
+        borderClass = 'border-purple-500/40 bg-purple-950/30';
+        icon = 'shield-alert';
+        iconColor = 'text-purple-400';
+        badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 font-semibold">ATTAQUE PHOTO</span>';
+      } else if (ev.status === 'hold_guard_review') {
+        borderClass = 'border-amberWarn/40 bg-amber-950/30';
+        icon = 'help-circle';
+        iconColor = 'text-amberWarn';
+        badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amberWarn/30 text-amber-300 font-semibold">VÉRIF. MANUELLE</span>';
+      } else if (ev.status === 'cleared_exit') {
+        borderClass = 'border-teal-500/30 bg-teal-950/20';
+        icon = 'log-out';
+        iconColor = 'text-teal-400';
+        badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/30 text-teal-300 font-semibold">SORTIE VALIDÉE</span>';
+      }
+
+      const card = document.createElement('div');
+      card.className = `p-2.5 rounded-lg border ${borderClass} space-y-1.5 text-xs transition duration-300 shadow`;
+      card.innerHTML = `
+        <div class="flex items-center justify-between">
+          <div class="flex items-center space-x-1.5">
+            <i data-lucide="${icon}" class="w-4 h-4 ${iconColor}"></i>
+            <span class="font-mono text-[11px] text-gray-300">${ev.timestamp}</span>
+          </div>
+          ${badge}
+        </div>
+        <div class="flex items-center justify-between">
+          <div>
+            <span class="plate-badge">${ev.plate}</span>
+            <span class="text-[11px] text-gray-400 font-mono ml-1">${ev.wilaya || 'Algérie'}</span>
+          </div>
+        </div>
+        <div class="flex items-center justify-between text-[11px] text-gray-400 pt-0.5 border-t border-gray-800">
+          <span>${ev.driver}</span>
+          <span class="font-mono text-cyan-300">${ev.distance ? 'Dist: ' + ev.distance : (ev.liveness ? 'Vivacité: ' + Math.round(ev.liveness*100) + '%' : '')}</span>
+        </div>
+      `;
+      container.prepend(card);
+      lucide.createIcons();
+    }
+
+    initialEvents.forEach(addEventCard);
+
+    // Scenario Trigger API call
+    async function triggerScenario(name) {
+      try {
+        const res = await fetch('/api/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ scenario: name })
+        });
+        const data = await res.json();
+
+        // Handle Visual UI Overlays on Cam 1 & 2
+        if (name === 'vip_entry') {
+          playChime(true);
+          cam1.triggerVehicle('104822 119 16');
+          cam2.triggerVehicle('104822 119 16');
+          showOverlay('cam1-overlay', 4000);
+          showOverlay('cam2-overlay', 4000);
+          flashBarrier('OUVERTE (180ms)', true);
+        } else if (name === 'temporary_00') {
+          playChime(true);
+          cam1.triggerVehicle('08412 00 16');
+          document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge">08412 00 16</span>';
+          showOverlay('cam1-overlay', 4000);
+          flashBarrier('OUVERTE (TICKET QR)', true);
+        } else if (name === 'watchlist_alert') {
+          playChime(false);
+          cam1.triggerVehicle('00551 218 16');
+          flashBarrier('VERROUILLÉE (ALERTE)', false);
+        } else if (name === 'spoof_attack') {
+          playChime(false);
+          cam2.triggerVehicle('104822 119 16');
+          flashBarrier('BLOQUÉE (PHOTO DÉTECTÉE)', false);
+        } else if (name === 'driver_mismatch') {
+          playChime(false);
+          flashBarrier('EN ATTENTE GARDE', false);
+        } else if (name === 'visitor_payment_exit') {
+          playChime(true);
+          cam3.triggerVehicle('08192 120 09');
+          showOverlay('cam3-overlay', 4000);
+        }
+      } catch (err) {
+        console.error('Erreur de simulation:', err);
+      }
+    }
+
+    function showOverlay(id, duration) {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('hidden');
+      setTimeout(() => { el.classList.add('hidden'); }, duration);
+    }
+
+    function flashBarrier(text, isOpen) {
+      const el = document.getElementById('barrier-text');
+      el.innerText = text;
+      el.className = isOpen ? 'text-emeraldAccent font-bold' : 'text-crimsonAlarm font-bold';
+      setTimeout(() => {
+        el.innerText = 'FERMÉE';
+        el.className = 'text-red-400 font-bold';
+      }, 5000);
+    }
+
+    async function manualBarrierOverride(ch) {
+      playChime(true);
+      await fetch('/api/barrier/override', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channel: ch, duration_ms: 500 })
+      });
+      flashBarrier('OUVERTURE MANUELLE', true);
+    }
+
+    function emergencyLockdown() {
+      playChime(false);
+      flashBarrier('VERROUILLAGE TOTAL', false);
+    }
+
+    // Modal Controls
+    function openAnpdpModal() { document.getElementById('anpdp-modal').classList.remove('hidden'); }
+    function closeAnpdpModal() { document.getElementById('anpdp-modal').classList.add('hidden'); }
+
+    // WebSocket Client
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'GATE_EVENT' || msg.type === 'SECURITY_ALERT' || msg.type === 'SPOOF_ALERT' || msg.type === 'GUARD_PROMPT' || msg.type === 'EXIT_CLEARED') {
+        addEventCard({
+          timestamp: msg.data.timestamp,
+          camera: msg.data.camera_id,
+          plate: msg.data.plate,
+          wilaya: msg.data.wilaya,
+          driver: msg.data.driver,
+          status: msg.data.result,
+          distance: msg.data.distance,
+          liveness: msg.data.liveness,
+        });
+      }
+    };
+
+    // Keyboard Shortcuts Hook
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        manualBarrierOverride(1);
+      } else if (e.key === '1') {
+        triggerScenario('vip_entry');
+      } else if (e.key === '2') {
+        triggerScenario('temporary_00');
+      } else if (e.key === '3') {
+        triggerScenario('watchlist_alert');
+      } else if (e.key === '4') {
+        triggerScenario('spoof_attack');
+      } else if (e.key === '5') {
+        triggerScenario('driver_mismatch');
+      } else if (e.key === '6') {
+        triggerScenario('visitor_payment_exit');
+      } else if (e.key === 'Escape') {
+        closeAnpdpModal();
+      }
+    });
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>
