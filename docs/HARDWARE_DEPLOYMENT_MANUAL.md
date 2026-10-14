@@ -183,3 +183,23 @@ Before handing the installation over to operations, field technicians must verif
 - [ ] Infrared active illuminator activates automatically when ambient light drops below 10 Lux.
 - [ ] RS-485 Modbus relay opens the barrier arm within 250ms of a whitelisted VIP arrival.
 - [ ] Loop detector B safely locks the barrier arm up while a vehicle is positioned underneath.
+
+---
+
+## 7. Automated Site Commissioning Script
+
+A dedicated verification utility is provided to run full automated diagnostics on-site:
+
+```bash
+python verify_edge_deployment.py
+```
+
+This utility automatically audits:
+1. Camera RTSP manifest parsing and channel reachability in `config/cameras.json`.
+2. SQLite Write-Ahead Logging (WAL) state and database integrity (`PRAGMA integrity_check`).
+3. Algerian plate syntax and wilaya registry parsing (Wilayas 01 to 58).
+4. Anti-Passback (APB) and cloned plate fraud intercept:
+   - Validates sub-250ms barrier opening for whitelisted VIP vehicles.
+   - Confirms immediate gate lockdown when a vehicle attempts duplicate entry while already recorded inside.
+   - Validates exit gantry clearance through CAM 3 and subsequent legal re-entry.
+
