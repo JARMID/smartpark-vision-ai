@@ -17,6 +17,8 @@ from pydantic import BaseModel
 import numpy as np
 
 from src.main import GateOrchestrator, GateDecisionResult
+from src.compliance.law_25_11_audit import Law2511ComplianceEngine
+from src.payment.chargily_v2_client import ChargilyV2PaymentClient
 
 app = FastAPI(title="SmartPark Vision AI Sovereign Server", version="2.0.0")
 
@@ -32,6 +34,8 @@ app.add_middleware(
 default_db = "/tmp/smartpark_demo.db" if os.environ.get("VERCEL") else "smartpark_demo.db"
 DB_PATH = os.environ.get("SMARTPARK_DB_PATH", default_db)
 orchestrator = GateOrchestrator(db_path=DB_PATH, simulation_mode=True)
+compliance_engine = Law2511ComplianceEngine()
+chargily_client = ChargilyV2PaymentClient()
 
 # Pre-enroll known VIPs and Blacklists for the interactive demo
 np.random.seed(42)
@@ -181,6 +185,23 @@ class SlotToggleRequest(BaseModel):
 class TicketGenerateRequest(BaseModel):
     plate: str = "08412 00 16"
     zone: str = "Zone B"
+
+
+class DpiaGenerateRequest(BaseModel):
+    dpo_name: Optional[str] = "Mohamed Cherif"
+    dpo_phone: Optional[str] = "+213 550 99 88 77"
+
+
+class BreachTriageCreateRequest(BaseModel):
+    incident_type: str = "TENTATIVE_EXTRACTION_NON_AUTORISEE"
+    severity: str = "HIGH"
+    description: str = "Tentative de dump de la table registered_vehicles"
+    impacted_records: int = 250
+
+
+class WebhookVerifyRequest(BaseModel):
+    payload: Dict[str, Any]
+    signature: str
 
 
 # REST Endpoints
@@ -583,6 +604,52 @@ async def generate_ticket(req: TicketGenerateRequest):
         "barcode": f"DZ{int(time.time()) % 10000000000:010d}",
         "anpdp_notice": "Données conservées 30 jours au titre de la sécurité du site (Loi 18-07).",
     }
+
+
+@app.post("/api/compliance/dpia")
+def generate_dpia_report(req: DpiaGenerateRequest):
+    return compliance_engine.generate_dpia(
+        dpo_name=req.dpo_name or "Mohamed Cherif",
+        dpo_phone=req.dpo_phone or "+213 550 99 88 77",
+    )
+
+
+@app.get("/api/compliance/register")
+def get_compliance_register():
+    return compliance_engine.get_processing_register()
+
+
+@app.post("/api/compliance/breach/triage")
+def create_breach_triage(req: BreachTriageCreateRequest):
+    return compliance_engine.create_breach_triage_dossier(
+        incident_type=req.incident_type,
+        severity=req.severity,
+        description=req.description,
+        impacted_records=req.impacted_records,
+    )
+
+
+@app.post("/api/compliance/purge")
+def run_compliance_purge():
+    return compliance_engine.execute_rolling_purge_plan(RECENT_EVENTS)
+
+
+@app.post("/api/chargily/webhook")
+async def chargily_webhook(req: WebhookVerifyRequest):
+    payload_str = json.dumps(req.payload, separators=(",", ":"))
+    payload_bytes = payload_str.encode("utf-8")
+    is_valid = chargily_client.verify_webhook_signature(payload_bytes, req.signature)
+    if not is_valid:
+        fallback_bytes = json.dumps(req.payload).encode("utf-8")
+        is_valid = chargily_client.verify_webhook_signature(fallback_bytes, req.signature)
+    if not is_valid:
+        raise HTTPException(status_code=401, detail="Signature cryptographique Chargily invalide")
+    checkout_id = req.payload.get("id", "ch_unknown")
+    plate_number = req.payload.get("metadata", {}).get("plate_number", "08192 120 09")
+    conf = chargily_client.process_payment_confirmation(checkout_id, plate_number)
+    orchestrator.barrier_controller.trigger_barrier_open(channel=2, duration_ms=500, force_override=True)
+    return conf
+
 
 
 # WebSocket Endpoint for Live Browser Telemetry

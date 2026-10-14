@@ -145,6 +145,69 @@ class TestServerAPI(unittest.TestCase):
         self.assertIn("barcode", data)
         self.assertEqual(data["plate"], "08412 00 16")
 
+    def test_compliance_dpia_endpoint(self):
+        res = self.client.post("/api/compliance/dpia", json={
+            "dpo_name": "Karim Meziane",
+            "dpo_phone": "+213 550 44 33 22"
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["dossier_type"], "DPIA_ANPDP_ALGERIA")
+        self.assertEqual(data["facility_metadata"]["dpo_officer"], "Karim Meziane")
+        self.assertTrue(len(data["data_categories_processed"]) >= 3)
+
+    def test_compliance_register_endpoint(self):
+        res = self.client.get("/api/compliance/register")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(len(data) >= 4)
+        self.assertTrue(any("ALPR" in item["activity_name"] for item in data))
+
+    def test_compliance_breach_triage_endpoint(self):
+        res = self.client.post("/api/compliance/breach/triage", json={
+            "incident_type": "INTRUSION_RESEAU_SUSPECTE",
+            "severity": "CRITICAL",
+            "description": "Scan de ports anormaux sur VLAN 20",
+            "impacted_records": 10
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["severity"], "CRITICAL")
+        self.assertEqual(data["status"], "TRIAGE_OPEN")
+        self.assertGreaterEqual(data["hours_remaining_until_statutory_breach"], 119)
+
+    def test_compliance_purge_endpoint(self):
+        res = self.client.post("/api/compliance/purge")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["anpdp_status"], "CONFORME_CYCLE_PURGE_AUTOMATIQUE")
+        self.assertIn("records_purged", data)
+
+    def test_chargily_webhook_endpoint(self):
+        import hmac
+        import hashlib
+        import json
+        payload = {"event": "checkout.paid", "id": "ch_inv_998811", "metadata": {"plate_number": "08192 120 09"}}
+        payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        secret = "test_secret_hmac_chargily_satim"
+        valid_sig = hmac.new(secret.encode("utf-8"), payload_bytes, hashlib.sha256).hexdigest()
+
+        # Valid signature
+        res_ok = self.client.post("/api/chargily/webhook", json={
+            "payload": payload,
+            "signature": valid_sig
+        })
+        self.assertEqual(res_ok.status_code, 200)
+        self.assertEqual(res_ok.json()["payment_status"], "PAID")
+
+        # Invalid signature
+        res_bad = self.client.post("/api/chargily/webhook", json={
+            "payload": payload,
+            "signature": "tampered_signature_dz"
+        })
+        self.assertEqual(res_bad.status_code, 401)
+
 
 if __name__ == "__main__":
     unittest.main()
+
