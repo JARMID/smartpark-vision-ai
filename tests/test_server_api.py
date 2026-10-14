@@ -35,6 +35,15 @@ class TestServerAPI(unittest.TestCase):
         self.assertIn("zone_name", slots[0])
         self.assertIn("status", slots[0])
 
+    def test_cameras_endpoint(self):
+        response = self.client.get("/api/cameras")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "ONLINE")
+        self.assertEqual(data["total_cameras"], 4)
+        self.assertIn("cameras", data)
+        self.assertEqual(data["cameras"][0]["camera_id"], "cam_lane1_entry_plate")
+
     def test_simulate_vip_entry(self):
         payload = {"scenario": "vip_entry"}
         response = self.client.post("/api/simulate", json=payload)

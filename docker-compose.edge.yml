@@ -1,0 +1,52 @@
+version: '3.8'
+
+# SmartPark Vision AI - Edge Gateway Appliance Stack
+# Deployed on on-premise industrial PCs (NVIDIA Jetson Orin / Advantech IPC)
+# Provides isolated camera VLAN ingestion, RS-485 barrier control, and local offline cache
+
+services:
+  # 1. Edge Camera Ingestion & Decision Engine Daemon
+  smartpark_edge_daemon:
+    image: smartpark-edge:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.edge
+    container_name: smartpark_edge_daemon
+    restart: always
+    network_mode: "host" # Required for ONVIF WS-Discovery and raw RTSP throughput
+    privileged: true
+    devices:
+      - "/dev/ttyUSB0:/dev/ttyUSB0" # Industrial RS-485 USB-to-Serial converter for barrier relays
+    volumes:
+      - ./config/cameras.json:/app/config/cameras.json:ro
+      - ./data:/app/data
+      - ./snapshots:/app/snapshots
+      - ./edge_buffer.db:/app/edge_buffer.db
+    environment:
+      - SMARTPARK_MODE=physical
+      - SMARTPARK_CONFIG=config/cameras.json
+      - SMARTPARK_DB=edge_buffer.db
+      - PYTHONUNBUFFERED=1
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # 2. Local MediaMTX RTSP / WebRTC Stream Proxy
+  # Caches and duplicates RTSP feeds locally so multiple clients (Edge Engine, Security Guard Monitor)
+  # do not overwhelm the camera's embedded DSP chip.
+  camera_proxy:
+    image: bluenviron/mediamtx:latest
+    container_name: smartpark_camera_proxy
+    restart: unless-stopped
+    network_mode: "host"
+    volumes:
+      - ./config/mediamtx.yml:/mediamtx.yml:ro
+    environment:
+      - MTX_PROTOCOLS=tcp
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "20m"
+        max-file: "3"

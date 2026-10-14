@@ -1,0 +1,75 @@
+{
+  "site_id": "park_algiers_central_01",
+  "site_name": "Parking Central Alger - Audin",
+  "wilaya_code": "16",
+  "cameras": [
+    {
+      "camera_id": "cam_lane1_entry_plate",
+      "lane_id": "lane_1",
+      "role": "plate_entry",
+      "name": "CAM 1 - Entry Plate ALPR Telephoto",
+      "ip": "192.168.10.101",
+      "port": 554,
+      "rtsp_url": "rtsp://admin:smartpark2026@192.168.10.101:554/Streaming/Channels/101",
+      "transport": "tcp",
+      "target_fps": 30,
+      "roi_box": [0.35, 0.20, 0.85, 0.80],
+      "lens_focal_mm": 12.0,
+      "sensor_notes": "Varifocal 8-32mm optical zoom aimed at entry bumper stop line"
+    },
+    {
+      "camera_id": "cam_lane1_driver_face",
+      "lane_id": "lane_1",
+      "role": "face_entry",
+      "name": "CAM 2 - Driver Window Biometric Dual-Lens",
+      "ip": "192.168.10.102",
+      "port": 554,
+      "rtsp_url": "rtsp://admin:smartpark2026@192.168.10.102:554/Streaming/Channels/101",
+      "transport": "tcp",
+      "target_fps": 30,
+      "roi_box": [0.15, 0.25, 0.85, 0.75],
+      "lens_focal_mm": 4.0,
+      "sensor_notes": "Dual-sensor RGB + 850nm NIR biometric unit mounted on entry totem"
+    },
+    {
+      "camera_id": "cam_lane2_exit_plate",
+      "lane_id": "lane_2",
+      "role": "plate_exit",
+      "name": "CAM 3 - Exit Barrier & Gantry VMS",
+      "ip": "192.168.10.104",
+      "port": 554,
+      "rtsp_url": "rtsp://admin:smartpark2026@192.168.10.104:554/Streaming/Channels/101",
+      "transport": "tcp",
+      "target_fps": 30,
+      "roi_box": [0.30, 0.20, 0.85, 0.80],
+      "lens_focal_mm": 8.0,
+      "sensor_notes": "Structural gantry camera monitoring egress toll lane and ticket validation"
+    },
+    {
+      "camera_id": "cam_deck_zone_a",
+      "lane_id": "zone_a",
+      "role": "overhead_deck",
+      "name": "CAM 4 - Level -1 Parking Deck Occupancy",
+      "ip": "192.168.10.105",
+      "port": 554,
+      "rtsp_url": "rtsp://admin:smartpark2026@192.168.10.105:554/Streaming/Channels/101",
+      "transport": "tcp",
+      "target_fps": 15,
+      "roi_box": [0.05, 0.05, 0.95, 0.95],
+      "lens_focal_mm": 2.8,
+      "sensor_notes": "Fisheye 180-degree overview camera tracking 24 stall occupancy states"
+    }
+  ],
+  "barrier_hardware": {
+    "interface": "modbus_rtu",
+    "port": "/dev/ttyUSB0",
+    "baudrate": 9600,
+    "parity": "N",
+    "stopbits": 1,
+    "fallback_tcp_host": "192.168.10.200",
+    "fallback_tcp_port": 502,
+    "channel_entry_barrier": 1,
+    "channel_exit_barrier": 2,
+    "pulse_duration_ms": 500
+  }
+}

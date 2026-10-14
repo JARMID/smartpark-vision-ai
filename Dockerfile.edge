@@ -1,0 +1,32 @@
+# SmartPark Vision AI - Edge Appliance Container
+# Built for Linux x86_64 and ARM64 (NVIDIA Jetson Linux Tegra / JetPack 6.x)
+
+FROM python:3.11-slim-bookworm
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    build-essential \
+    ffmpeg \
+    libsm6 \
+    libxext6 \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    curl \
+    iproute2 \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY src/ ./src/
+COPY config/ ./config/
+COPY edge_daemon.py .
+
+RUN mkdir -p /app/snapshots /app/data
+
+ENTRYPOINT ["python3", "edge_daemon.py"]
+CMD ["--config", "config/cameras.json", "--mode", "physical"]

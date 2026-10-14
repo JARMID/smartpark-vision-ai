@@ -1,0 +1,26 @@
+[Unit]
+Description=SmartPark Vision AI - Edge Camera Ingestion and Barrier Gate Engine
+After=network.target network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=smartpark
+Group=smartpark
+WorkingDirectory=/opt/smartpark
+ExecStart=/opt/smartpark/venv/bin/python edge_daemon.py --config config/cameras.json --mode physical
+Restart=always
+RestartSec=5s
+KillMode=process
+TimeoutStopSec=10s
+
+# Hardware device access for RS-485 barrier control
+SupplementaryGroups=dialout
+
+# Security hardening
+ProtectSystem=full
+ProtectHome=read-only
+NoNewPrivileges=true
+
+[Install]
+WantedBy=multi-user.target
