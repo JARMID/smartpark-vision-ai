@@ -128,6 +128,13 @@ orchestrator.enroll_subscriber(
     is_blacklisted=True,
 )
 
+# Seed active parked vehicles into the Anti-Passback & Clone Detection registry
+orchestrator.register_active_vehicle("104822 119 16", slot_number="A01", driver_name="Amine Hadj", is_vip=True)
+orchestrator.register_active_vehicle("04122 118 16", slot_number="A02", driver_name="Karim Benali", is_vip=True)
+orchestrator.register_active_vehicle("08192 120 09", slot_number="B01", driver_name="Visiteur Public", is_vip=False)
+orchestrator.register_active_vehicle("99120 121 16", slot_number="B03", driver_name="Visiteur Public", is_vip=False)
+orchestrator.register_active_vehicle("03144 117 31", slot_number="B05", driver_name="Visiteur Public", is_vip=False)
+
 # In-Memory Parking Stalls & Occupancy State
 PARKING_SLOTS = [
     # Zone A: VIP
@@ -242,6 +249,11 @@ class TicketGenerateRequest(BaseModel):
     zone: str = "Zone B"
 
 
+class VehicleExitRequest(BaseModel):
+    plate: str = "104822 119 16"
+    camera_id: Optional[str] = "CAM-03 (Sortie)"
+
+
 class DpiaGenerateRequest(BaseModel):
     dpo_name: Optional[str] = "Mohamed Cherif"
     dpo_phone: Optional[str] = "+213 550 99 88 77"
@@ -349,6 +361,10 @@ async def simulate_scenario(req: SimulateRequest):
     scenario = req.scenario
 
     if scenario == "vip_entry":
+        # Reset presence for VIP entry scenario reproducibility
+        cleaned_vip = "".join(filter(str.isdigit, "104822 119 16"))
+        orchestrator.active_inside_vehicles.pop(cleaned_vip, None)
+
         decision = orchestrator.process_arrival(
             camera_id="CAM-01 (Entrée)",
             raw_plate_text="104822 119 16",
@@ -503,7 +519,85 @@ async def simulate_scenario(req: SimulateRequest):
             "latency_ms": 190.0,
         }
 
+    elif scenario in ("duplicate_plate_fraud", "cloned_plate_alert"):
+        # Guarantee vehicle is recorded inside first to demonstrate Anti-Passback
+        cleaned_vip = "".join(filter(str.isdigit, "104822 119 16"))
+        if cleaned_vip not in orchestrator.active_inside_vehicles:
+            orchestrator.register_active_vehicle("104822 119 16", slot_number="A01", driver_name="Amine Hadj", is_vip=True)
+
+        decision = orchestrator.process_arrival(
+            camera_id="CAM-01 (Entrée)",
+            raw_plate_text="104822 119 16",
+            plate_confidence=0.99,
+            face_embedding=VIP_EMBEDDING_1,
+            liveness_score=0.98,
+        )
+        event = {
+            "id": len(RECENT_EVENTS) + 1,
+            "timestamp": now_str,
+            "camera_id": "CAM-01 (Entrée)",
+            "plate": "104822 119 16",
+            "wilaya": "Alger (16)",
+            "driver": "SUSPICION PLAQUE CLONÉE / DOUBLE PASSAGE",
+            "result": "denied_antipassback",
+            "barrier_opened": False,
+            "liveness": 0.98,
+            "distance": None,
+            "error_code": "CLONED_PLATE_OR_DOUBLE_ENTRY_VIOLATION",
+            "message": (
+                "ALERTE ROUGE: Véhicule déjà stationné en Place A01 depuis 14:15. "
+                "Suspicion de plaque clonée ou violation Anti-Passback. Barrière verrouillée."
+            ),
+        }
+        RECENT_EVENTS.insert(0, event)
+        await ws_manager.broadcast({"type": "SECURITY_ALERT", "data": event})
+        return decision
+
     raise HTTPException(status_code=400, detail="Scénario non reconnu")
+
+
+@app.get("/api/active-vehicles")
+def get_active_vehicles():
+    """Return all vehicles currently inside the parking perimeter for Anti-Passback monitoring."""
+    vehicles = list(orchestrator.active_inside_vehicles.values())
+    return {
+        "status": "ONLINE",
+        "total_inside": len(vehicles),
+        "antipassback_enabled": orchestrator.enable_antipassback,
+        "vehicles": vehicles,
+    }
+
+
+@app.post("/api/exit")
+async def process_vehicle_exit(req: VehicleExitRequest):
+    """Process physical vehicle egress through the exit barrier."""
+    res = orchestrator.process_exit(
+        camera_id=req.camera_id,
+        raw_plate_text=req.plate,
+    )
+    # Free up stall in memory if matches
+    for s in PARKING_SLOTS:
+        if s.get("plate") == res.get("plate"):
+            s["status"] = "vacant"
+            s["plate"] = None
+            s["parked_since"] = None
+            break
+
+    event = {
+        "id": len(RECENT_EVENTS) + 1,
+        "timestamp": datetime.now().strftime("%H:%M:%S"),
+        "camera_id": req.camera_id,
+        "plate": res.get("plate"),
+        "wilaya": res.get("wilaya"),
+        "driver": "Sortie Validée",
+        "result": "cleared_exit",
+        "barrier_opened": res.get("barrier_opened"),
+        "amount_paid_dzd": res.get("fee_dzd", 0),
+        "message": f"Véhicule sorti du périmètre ({res.get('duration_minutes', 0)} min - {res.get('fee_dzd', 0)} DZD)",
+    }
+    RECENT_EVENTS.insert(0, event)
+    await ws_manager.broadcast({"type": "EXIT_CLEARED", "data": event})
+    return res
 
 
 @app.get("/api/compliance/anpdp")

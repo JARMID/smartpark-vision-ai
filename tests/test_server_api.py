@@ -78,6 +78,33 @@ class TestServerAPI(unittest.TestCase):
         self.assertEqual(data["result"], "denied_spoof")
         self.assertFalse(data["barrier_opened"])
 
+    def test_simulate_duplicate_plate_fraud(self):
+        payload = {"scenario": "duplicate_plate_fraud"}
+        response = self.client.post("/api/simulate", json=payload)
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["result"], "denied_antipassback")
+        self.assertFalse(data["barrier_opened"])
+        self.assertEqual(data["error_code"], "CLONED_PLATE_OR_DOUBLE_ENTRY_VIOLATION")
+        self.assertIn("A01", data["message"])
+
+    def test_active_vehicles_and_exit_endpoint(self):
+        # 1. Inspect inside vehicles
+        response = self.client.get("/api/active-vehicles")
+        self.assertEqual(response.status_code, 200)
+        data = response.json()
+        self.assertEqual(data["status"], "ONLINE")
+        self.assertTrue(data["antipassback_enabled"])
+        self.assertGreaterEqual(data["total_inside"], 3)
+
+        # 2. Process vehicle exit for 104822 119 16
+        exit_res = self.client.post("/api/exit", json={"plate": "104822 119 16"})
+        self.assertEqual(exit_res.status_code, 200)
+        exit_data = exit_res.json()
+        self.assertEqual(exit_data["result"], "cleared_exit")
+        self.assertTrue(exit_data["barrier_opened"])
+        self.assertTrue(exit_data["is_vip"])
+
     def test_barrier_manual_override(self):
         payload = {"channel": 1, "duration_ms": 500}
         response = self.client.post("/api/barrier/override", json=payload)

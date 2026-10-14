@@ -181,6 +181,10 @@
         <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
         <span>[6] Sortie Chargily Pay</span>
       </button>
+      <button onclick="triggerScenario('duplicate_plate_fraud')" class="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0" title="Deuxième véhicule se présentant avec la même plaque qu'une voiture déjà garée">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+        <span>[7] Plaque Clonée (Anti-Passback)</span>
+      </button>
     </div>
 
     <!-- View Mode Tabs (3D Digital Twin / 2D Tactical CAD / 4-Cam CCTV) -->
@@ -2787,6 +2791,10 @@
           borderClass = 'border-teal-500/30 bg-teal-950/20';
           icon = 'log-out'; iconColor = 'text-teal-400';
           badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/30 text-teal-300 font-semibold">SORTIE VALIDÉE</span>';
+        } else if (ev.status === 'denied_antipassback') {
+          borderClass = 'border-rose-500/50 bg-rose-950/40';
+          icon = 'shield-alert'; iconColor = 'text-rose-400';
+          badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/30 text-rose-300 font-semibold animate-pulse">PLAQUE CLONÉE (APB)</span>';
         }
 
         const card = document.createElement('div');
@@ -2997,6 +3005,27 @@
             status: 'cleared_exit',
             distance: null,
             liveness: null,
+          });
+        }
+
+      } else if (name === 'duplicate_plate_fraud' || name === 'cloned_plate_alert') {
+        playChime(false);
+        cam1.triggerVehicle('104822 119 16');
+        cam2.triggerVehicle(false);
+        document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge bg-rose-600 text-white font-black animate-pulse">104822 119 16</span>';
+        document.getElementById('cam1-wilaya').innerText = 'Alger (16) - [DÉJÀ EN PLACE A01]';
+        showOverlay('cam1-overlay', 4500);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-01 (Entrée)',
+            plate: '104822 119 16',
+            wilaya: 'Alger (16)',
+            driver: 'SUSPICION PLAQUE CLONÉE / DOUBLE ENTRÉE',
+            status: 'denied_antipassback',
+            distance: null,
+            liveness: 0.98,
           });
         }
       }

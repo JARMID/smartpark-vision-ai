@@ -86,6 +86,70 @@ class TestGateOrchestrator(unittest.TestCase):
         self.assertTrue(decision["barrier_opened"])
         self.assertTrue("ticket_qr" in decision)
 
+    def test_antipassback_duplicate_plate_blocked(self):
+        # Car 1 enters legitimately
+        entry1 = self.orchestrator.process_arrival(
+            camera_id="cam-01",
+            raw_plate_text="104822 119 16",
+            plate_confidence=0.98,
+            face_embedding=self.driver_embedding,
+            liveness_score=0.98,
+        )
+        self.assertEqual(entry1["result"], GateDecisionResult.CLEARED_VIP)
+        self.assertTrue(entry1["barrier_opened"])
+
+        # Car 2 arrives with the exact same license plate while Car 1 is still inside
+        entry2 = self.orchestrator.process_arrival(
+            camera_id="cam-01",
+            raw_plate_text="104822 119 16",
+            plate_confidence=0.98,
+            face_embedding=self.driver_embedding,
+            liveness_score=0.98,
+        )
+        self.assertEqual(entry2["result"], GateDecisionResult.DENIED_ANTIPASSBACK)
+        self.assertFalse(entry2["barrier_opened"])
+        self.assertEqual(entry2["error_code"], "CLONED_PLATE_OR_DOUBLE_ENTRY_VIOLATION")
+        self.assertIn("déjà enregistré à l'intérieur", entry2["message"])
+
+        # Car 1 exits through Lane 2
+        exit_res = self.orchestrator.process_exit(
+            camera_id="cam-03",
+            raw_plate_text="104822 119 16",
+        )
+        self.assertEqual(exit_res["result"], "cleared_exit")
+        self.assertTrue(exit_res["barrier_opened"])
+        self.assertTrue(exit_res["was_registered_inside"])
+
+        # Now vehicle is permitted to enter again legitimately
+        entry3 = self.orchestrator.process_arrival(
+            camera_id="cam-01",
+            raw_plate_text="104822 119 16",
+            plate_confidence=0.98,
+            face_embedding=self.driver_embedding,
+            liveness_score=0.98,
+        )
+        self.assertEqual(entry3["result"], GateDecisionResult.CLEARED_VIP)
+        self.assertTrue(entry3["barrier_opened"])
+
+    def test_seeded_active_vehicle_blocks_duplicate(self):
+        # Pre-seed a vehicle already in stall A02
+        self.orchestrator.register_active_vehicle(
+            plate_raw="04122 118 16",
+            slot_number="A02",
+            driver_name="Karim Benali",
+            is_vip=True,
+        )
+
+        # Attempt duplicate entry with identical plate
+        dup_entry = self.orchestrator.process_arrival(
+            camera_id="cam-01",
+            raw_plate_text="04122 118 16",
+            plate_confidence=0.99,
+        )
+        self.assertEqual(dup_entry["result"], GateDecisionResult.DENIED_ANTIPASSBACK)
+        self.assertFalse(dup_entry["barrier_opened"])
+        self.assertIn("A02", dup_entry["message"])
+
 
 if __name__ == "__main__":
     unittest.main()
