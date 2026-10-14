@@ -38,11 +38,12 @@ def vercel_root():
 def vercel_api_root():
     return {"status": "ONLINE", "service": "SmartPark Vision AI API"}
 
-@app.get("/api/index.py")
-def debug_vercel(request: Request):
+@app.api_route("/{full_path:path}", methods=["GET", "POST"])
+def catch_all(full_path: str, request: Request):
     return {
-        "path": request.url.path,
-        "matched_path": request.headers.get("x-matched-path"),
-        "headers": {k: v for k, v in request.headers.items() if not k.startswith("sec-")}
+        "full_path": full_path,
+        "url_path": request.url.path,
+        "scope_path": request.scope.get("path"),
+        "headers": dict(request.headers),
     }
 
