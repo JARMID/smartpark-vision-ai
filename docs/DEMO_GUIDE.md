@@ -50,6 +50,14 @@ Si vous disposez de Docker Desktop :
 docker compose up -d
 ```
 
+### Option E : Accès Direct en Ligne (Cloud Vercel)
+Si vous souhaitez envoyer un lien accessible immédiatement depuis n'importe quel smartphone, tablette ou ordinateur sans installer de logiciel :
+```text
+https://smartpark-vision-ai.vercel.app
+```
+Ce déploiement intègre le jumeau numérique 3D WebGL, le moteur de simulation complet avec les 6 scénarios, la synthèse vocale bilingue et les dossiers de conformité juridique ANPDP.
+
+
 ---
 
 ## 3. Déroulé des 6 Scénarios de Démonstration
@@ -150,6 +158,7 @@ Pour un déploiement commercial pilote sur un site comprenant une voie d'entrée
 
 Le code source inclut une suite de tests unitaires et d'intégration validant chaque couche algorithmique. Pour exécuter la suite de tests :
 ```bash
-python -m unittest discover tests
+python -m unittest discover -s tests -p "test_*.py"
 ```
-Résultat garanti : 33 tests exécutés avec succès couvrant le parseur de plaques, l'index vectoriel en RAM, le tampon SQLite hors-ligne, le contrôleur Modbus et l'API FastAPI.
+Résultat garanti : 52 tests exécutés avec succès couvrant le parseur de plaques algérien, l'index vectoriel en RAM, le tampon SQLite hors-ligne, le contrôleur Modbus, le moteur de conformité Loi 25-11, le client Chargily Pay V2 et l'API FastAPI.
+
