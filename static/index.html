@@ -73,7 +73,7 @@
 <body class="font-sans antialiased h-screen flex flex-col overflow-hidden">
 
   <!-- TOP APP HEADER -->
-  <header class="bg-surface border-b border-surfaceBorder px-4 py-2.5 flex items-center justify-between shrink-0">
+  <header class="bg-surface border-b border-surfaceBorder px-4 py-2 flex items-center justify-between shrink-0">
     <div class="flex items-center space-x-3">
       <div class="w-8 h-8 rounded-lg bg-emeraldAccent/20 border border-emeraldAccent/40 flex items-center justify-center text-emeraldAccent font-bold">
         <i data-lucide="shield-check" class="w-5 h-5"></i>
@@ -83,66 +83,74 @@
           <span class="font-bold text-base tracking-tight text-white">SmartPark Vision AI</span>
           <span class="text-xs px-2 py-0.5 rounded bg-emeraldAccent/10 text-emeraldAccent border border-emeraldAccent/30 font-medium">Édition Souveraine DZ</span>
         </div>
-        <p class="text-[11px] text-gray-400">Site: Parking Alger-Centre (El-Biar) | Wilaya: 16</p>
+        <p class="text-[11px] text-gray-400">Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)</p>
       </div>
     </div>
 
     <!-- Telemetry Badges -->
-    <div class="flex items-center space-x-3 text-xs">
+    <div class="flex items-center space-x-2.5 text-xs">
+      <div id="backend-status-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
+        <span id="backend-dot" class="w-2 h-2 rounded-full bg-emeraldAccent pulsing-indicator"></span>
+        <span id="backend-text" class="font-mono text-[11px]">Serveur: En Ligne</span>
+      </div>
       <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
-        <span class="w-2 h-2 rounded-full bg-emeraldAccent pulsing-indicator"></span>
-        <span class="font-mono text-[11px]">UPS: 230V (100% AC)</span>
+        <span class="w-2 h-2 rounded-full bg-emeraldAccent"></span>
+        <span class="font-mono text-[11px]">UPS: 230V AC</span>
       </div>
       <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
         <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyanStream"></i>
-        <span class="font-mono text-[11px]">GPU: RTX 4070 (2.1GB)</span>
+        <span class="font-mono text-[11px]">RTX 4070 (2.1GB)</span>
       </div>
       <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-black/40 border border-gray-800 text-gray-300">
         <i data-lucide="zap" class="w-3.5 h-3.5 text-plateYellow"></i>
-        <span class="font-mono text-[11px]">FAISS: 0.74ms</span>
+        <span class="font-mono text-[11px]">RAM: 0.74ms</span>
       </div>
-      <button onclick="openAnpdpModal()" class="flex items-center space-x-1.5 px-2.5 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium transition">
-        <i data-lucide="scale" class="w-3.5 h-3.5"></i>
-        <span>ANPDP Loi 25-11</span>
+      <button onclick="openGuideModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded bg-emeraldAccent/10 hover:bg-emeraldAccent/20 text-emerald-400 border border-emeraldAccent/30 font-medium transition">
+        <i data-lucide="help-circle" class="w-3.5 h-3.5"></i>
+        <span>Guide Démo</span>
       </button>
-      <div id="clock" class="font-mono text-gray-300 font-semibold px-2">17:50:00</div>
+      <button onclick="openAnpdpModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium transition">
+        <i data-lucide="scale" class="w-3.5 h-3.5"></i>
+        <span>Loi 25-11</span>
+      </button>
+      <div id="clock" class="font-mono text-gray-300 font-semibold px-1 text-[11px]">17:50:00</div>
     </div>
   </header>
 
   <!-- INTERACTIVE SCENARIO SIMULATION BAR (Hero Controls) -->
-  <section class="bg-gray-900/90 border-b border-surfaceBorder px-4 py-2 shrink-0 flex items-center justify-between">
-    <div class="flex items-center space-x-2">
-      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1 flex items-center">
-        <i data-lucide="play-circle" class="w-3.5 h-3.5 mr-1 text-emeraldAccent"></i> Démo Scénarios:
+  <section class="bg-gray-900/90 border-b border-surfaceBorder px-4 py-1.5 shrink-0 flex items-center justify-between">
+    <div class="flex items-center space-x-1.5 overflow-x-auto py-0.5">
+      <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1 flex items-center shrink-0">
+        <i data-lucide="play-circle" class="w-3.5 h-3.5 mr-1 text-emeraldAccent"></i> Scénarios:
       </span>
-      <button onclick="triggerScenario('vip_entry')" class="px-2.5 py-1 rounded bg-emeraldAccent/15 hover:bg-emeraldAccent/25 text-emerald-300 border border-emeraldAccent/40 text-xs font-medium transition flex items-center space-x-1 shadow-sm">
+      <button onclick="triggerScenario('vip_entry')" class="px-2.5 py-1 rounded bg-emeraldAccent/15 hover:bg-emeraldAccent/25 text-emerald-300 border border-emeraldAccent/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
-        <span>[1] Entrée VIP (104822 119 16)</span>
+        <span>[1] VIP (104822 119 16)</span>
       </button>
-      <button onclick="triggerScenario('temporary_00')" class="px-2.5 py-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/40 text-xs font-medium transition flex items-center space-x-1">
+      <button onclick="triggerScenario('temporary_00')" class="px-2.5 py-1 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-        <span>[2] Plaque Provisoire 00 (08412 00 16)</span>
+        <span>[2] Provisoire 00 (08412 00 16)</span>
       </button>
-      <button onclick="triggerScenario('watchlist_alert')" class="px-2.5 py-1 rounded bg-crimsonAlarm/15 hover:bg-crimsonAlarm/25 text-red-300 border border-crimsonAlarm/40 text-xs font-medium transition flex items-center space-x-1">
+      <button onclick="triggerScenario('watchlist_alert')" class="px-2.5 py-1 rounded bg-crimsonAlarm/15 hover:bg-crimsonAlarm/25 text-red-300 border border-crimsonAlarm/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-crimsonAlarm"></span>
         <span>[3] Véhicule Volé (00551 218 16)</span>
       </button>
-      <button onclick="triggerScenario('spoof_attack')" class="px-2.5 py-1 rounded bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/40 text-xs font-medium transition flex items-center space-x-1">
+      <button onclick="triggerScenario('spoof_attack')" class="px-2.5 py-1 rounded bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
         <span>[4] Fraude Photo / Écran</span>
       </button>
-      <button onclick="triggerScenario('driver_mismatch')" class="px-2.5 py-1 rounded bg-amberWarn/15 hover:bg-amberWarn/25 text-amber-300 border border-amberWarn/40 text-xs font-medium transition flex items-center space-x-1">
+      <button onclick="triggerScenario('driver_mismatch')" class="px-2.5 py-1 rounded bg-amberWarn/15 hover:bg-amberWarn/25 text-amber-300 border border-amberWarn/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-amberWarn"></span>
         <span>[5] Chauffeur Inconnu</span>
       </button>
-      <button onclick="triggerScenario('visitor_payment_exit')" class="px-2.5 py-1 rounded bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-xs font-medium transition flex items-center space-x-1">
+      <button onclick="triggerScenario('visitor_payment_exit')" class="px-2.5 py-1 rounded bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-        <span>[6] Sortie Réglée (Chargily Pay CIB)</span>
+        <span>[6] Sortie CIB / Chargily</span>
       </button>
     </div>
 
     <!-- Quick Manual Override -->
-    <div class="flex items-center space-x-2">
+    <div class="flex items-center space-x-2 shrink-0 ml-2">
       <button onclick="manualBarrierOverride(1)" class="px-3 py-1 rounded bg-white/10 hover:bg-white/20 text-white border border-gray-700 text-xs font-semibold flex items-center space-x-1 transition shadow">
         <i data-lucide="unlock" class="w-3.5 h-3.5 text-emeraldAccent"></i>
         <span>Ouvrir Voie 1 [Espace]</span>
@@ -158,32 +166,32 @@
 
       <!-- 4-CAMERA MATRIX -->
       <div class="bg-surface rounded-xl border border-surfaceBorder p-2.5 flex-1 flex flex-col min-h-0">
-        <div class="flex items-center justify-between mb-2 px-1">
+        <div class="flex items-center justify-between mb-1.5 px-1">
           <div class="flex items-center space-x-2">
             <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
-              <i data-lucide="video" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Flux Caméras Temps Réel (WebRTC Sub-300ms)
+              <i data-lucide="video" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Flux Caméras Haute Fréquence (25 FPS)
             </span>
-            <span class="text-[10px] bg-cyanStream/10 text-cyanStream border border-cyanStream/30 px-1.5 py-0.5 rounded font-mono">NVDEC HW Décode</span>
+            <span class="text-[10px] bg-cyanStream/10 text-cyanStream border border-cyanStream/30 px-1.5 py-0.5 rounded font-mono">NVDEC HW Accéléré</span>
           </div>
-          <div class="text-[11px] text-gray-400 font-mono">4 Flux Actifs @ 25 FPS</div>
+          <div class="text-[11px] text-gray-400 font-mono">Voie 1 Entrée | Borne | Voie 2 Sortie | Stalles</div>
         </div>
 
         <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
           
           <!-- CAM 1: Lane 1 Entry ALPR -->
           <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
-            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
               <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
-              <span>CAM-01: Voie 1 (Plaque Entrée)</span>
+              <span>CAM-01: Voie 1 (Entrée ALPR)</span>
             </div>
-            <div id="barrier-status-pill" class="absolute top-2 right-2 z-10 bg-black/70 border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+            <div id="barrier-status-pill" class="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
               Barrière: <span class="text-red-400 font-bold" id="barrier-text">FERMÉE</span>
             </div>
             <canvas id="cam1-canvas" class="w-full h-full object-cover"></canvas>
             <!-- Plate Detection Overlay Box -->
-            <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur border border-yellow-500/50 p-2 rounded flex items-center justify-between hidden">
+            <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-yellow-500/50 p-2 rounded flex items-center justify-between hidden">
               <div>
-                <span class="text-[10px] text-gray-400 uppercase">Plaque Détectée (Conf: 98.4%)</span>
+                <span class="text-[10px] text-gray-400 uppercase">Plaque Détectée (Confiance: 98.6%)</span>
                 <div class="mt-0.5" id="cam1-plate-box"><span class="plate-badge">104822 119 16</span></div>
               </div>
               <div class="text-right">
@@ -195,18 +203,18 @@
 
           <!-- CAM 2: Driver Kiosk Dual-Lens (RGB + NIR Multi-Spectral) -->
           <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
-            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
               <span class="w-1.5 h-1.5 rounded-full bg-cyanStream"></span>
-              <span>CAM-02: Borne (Double Optique CPL/850nm NIR)</span>
+              <span>CAM-02: Borne Conducteur (RGB + 850nm NIR)</span>
             </div>
-            <div class="absolute top-2 right-2 z-10 bg-black/70 border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+            <div class="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
               Filtre CPL: <span class="text-emeraldAccent font-semibold">ACTIF</span>
             </div>
             <canvas id="cam2-canvas" class="w-full h-full object-cover"></canvas>
             <!-- Liveness & Face Recognition Overlay -->
-            <div id="cam2-overlay" class="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur border border-cyan-500/50 p-2 rounded flex items-center justify-between hidden">
+            <div id="cam2-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-cyan-500/50 p-2 rounded flex items-center justify-between hidden">
               <div>
-                <span class="text-[10px] text-gray-400 uppercase">Reconnaissance Faciale (ArcFace)</span>
+                <span class="text-[10px] text-gray-400 uppercase">ArcFace 512-D Local</span>
                 <div class="text-xs font-bold text-white" id="cam2-driver-name">Amine Hadj</div>
                 <div class="text-[10px] text-cyan-300 font-mono" id="cam2-driver-dist">Distance: 0.42 (Match)</div>
               </div>
@@ -219,33 +227,36 @@
             </div>
           </div>
 
-          <!-- CAM 3: Lane 2 Exit ALPR -->
+          <!-- CAM 3: Lane 2 Exit ALPR with Mechanical Arm -->
           <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
-            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
-              <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
-              <span>CAM-03: Voie 2 (Sortie ALPR)</span>
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+              <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
+              <span>CAM-03: Voie 2 (Sortie ALPR & Barrière)</span>
             </div>
-            <div class="absolute top-2 right-2 z-10 bg-black/70 border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
-              Règlement: <span class="text-teal-400 font-semibold">Chargily Pay V2</span>
+            <div id="cam3-arm-status" class="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+              Lisse: <span class="text-red-400 font-semibold" id="cam3-arm-text">BAISSÉE</span>
             </div>
             <canvas id="cam3-canvas" class="w-full h-full object-cover"></canvas>
-            <div id="cam3-overlay" class="absolute bottom-2 left-2 right-2 bg-black/80 backdrop-blur border border-teal-500/50 p-2 rounded flex items-center justify-between hidden">
+            <div id="cam3-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-teal-500/50 p-2 rounded flex items-center justify-between hidden">
               <div>
-                <span class="text-[10px] text-gray-400 uppercase">Sortie Validée</span>
+                <span class="text-[10px] text-gray-400 uppercase">Sortie Validée (08192 120 09)</span>
                 <div class="mt-0.5" id="cam3-plate-box"><span class="plate-badge">08192 120 09</span></div>
               </div>
               <div class="text-right">
-                <span class="text-[10px] text-gray-400">Règlement CIB</span>
-                <div class="text-xs font-semibold text-emeraldAccent font-mono">Payé: 200 DZD (OK)</div>
+                <span class="text-[10px] text-gray-400">Règlement Chargily Pay</span>
+                <div class="text-xs font-semibold text-emeraldAccent font-mono">CIB / Edahabia: 200 DZD</div>
               </div>
             </div>
           </div>
 
           <!-- CAM 4: Overhead Parking Stalls (Zone Overview) -->
           <div class="relative bg-black rounded-lg overflow-hidden border border-gray-800 flex flex-col">
-            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
+            <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/60 backdrop-blur px-2 py-0.5 rounded text-[11px] text-gray-200 font-mono">
               <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
               <span>CAM-04: Zone A & B (Vue Aérienne Stalles)</span>
+            </div>
+            <div class="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur border border-gray-700 px-2 py-0.5 rounded text-[11px] font-mono text-gray-300">
+              YOLOv11n: <span class="text-emeraldAccent font-semibold">10/14 Occupées</span>
             </div>
             <canvas id="cam4-canvas" class="w-full h-full object-cover"></canvas>
           </div>
@@ -253,12 +264,12 @@
         </div>
       </div>
 
-      <!-- PARKING STALL OCCUPANCY & HEATMAP (Bottom Left) -->
-      <div class="bg-surface rounded-xl border border-surfaceBorder p-3 shrink-0">
+      <!-- PARKING STALL OCCUPANCY GRID (Bottom Left) -->
+      <div class="bg-surface rounded-xl border border-surfaceBorder p-2.5 shrink-0">
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
-              <i data-lucide="layout-grid" class="w-4 h-4 mr-1.5 text-emeraldAccent"></i> Plan d'Occupation des Stalles (Temps Réel)
+              <i data-lucide="layout-grid" class="w-4 h-4 mr-1.5 text-emeraldAccent"></i> Plan des Stalles en Temps Réel
             </span>
             <span class="text-xs font-mono text-emeraldAccent bg-emeraldAccent/10 px-2 py-0.5 rounded border border-emeraldAccent/30" id="occupancy-pill">
               10 / 14 Places Occupées (71.4%)
@@ -281,13 +292,13 @@
 
     <!-- RIGHT COLUMN: REAL-TIME EVENT STREAM & AUDIT LOG (35%) -->
     <aside class="w-96 bg-surface rounded-xl border border-surfaceBorder p-3 flex flex-col shrink-0 min-w-0">
-      <div class="flex items-center justify-between pb-2.5 mb-2 border-b border-surfaceBorder">
+      <div class="flex items-center justify-between pb-2 mb-2 border-b border-surfaceBorder">
         <div class="flex items-center space-x-2">
           <span class="text-xs font-bold uppercase tracking-wider text-gray-200 flex items-center">
-            <i data-lucide="activity" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Flux d'Événements en Direct
+            <i data-lucide="activity" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Journal d'Événements Souverain
           </span>
         </div>
-        <span class="text-[10px] px-2 py-0.5 rounded bg-emeraldAccent/10 text-emeraldAccent font-mono border border-emeraldAccent/30">Connecté WSS</span>
+        <span class="text-[10px] px-2 py-0.5 rounded bg-emeraldAccent/10 text-emeraldAccent font-mono border border-emeraldAccent/30" id="event-mode-badge">Direct Live</span>
       </div>
 
       <!-- Events Scroll Container -->
@@ -296,10 +307,10 @@
       </div>
 
       <!-- Security Emergency Action Dock -->
-      <div class="mt-2.5 pt-2.5 border-t border-surfaceBorder space-y-1.5">
+      <div class="mt-2.5 pt-2 border-t border-surfaceBorder space-y-1.5">
         <div class="flex items-center justify-between text-xs text-gray-400">
-          <span>Commandes Rapides Clavier:</span>
-          <span class="font-mono text-[10px] text-gray-500">[Espace] Voie 1 | [1-6] Scénarios</span>
+          <span>Commandes Clavier :</span>
+          <span class="font-mono text-[10px] text-gray-500">[Espace] Barrière | [1-6] Scénarios</span>
         </div>
         <div class="grid grid-cols-2 gap-1.5">
           <button onclick="manualBarrierOverride(1)" class="px-2 py-1.5 rounded bg-gray-800 hover:bg-gray-700 text-white text-xs font-medium border border-gray-700 flex items-center justify-center space-x-1 transition">
@@ -308,13 +319,81 @@
           </button>
           <button onclick="emergencyLockdown()" class="px-2 py-1.5 rounded bg-red-950/60 hover:bg-red-900/80 text-red-200 text-xs font-medium border border-red-800 flex items-center justify-center space-x-1 transition">
             <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-crimsonAlarm"></i>
-            <span>Verrouillage Urgence</span>
+            <span>Verrouillage Total</span>
           </button>
         </div>
       </div>
     </aside>
 
   </main>
+
+  <!-- PRESENTATION GUIDE MODAL -->
+  <div id="guide-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-surface rounded-xl border border-surfaceBorder max-w-2xl w-full p-5 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-surfaceBorder pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded bg-emeraldAccent/20 border border-emeraldAccent/40 flex items-center justify-center text-emeraldAccent">
+            <i data-lucide="book-open" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white">Guide de Présentation & Scénarios Démo</h3>
+            <p class="text-xs text-gray-400">Déroulé d'évaluation pour la direction et les partenaires techniques</p>
+          </div>
+        </div>
+        <button onclick="closeGuideModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <div class="space-y-3 text-xs">
+        <div class="bg-black/40 p-3 rounded border border-gray-800 space-y-1">
+          <span class="font-semibold text-emeraldAccent block">Points Clés à Mettre en Valeur :</span>
+          <p class="text-gray-300 leading-relaxed">
+            1. <strong>Conformité ANPDP Intégrale :</strong> 100% hébergé en Algérie. Zéro envoi de données biométriques à l'étranger (Article 44 de la Loi 18-07 et Loi 25-11).<br>
+            2. <strong>Autonomie Hors-Ligne Totale :</strong> La décision d'ouverture de barrière est calculée en mémoire vive (RAM FAISS) en moins de 1 milliseconde, sans dépendre d'Internet.<br>
+            3. <strong>Plaques Algériennes Authentiques :</strong> Prise en charge des 6 chiffres récents et du code temporaire "00" (cartes grises provisoires).
+          </p>
+        </div>
+
+        <div class="space-y-2">
+          <span class="font-semibold text-gray-300 block">Les 6 Scénarios Interactifs (Touches 1 à 6) :</span>
+          
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-emeraldAccent">[1] Accès VIP Instantané (Touche 1) :</span>
+            <p class="text-gray-400 mt-0.5">Le véhicule de l'abonné VIP arrive. La plaque 104822 119 16 est analysée, le visage du conducteur est comparé en RAM (Distance 0.42), et la barrière s'ouvre en 180ms.</p>
+          </div>
+
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-blue-400">[2] Véhicule Neuf / Plaque Provisoire 00 (Touche 2) :</span>
+            <p class="text-gray-400 mt-0.5">Démontre la gestion du code 00 propre aux véhicules sortis d'usine ou d'importation récente. Un ticket QR est délivré et la barrière s'ouvre.</p>
+          </div>
+
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-red-400">[3] Véhicule Volé / Blacklist (Touche 3) :</span>
+            <p class="text-gray-400 mt-0.5">Plaque signalée aux services de sécurité. La barrière reste strictement verrouillée et une alerte rouge sonore et visuelle est consignée.</p>
+          </div>
+
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-purple-400">[4] Détection de Fraude Photo / Écran (Touche 4) :</span>
+            <p class="text-gray-400 mt-0.5">Un individu présente une tablette avec la photo d'un VIP. L'algorithme MiniFASNet détecte l'absence de vivacité (0.22) et bloque immédiatement l'ouverture.</p>
+          </div>
+
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-amber-400">[5] Discordance Chauffeur / Voiture (Touche 5) :</span>
+            <p class="text-gray-400 mt-0.5">La plaque correspond à un abonné, mais le conducteur est inconnu. La barrière reste en attente de validation manuelle par l'agent de garde.</p>
+          </div>
+
+          <div class="bg-black/30 p-2.5 rounded border border-gray-800">
+            <span class="font-semibold text-teal-400">[6] Règlement Sortie Chargily Pay V2 (Touche 6) :</span>
+            <p class="text-gray-400 mt-0.5">Sortie fluide par pré-paiement QR (cartes EDAHABIA et CIB). La plaque est détectée sur CAM-03 et la lisse de barrière se lève automatiquement.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex items-center justify-between pt-2 border-t border-surfaceBorder text-xs">
+        <span class="text-gray-500 font-mono">Appuyez sur Échap pour fermer</span>
+        <button onclick="closeGuideModal()" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-medium transition">Compris</button>
+      </div>
+    </div>
+  </div>
 
   <!-- ANPDP LAW 25-11 COMPLIANCE MODAL -->
   <div id="anpdp-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
@@ -370,111 +449,153 @@
     </div>
   </div>
 
-  <!-- JAVASCRIPT ENGINE & WEBSOCKET CLIENT -->
+  <!-- JAVASCRIPT ENGINE & DUAL SIMULATION SYSTEM -->
   <script>
     // Audio Synthesis (Web Audio API) for realistic gate chimes and security alerts
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
     function playChime(success = true) {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      const osc = audioCtx.createOscillator();
-      const gain = audioCtx.createGain();
-      osc.connect(gain);
-      gain.connect(audioCtx.destination);
-      const now = audioCtx.currentTime;
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        const now = audioCtx.currentTime;
 
-      if (success) {
-        // Ascending two-tone gate chime
-        osc.frequency.setValueAtTime(587.33, now); // D5
-        osc.frequency.setValueAtTime(880.00, now + 0.12); // A5
-        gain.gain.setValueAtTime(0.15, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
-        osc.start(now);
-        osc.stop(now + 0.35);
-      } else {
-        // Low security alert klaxon
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(220, now);
-        osc.frequency.setValueAtTime(160, now + 0.15);
-        gain.gain.setValueAtTime(0.25, now);
-        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
-        osc.start(now);
-        osc.stop(now + 0.45);
+        if (success) {
+          // Gate chime
+          osc.frequency.setValueAtTime(587.33, now); // D5
+          osc.frequency.setValueAtTime(880.00, now + 0.12); // A5
+          gain.gain.setValueAtTime(0.12, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.35);
+          osc.start(now);
+          osc.stop(now + 0.35);
+        } else {
+          // Klaxon security alarm
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(220, now);
+          osc.frequency.setValueAtTime(160, now + 0.15);
+          gain.gain.setValueAtTime(0.2, now);
+          gain.gain.exponentialRampToValueAtTime(0.01, now + 0.45);
+          osc.start(now);
+          osc.stop(now + 0.45);
+        }
+      } catch (e) {
+        console.warn('Audio non initialisé', e);
       }
     }
 
-    // Canvas Simulator for Camera Streams
-    function setupCameraCanvas(id, label, color) {
-      const canvas = document.getElementById(id);
-      if (!canvas) return;
+    // ---------------------------------------------------------
+    // CAM 1: Voie 1 Entrée ALPR Canvas Renderer
+    // ---------------------------------------------------------
+    function setupCam1() {
+      const canvas = document.getElementById('cam1-canvas');
       const ctx = canvas.getContext('2d');
       canvas.width = 480;
       canvas.height = 270;
-
-      let carX = -100;
-      let activeCar = false;
-      let carPlate = "";
+      let carY = 320;
+      let active = false;
+      let scanY = 0;
+      let plateText = "104822 119 16";
 
       function draw() {
-        // Dark background grid
-        ctx.fillStyle = '#050811';
+        ctx.fillStyle = '#060a14';
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        // Grid lines
-        ctx.strokeStyle = '#111827';
-        ctx.lineWidth = 1;
-        for (let x = 0; x < canvas.width; x += 30) {
-          ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, canvas.height); ctx.stroke();
-        }
-        for (let y = 0; y < canvas.height; y += 30) {
-          ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(canvas.width, y); ctx.stroke();
-        }
-
-        // Road / Lane markings
+        // Perspective roadway
         ctx.fillStyle = '#0f172a';
-        ctx.fillRect(60, 40, canvas.width - 120, canvas.height - 80);
-        ctx.strokeStyle = '#334155';
-        ctx.setLineDash([8, 8]);
         ctx.beginPath();
-        ctx.moveTo(canvas.width / 2, 40);
-        ctx.lineTo(canvas.width / 2, canvas.height - 40);
+        ctx.moveTo(170, 60);
+        ctx.lineTo(310, 60);
+        ctx.lineTo(440, canvas.height);
+        ctx.lineTo(40, canvas.height);
+        ctx.closePath();
+        ctx.fill();
+
+        // Lane dividing dashed line
+        ctx.strokeStyle = '#334155';
+        ctx.setLineDash([10, 10]);
+        ctx.beginPath();
+        ctx.moveTo(240, 60);
+        ctx.lineTo(240, canvas.height);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Animated car when active
-        if (activeCar) {
-          ctx.fillStyle = color;
-          ctx.fillRect(carX, canvas.height / 2 - 25, 110, 50);
+        // Ground inductive loop sensor marking
+        ctx.strokeStyle = '#eab308';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(160, 175, 160, 45);
+        ctx.fillStyle = 'rgba(234, 179, 8, 0.08)';
+        ctx.fillRect(160, 175, 160, 45);
+        ctx.fillStyle = '#eab308';
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillText('BOUCLE INDUCTIVE (SOL)', 165, 172);
 
-          // Car windshield
+        // Car approaching
+        if (active) {
+          if (carY > 155) carY -= 2.5;
+
+          // Car body perspective
+          const scale = (carY - 60) / 160;
+          const w = 150 * scale;
+          const h = 85 * scale;
+          const x = 240 - w / 2;
+
+          ctx.fillStyle = '#1e293b';
+          ctx.beginPath();
+          ctx.roundRect(x, carY, w, h, 6);
+          ctx.fill();
+          ctx.strokeStyle = '#475569';
+          ctx.stroke();
+
+          // Windshield
           ctx.fillStyle = '#0284c7';
-          ctx.fillRect(carX + 55, canvas.height / 2 - 20, 30, 40);
+          ctx.beginPath();
+          ctx.roundRect(x + w * 0.15, carY + h * 0.1, w * 0.7, h * 0.35, 4);
+          ctx.fill();
 
-          // Plate crop box on car
+          // Headlights
+          ctx.fillStyle = '#fef08a';
+          ctx.fillRect(x + w * 0.08, carY + h * 0.55, w * 0.15, h * 0.15);
+          ctx.fillRect(x + w * 0.77, carY + h * 0.55, w * 0.15, h * 0.15);
+
+          // Front License Plate
+          const pw = w * 0.45;
+          const ph = h * 0.2;
+          const px = 240 - pw / 2;
+          const py = carY + h * 0.65;
           ctx.fillStyle = '#fde047';
-          ctx.fillRect(carX + 95, canvas.height / 2 - 6, 20, 12);
+          ctx.fillRect(px, py, pw, ph);
+          ctx.strokeStyle = '#ca8a04';
+          ctx.strokeRect(px, py, pw, ph);
 
-          // Detection Bounding Box Overlay
-          ctx.strokeStyle = '#eab308';
+          // Plate text
+          ctx.fillStyle = '#000000';
+          ctx.font = `bold ${Math.max(8, Math.round(9 * scale))}px JetBrains Mono`;
+          ctx.textAlign = 'center';
+          ctx.fillText(plateText, 240, py + ph * 0.72);
+          ctx.textAlign = 'left';
+
+          // ALPR laser scanning effect
+          scanY = (scanY + 2) % (ph + 10);
+          ctx.strokeStyle = '#10b981';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(px - 4, py + scanY);
+          ctx.lineTo(px + pw + 4, py + scanY);
+          ctx.stroke();
+
+          // Bounding box brackets
+          ctx.strokeStyle = '#10b981';
           ctx.lineWidth = 2;
-          ctx.strokeRect(carX - 5, canvas.height / 2 - 30, 120, 60);
-
-          // Corner brackets
-          ctx.fillStyle = '#eab308';
-          ctx.fillRect(carX - 5, canvas.height / 2 - 30, 6, 6);
-          ctx.fillRect(carX + 109, canvas.height / 2 - 30, 6, 6);
-          ctx.fillRect(carX - 5, canvas.height / 2 + 24, 6, 6);
-          ctx.fillRect(carX + 109, canvas.height / 2 + 24, 6, 6);
-
-          if (carX < canvas.width / 2 - 50) {
-            carX += 4;
-          }
+          ctx.strokeRect(px - 3, py - 3, pw + 6, ph + 6);
         }
 
-        // Live stream overlay timestamp
+        // Camera timestamp
         ctx.fillStyle = '#94a3b8';
         ctx.font = '10px JetBrains Mono';
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`${label} | ${now} | 25 FPS`, 10, canvas.height - 10);
+        ctx.fillText(`CAM-01 [ENTREE ALPR] | ${now} | 25 FPS`, 10, canvas.height - 10);
 
         requestAnimationFrame(draw);
       }
@@ -482,18 +603,320 @@
 
       return {
         triggerVehicle: (plate) => {
-          activeCar = true;
-          carX = -120;
-          carPlate = plate;
-          setTimeout(() => { activeCar = false; }, 6000);
+          active = true;
+          carY = 320;
+          plateText = plate;
+          setTimeout(() => { active = false; }, 6000);
         }
       };
     }
 
-    const cam1 = setupCameraCanvas('cam1-canvas', 'CAM-01 [ENTREE ALPR]', '#334155');
-    const cam2 = setupCameraCanvas('cam2-canvas', 'CAM-02 [BORNE FACIALE]', '#1e293b');
-    const cam3 = setupCameraCanvas('cam3-canvas', 'CAM-03 [SORTIE ALPR]', '#334155');
-    const cam4 = setupCameraCanvas('cam4-canvas', 'CAM-04 [VUE STALLES]', '#1e293b');
+    // ---------------------------------------------------------
+    // CAM 2: Borne Conducteur Dual-Lens (Face & Anti-Spoof)
+    // ---------------------------------------------------------
+    function setupCam2() {
+      const canvas = document.getElementById('cam2-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 480;
+      canvas.height = 270;
+      let active = false;
+      let spoofMode = false;
+      let scanPhase = 0;
+
+      function draw() {
+        ctx.fillStyle = '#040711';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Kiosk perspective: car window frame
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 14;
+        ctx.strokeRect(40, 20, 400, 230);
+
+        // Window tint
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+        ctx.fillRect(47, 27, 386, 216);
+
+        if (active) {
+          scanPhase = (scanPhase + 0.05);
+
+          if (!spoofMode) {
+            // Real Driver (Head & Shoulders)
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.arc(240, 115, 42, 0, Math.PI * 2); // Head
+            ctx.fill();
+
+            // Shoulders
+            ctx.beginPath();
+            ctx.ellipse(240, 205, 80, 50, 0, 0, Math.PI);
+            ctx.fill();
+
+            // ArcFace Bounding Box
+            ctx.strokeStyle = '#06b6d4';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(185, 65, 110, 120);
+
+            // 5 Facial Landmark points
+            ctx.fillStyle = '#06b6d4';
+            ctx.beginPath(); ctx.arc(222, 105, 3, 0, Math.PI * 2); ctx.fill(); // Left eye
+            ctx.beginPath(); ctx.arc(258, 105, 3, 0, Math.PI * 2); ctx.fill(); // Right eye
+            ctx.beginPath(); ctx.arc(240, 120, 2.5, 0, Math.PI * 2); ctx.fill(); // Nose
+            ctx.beginPath(); ctx.arc(228, 138, 2.5, 0, Math.PI * 2); ctx.fill(); // Mouth L
+            ctx.beginPath(); ctx.arc(252, 138, 2.5, 0, Math.PI * 2); ctx.fill(); // Mouth R
+
+            // Anti-spoofing green reticle
+            ctx.strokeStyle = '#10b981';
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(240, 115, 58 + Math.sin(scanPhase)*3, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            ctx.fillStyle = '#10b981';
+            ctx.font = '9px JetBrains Mono';
+            ctx.fillText('MiniFASNet: VIVACITE 98% (HUMAIN)', 160, 60);
+
+          } else {
+            // SPOOF ATTACK: Tablet / Phone held in window
+            ctx.fillStyle = '#0f172a';
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineWidth = 3;
+            ctx.fillRect(170, 50, 140, 160);
+            ctx.strokeRect(170, 50, 140, 160);
+
+            // Screen image
+            ctx.fillStyle = '#1e293b';
+            ctx.fillRect(180, 60, 120, 140);
+            ctx.fillStyle = '#64748b';
+            ctx.beginPath();
+            ctx.arc(240, 115, 30, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Red warning overlay
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.15)';
+            ctx.fillRect(180, 60, 120, 140);
+
+            ctx.fillStyle = '#ef4444';
+            ctx.font = 'bold 9px JetBrains Mono';
+            ctx.fillText('ALERTE FRAUDE PHOTO', 178, 42);
+            ctx.fillText('EFFET MOIRE DETECTE', 182, 222);
+          }
+        }
+
+        // Overlay status
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px JetBrains Mono';
+        const now = new Date().toLocaleTimeString('fr-DZ');
+        ctx.fillText(`CAM-02 [BORNE DUAL-LENS] | ${now} | 25 FPS`, 10, canvas.height - 10);
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      return {
+        triggerVehicle: (isSpoof = false) => {
+          active = true;
+          spoofMode = isSpoof;
+          setTimeout(() => { active = false; }, 6000);
+        }
+      };
+    }
+
+    // ---------------------------------------------------------
+    // CAM 3: Voie 2 Sortie ALPR & Mechanical Barrier Arm
+    // ---------------------------------------------------------
+    function setupCam3() {
+      const canvas = document.getElementById('cam3-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 480;
+      canvas.height = 270;
+      let armAngle = 0; // 0 = horizontal (closed), -75 = open
+      let targetAngle = 0;
+      let carX = 140;
+      let carRolling = false;
+
+      function draw() {
+        ctx.fillStyle = '#060a14';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Exit Roadway
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(40, 80, 400, 130);
+
+        // Barrier housing / pillar
+        ctx.fillStyle = '#f59e0b';
+        ctx.fillRect(380, 70, 24, 110);
+        ctx.strokeStyle = '#b45309';
+        ctx.strokeRect(380, 70, 24, 110);
+
+        // Pivot point
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(392, 100, 10, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Smooth angle animation
+        armAngle += (targetAngle - armAngle) * 0.1;
+
+        // Mechanical Barrier Arm (Yellow & Black stripes)
+        ctx.save();
+        ctx.translate(392, 100);
+        ctx.rotate((armAngle * Math.PI) / 180);
+
+        // Draw arm pointing left
+        const armLength = 250;
+        const armHeight = 10;
+        ctx.fillStyle = '#eab308';
+        ctx.fillRect(-armLength, -armHeight / 2, armLength, armHeight);
+
+        // Black warning diagonal stripes
+        ctx.fillStyle = '#000000';
+        for (let i = 0; i < armLength; i += 30) {
+          ctx.beginPath();
+          ctx.moveTo(-armLength + i, -armHeight / 2);
+          ctx.lineTo(-armLength + i + 15, -armHeight / 2);
+          ctx.lineTo(-armLength + i + 8, armHeight / 2);
+          ctx.lineTo(-armLength + i - 7, armHeight / 2);
+          ctx.fill();
+        }
+        ctx.restore();
+
+        // Car moving through when open
+        if (carRolling) {
+          ctx.fillStyle = '#334155';
+          ctx.fillRect(carX, 120, 100, 50);
+          ctx.fillStyle = '#0284c7';
+          ctx.fillRect(carX + 55, 125, 25, 40);
+
+          // Plate on car
+          ctx.fillStyle = '#fde047';
+          ctx.fillRect(carX + 85, 138, 18, 12);
+
+          carX += 3;
+          if (carX > canvas.width) {
+            carRolling = false;
+            targetAngle = 0;
+            document.getElementById('cam3-arm-text').innerText = 'BAISSÉE';
+            document.getElementById('cam3-arm-text').className = 'text-red-400 font-semibold';
+          }
+        }
+
+        // Camera timestamp
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px JetBrains Mono';
+        const now = new Date().toLocaleTimeString('fr-DZ');
+        ctx.fillText(`CAM-03 [SORTIE ALPR] | ${now} | 25 FPS`, 10, canvas.height - 10);
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+
+      return {
+        openBarrier: () => {
+          targetAngle = -75; // Rotate arm upward
+          carRolling = true;
+          carX = 80;
+          document.getElementById('cam3-arm-text').innerText = 'LEVÉE (OUVERT)';
+          document.getElementById('cam3-arm-text').className = 'text-emeraldAccent font-semibold';
+        }
+      };
+    }
+
+    // ---------------------------------------------------------
+    // CAM 4: Zone A & B Overhead Parking Stalls CCTV
+    // ---------------------------------------------------------
+    function setupCam4() {
+      const canvas = document.getElementById('cam4-canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 480;
+      canvas.height = 270;
+
+      function draw() {
+        ctx.fillStyle = '#050811';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Parking Floor markings
+        ctx.strokeStyle = '#1e293b';
+        ctx.lineWidth = 1;
+        for (let i = 0; i < canvas.width; i += 40) {
+          ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
+        }
+
+        // Top Row Stalls (A01 - A07)
+        for (let i = 0; i < 7; i++) {
+          const x = 30 + i * 60;
+          const y = 35;
+          ctx.strokeStyle = '#64748b';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x, y, 50, 80);
+
+          // Render parked car in some slots
+          if ([0, 1, 3, 4, 6].includes(i)) {
+            ctx.fillStyle = i === 1 ? '#0284c7' : '#334155';
+            ctx.roundRect(x + 6, y + 8, 38, 64, 4);
+            ctx.fill();
+            // Roof
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(x + 10, y + 22, 30, 36);
+          } else {
+            // Vacant slot green marker
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+            ctx.fillRect(x + 2, y + 2, 46, 76);
+            ctx.fillStyle = '#10b981';
+            ctx.font = '8px JetBrains Mono';
+            ctx.fillText('LIBRE', x + 12, y + 45);
+          }
+        }
+
+        // Center Aisle (Lane)
+        ctx.fillStyle = '#0f172a';
+        ctx.fillRect(20, 120, canvas.width - 40, 30);
+        ctx.strokeStyle = '#334155';
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(20, 135);
+        ctx.lineTo(canvas.width - 20, 135);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Bottom Row Stalls (B01 - B07)
+        for (let i = 0; i < 7; i++) {
+          const x = 30 + i * 60;
+          const y = 155;
+          ctx.strokeStyle = '#64748b';
+          ctx.lineWidth = 1.5;
+          ctx.strokeRect(x, y, 50, 80);
+
+          if ([0, 2, 4, 5, 6].includes(i)) {
+            ctx.fillStyle = i === 4 ? '#b91c1c' : '#475569';
+            ctx.roundRect(x + 6, y + 8, 38, 64, 4);
+            ctx.fill();
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(x + 10, y + 22, 30, 36);
+          } else {
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+            ctx.fillRect(x + 2, y + 2, 46, 76);
+            ctx.fillStyle = '#10b981';
+            ctx.font = '8px JetBrains Mono';
+            ctx.fillText('LIBRE', x + 12, y + 45);
+          }
+        }
+
+        // Camera timestamp
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '10px JetBrains Mono';
+        const now = new Date().toLocaleTimeString('fr-DZ');
+        ctx.fillText(`CAM-04 [VUE AERIENNE STALLES] | ${now} | 25 FPS`, 10, canvas.height - 10);
+
+        requestAnimationFrame(draw);
+      }
+      draw();
+    }
+
+    const cam1 = setupCam1();
+    const cam2 = setupCam2();
+    const cam3 = setupCam3();
+    setupCam4();
 
     // Clock
     setInterval(() => {
@@ -543,8 +966,8 @@
 
     // Initial Events
     const initialEvents = [
-      { timestamp: '16:42:10', camera: 'CAM-01 (Entrée)', plate: '104822 119 16', wilaya: 'Alger (16)', driver: 'Amine Hadj (VIP)', status: 'cleared_vip', distance: 0.42, liveness: 0.98 },
-      { timestamp: '16:38:22', camera: 'CAM-01 (Entrée)', plate: '08192 120 09', wilaya: 'Blida (09)', driver: 'Visiteur Public', status: 'cleared_visitor', distance: null, liveness: 0.95 },
+      { timestamp: '17:42:10', camera: 'CAM-01 (Entrée)', plate: '104822 119 16', wilaya: 'Alger (16)', driver: 'Amine Hadj (VIP)', status: 'cleared_vip', distance: 0.42, liveness: 0.98 },
+      { timestamp: '17:38:22', camera: 'CAM-01 (Entrée)', plate: '08192 120 09', wilaya: 'Blida (09)', driver: 'Visiteur Public', status: 'cleared_visitor', distance: null, liveness: 0.95 },
     ];
 
     function addEventCard(ev) {
@@ -577,7 +1000,7 @@
       }
 
       const card = document.createElement('div');
-      card.className = `p-2.5 rounded-lg border ${borderClass} space-y-1.5 text-xs transition duration-300 shadow`;
+      card.className = `p-2.5 rounded-lg border ${borderClass} space-y-1 text-xs transition duration-300 shadow`;
       card.innerHTML = `
         <div class="flex items-center justify-between">
           <div class="flex items-center space-x-1.5">
@@ -603,48 +1026,179 @@
 
     initialEvents.forEach(addEventCard);
 
-    // Scenario Trigger API call
-    async function triggerScenario(name) {
-      try {
-        const res = await fetch('/api/simulate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ scenario: name })
-        });
-        const data = await res.json();
+    // ---------------------------------------------------------
+    // Scenario Execution (Connected Backend + Standalone Fallback)
+    // ---------------------------------------------------------
+    let isConnectedToBackend = false;
 
-        // Handle Visual UI Overlays on Cam 1 & 2
-        if (name === 'vip_entry') {
-          playChime(true);
-          cam1.triggerVehicle('104822 119 16');
-          cam2.triggerVehicle('104822 119 16');
-          showOverlay('cam1-overlay', 4000);
-          showOverlay('cam2-overlay', 4000);
-          flashBarrier('OUVERTE (180ms)', true);
-        } else if (name === 'temporary_00') {
-          playChime(true);
-          cam1.triggerVehicle('08412 00 16');
-          document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge">08412 00 16</span>';
-          showOverlay('cam1-overlay', 4000);
-          flashBarrier('OUVERTE (TICKET QR)', true);
-        } else if (name === 'watchlist_alert') {
-          playChime(false);
-          cam1.triggerVehicle('00551 218 16');
-          flashBarrier('VERROUILLÉE (ALERTE)', false);
-        } else if (name === 'spoof_attack') {
-          playChime(false);
-          cam2.triggerVehicle('104822 119 16');
-          flashBarrier('BLOQUÉE (PHOTO DÉTECTÉE)', false);
-        } else if (name === 'driver_mismatch') {
-          playChime(false);
-          flashBarrier('EN ATTENTE GARDE', false);
-        } else if (name === 'visitor_payment_exit') {
-          playChime(true);
-          cam3.triggerVehicle('08192 120 09');
-          showOverlay('cam3-overlay', 4000);
+    function updateBackendBadge(online) {
+      isConnectedToBackend = online;
+      const dot = document.getElementById('backend-dot');
+      const txt = document.getElementById('backend-text');
+      const mode = document.getElementById('event-mode-badge');
+      if (online) {
+        dot.className = 'w-2 h-2 rounded-full bg-emeraldAccent pulsing-indicator';
+        txt.innerText = 'Serveur: FastAPI + FAISS';
+        mode.innerText = 'Direct WSS';
+      } else {
+        dot.className = 'w-2 h-2 rounded-full bg-amberWarn';
+        txt.innerText = 'Mode Autonome';
+        mode.innerText = 'Navigateur Direct';
+      }
+    }
+
+    async function triggerScenario(name) {
+      let handledByServer = false;
+
+      if (isConnectedToBackend) {
+        try {
+          const res = await fetch('/api/simulate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ scenario: name })
+          });
+          if (res.ok) {
+            handledByServer = true;
+          }
+        } catch (e) {
+          console.warn("Bascule en simulation autonome locale:", e);
         }
-      } catch (err) {
-        console.error('Erreur de simulation:', err);
+      }
+
+      // Execute Visuals
+      runVisualScenario(name, !handledByServer);
+    }
+
+    function runVisualScenario(name, generateLocalEvent = false) {
+      const nowStr = new Date().toLocaleTimeString('fr-DZ');
+
+      if (name === 'vip_entry') {
+        playChime(true);
+        cam1.triggerVehicle('104822 119 16');
+        cam2.triggerVehicle(false);
+        document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge">104822 119 16</span>';
+        document.getElementById('cam1-wilaya').innerText = 'Alger (16)';
+        document.getElementById('cam2-driver-name').innerText = 'Amine Hadj (VIP)';
+        document.getElementById('cam2-driver-dist').innerText = 'Distance: 0.42 (Match)';
+        showOverlay('cam1-overlay', 4500);
+        showOverlay('cam2-overlay', 4500);
+        flashBarrier('OUVERTE (180ms)', true);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-01 (Entrée)',
+            plate: '104822 119 16',
+            wilaya: 'Alger (16)',
+            driver: 'Amine Hadj (VIP)',
+            status: 'cleared_vip',
+            distance: 0.42,
+            liveness: 0.98,
+          });
+        }
+
+      } else if (name === 'temporary_00') {
+        playChime(true);
+        cam1.triggerVehicle('08412 00 16');
+        cam2.triggerVehicle(false);
+        document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge">08412 00 16</span>';
+        document.getElementById('cam1-wilaya').innerText = 'Alger (16)';
+        showOverlay('cam1-overlay', 4500);
+        flashBarrier('OUVERTE (TICKET QR)', true);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-01 (Entrée)',
+            plate: '08412 00 16',
+            wilaya: 'Alger (16)',
+            driver: 'Véhicule Neuf (Provisoire 00)',
+            status: 'cleared_visitor',
+            distance: null,
+            liveness: 0.96,
+          });
+        }
+
+      } else if (name === 'watchlist_alert') {
+        playChime(false);
+        cam1.triggerVehicle('00551 218 16');
+        document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge">00551 218 16</span>';
+        document.getElementById('cam1-wilaya').innerText = 'Alger (16)';
+        showOverlay('cam1-overlay', 4500);
+        flashBarrier('VERROUILLÉE (ALERTE VOL)', false);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-01 (Entrée)',
+            plate: '00551 218 16',
+            wilaya: 'Alger (16)',
+            driver: 'SUSPECT - Fiche Vol Signalée',
+            status: 'denied_blacklist',
+            distance: 0.28,
+            liveness: 0.94,
+          });
+        }
+
+      } else if (name === 'spoof_attack') {
+        playChime(false);
+        cam1.triggerVehicle('104822 119 16');
+        cam2.triggerVehicle(true); // Spoof tablet in window
+        showOverlay('cam1-overlay', 4500);
+        flashBarrier('BLOQUÉE (PHOTO DÉTECTÉE)', false);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-02 (Borne)',
+            plate: '104822 119 16',
+            wilaya: 'Alger (16)',
+            driver: 'Fraude Écran / Photo',
+            status: 'denied_spoof',
+            distance: null,
+            liveness: 0.22,
+          });
+        }
+
+      } else if (name === 'driver_mismatch') {
+        playChime(false);
+        cam1.triggerVehicle('04122 118 16');
+        cam2.triggerVehicle(false);
+        document.getElementById('cam1-plate-box').innerHTML = '<span class="plate-badge">04122 118 16</span>';
+        document.getElementById('cam1-wilaya').innerText = 'Alger (16)';
+        showOverlay('cam1-overlay', 4500);
+        flashBarrier('EN ATTENTE GARDE', false);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-02 (Borne)',
+            plate: '04122 118 16',
+            wilaya: 'Alger (16)',
+            driver: 'Conducteur Non Reconnu (Dist: 0.62)',
+            status: 'hold_guard_review',
+            distance: 0.62,
+            liveness: 0.97,
+          });
+        }
+
+      } else if (name === 'visitor_payment_exit') {
+        playChime(true);
+        cam3.openBarrier();
+        showOverlay('cam3-overlay', 5000);
+
+        if (generateLocalEvent) {
+          addEventCard({
+            timestamp: nowStr,
+            camera: 'CAM-03 (Sortie)',
+            plate: '08192 120 09',
+            wilaya: 'Blida (09)',
+            driver: 'Sortie Réglée (Chargily Pay)',
+            status: 'cleared_exit',
+            distance: null,
+            liveness: null,
+          });
+        }
       }
     }
 
@@ -667,11 +1221,15 @@
 
     async function manualBarrierOverride(ch) {
       playChime(true);
-      await fetch('/api/barrier/override', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ channel: ch, duration_ms: 500 })
-      });
+      if (isConnectedToBackend) {
+        try {
+          await fetch('/api/barrier/override', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ channel: ch, duration_ms: 500 })
+          });
+        } catch (e) {}
+      }
       flashBarrier('OUVERTURE MANUELLE', true);
     }
 
@@ -681,28 +1239,48 @@
     }
 
     // Modal Controls
+    function openGuideModal() { document.getElementById('guide-modal').classList.remove('hidden'); }
+    function closeGuideModal() { document.getElementById('guide-modal').classList.add('hidden'); }
     function openAnpdpModal() { document.getElementById('anpdp-modal').classList.remove('hidden'); }
     function closeAnpdpModal() { document.getElementById('anpdp-modal').classList.add('hidden'); }
 
-    // WebSocket Client
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
+    // WebSocket Client Setup
+    if (window.location.protocol.startsWith('http')) {
+      try {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const ws = new WebSocket(`${protocol}//${window.location.host}/ws`);
 
-    ws.onmessage = (e) => {
-      const msg = JSON.parse(e.data);
-      if (msg.type === 'GATE_EVENT' || msg.type === 'SECURITY_ALERT' || msg.type === 'SPOOF_ALERT' || msg.type === 'GUARD_PROMPT' || msg.type === 'EXIT_CLEARED') {
-        addEventCard({
-          timestamp: msg.data.timestamp,
-          camera: msg.data.camera_id,
-          plate: msg.data.plate,
-          wilaya: msg.data.wilaya,
-          driver: msg.data.driver,
-          status: msg.data.result,
-          distance: msg.data.distance,
-          liveness: msg.data.liveness,
-        });
+        ws.onopen = () => {
+          updateBackendBadge(true);
+        };
+
+        ws.onmessage = (e) => {
+          try {
+            const msg = JSON.parse(e.data);
+            if (msg.type === 'GATE_EVENT' || msg.type === 'SECURITY_ALERT' || msg.type === 'SPOOF_ALERT' || msg.type === 'GUARD_PROMPT' || msg.type === 'EXIT_CLEARED') {
+              addEventCard({
+                timestamp: msg.data.timestamp,
+                camera: msg.data.camera_id,
+                plate: msg.data.plate,
+                wilaya: msg.data.wilaya,
+                driver: msg.data.driver,
+                status: msg.data.result,
+                distance: msg.data.distance,
+                liveness: msg.data.liveness,
+              });
+            }
+          } catch (err) {}
+        };
+
+        ws.onerror = () => { updateBackendBadge(false); };
+        ws.onclose = () => { updateBackendBadge(false); };
+      } catch (e) {
+        updateBackendBadge(false);
       }
-    };
+    } else {
+      // Standalone mode via file://
+      updateBackendBadge(false);
+    }
 
     // Keyboard Shortcuts Hook
     window.addEventListener('keydown', (e) => {
@@ -722,6 +1300,7 @@
       } else if (e.key === '6') {
         triggerScenario('visitor_payment_exit');
       } else if (e.key === 'Escape') {
+        closeGuideModal();
         closeAnpdpModal();
       }
     });
