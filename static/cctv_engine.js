@@ -1,8 +1,9 @@
 /**
- * SmartPark Vision AI - High-Fidelity CCTV Rendering Engine
- * Sovereign DZ Edition - Multi-Angle Real-Time Canvas Pipeline
- * CAM-01: Voie 1 Entry ALPR (High-Angle Perspective)
- * CAM-02: Biometric Access Kiosk (100% Architecturally Consistent Driver Close-Up)
+ * SmartPark Vision AI - High-Fidelity CCTV Rendering Engine (V3.2 Sovereign DZ)
+ * Real-Time Canvas Pipeline with Complete Day/Night & Trilingual Support
+ * 
+ * CAM-01: Voie 1 Entry ALPR (High-Angle Architectural Perspective)
+ * CAM-02: Biometric Access Kiosk (100% Spatially Consistent Driver Close-Up)
  * CAM-03: Voie 2 Exit ALPR & Toll Barrier (Perspective Exit Lane)
  * CAM-04: Zone A & B Deck Overview (Tactical Overhead CCTV)
  */
@@ -15,9 +16,10 @@
   // =========================================================================
   function drawCCTVEffects(ctx, w, h, camCode, camTitle, fps = 25.0, nowStr = '', isRec = true) {
     const isLight = document.documentElement.classList.contains('light');
+    const lang = window.currentLang || 'fr';
 
-    // 1. Horizontal CRT Micro-Scanlines
-    ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(0, 0, 0, 0.15)';
+    // 1. Horizontal Micro-Scanlines
+    ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.025)' : 'rgba(0, 0, 0, 0.16)';
     for (let y = 0; y < h; y += 3) {
       ctx.fillRect(0, y, w, 1);
     }
@@ -26,10 +28,10 @@
     const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.45, w / 2, h / 2, w * 0.75);
     if (isLight) {
       vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vig.addColorStop(1, 'rgba(15, 23, 42, 0.16)');
+      vig.addColorStop(1, 'rgba(15, 23, 42, 0.14)');
     } else {
       vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vig.addColorStop(1, 'rgba(2, 6, 18, 0.65)');
+      vig.addColorStop(1, 'rgba(2, 6, 18, 0.68)');
     }
     ctx.fillStyle = vig;
     ctx.fillRect(0, 0, w, h);
@@ -37,16 +39,16 @@
     // 3. Dynamic Low-Light Sensor Grain / Noise
     ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.035)';
     const seed = (Date.now() % 1000) * 0.01;
-    for (let i = 0; i < 60; i++) {
+    for (let i = 0; i < 50; i++) {
       const rx = Math.abs((Math.sin(seed + i * 1.7) * 43758.5453) % w);
       const ry = Math.abs((Math.cos(seed + i * 2.3) * 43758.5453) % h);
       ctx.fillRect(rx, ry, 1, 1);
     }
 
     // 4. CCTV Top Header Bar
-    ctx.fillStyle = isLight ? 'rgba(248, 250, 252, 0.94)' : 'rgba(4, 8, 20, 0.88)';
+    ctx.fillStyle = isLight ? 'rgba(248, 250, 252, 0.95)' : 'rgba(4, 8, 20, 0.90)';
     ctx.fillRect(0, 0, w, 22);
-    ctx.strokeStyle = isLight ? 'rgba(203, 213, 225, 0.8)' : 'rgba(30, 41, 59, 0.8)';
+    ctx.strokeStyle = isLight ? 'rgba(203, 213, 225, 0.9)' : 'rgba(30, 41, 59, 0.85)';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(0, 22); ctx.lineTo(w, 22); ctx.stroke();
 
@@ -76,14 +78,13 @@
     ctx.textAlign = 'left';
 
     // 5. CCTV Bottom Telemetry Footer
-    ctx.fillStyle = isLight ? 'rgba(248, 250, 252, 0.94)' : 'rgba(4, 8, 20, 0.88)';
+    ctx.fillStyle = isLight ? 'rgba(248, 250, 252, 0.95)' : 'rgba(4, 8, 20, 0.90)';
     ctx.fillRect(0, h - 20, w, 20);
-    ctx.strokeStyle = isLight ? 'rgba(203, 213, 225, 0.8)' : 'rgba(30, 41, 59, 0.8)';
+    ctx.strokeStyle = isLight ? 'rgba(203, 213, 225, 0.9)' : 'rgba(30, 41, 59, 0.85)';
     ctx.beginPath(); ctx.moveTo(0, h - 20); ctx.lineTo(w, h - 20); ctx.stroke();
 
-    ctx.fillStyle = isLight ? '#475569' : '#94A3B8';
+    ctx.fillStyle = isLight ? '#334155' : '#94A3B8';
     ctx.font = '8px "JetBrains Mono", monospace';
-    const lang = window.currentLang || 'fr';
     const lawText = lang === 'ar' ? 'القانون 25-11 لحماية المعطيات الشخصية | NVDEC 4.8 Mb/s' : (lang === 'en' ? 'LAW 25-11 PRIVACY COMPLIANT | NVDEC 4.8 Mb/s' : 'LOI 25-11 PROTECTION DES DONNEES | NVDEC 4.8 Mb/s');
     ctx.fillText(`1080p50 H.265 | ${lawText}`, 10, h - 7);
 
@@ -106,11 +107,9 @@
     let carSpeed = 0;
     let carDeparting = false;
     let plateText = "104822 119 16";
-    let plateConf = 0.994;
     let armAngle = 0;
     let targetArmAngle = 0;
     let frameCount = 0;
-    let active = false;
 
     function render() {
       frameCount++;
@@ -129,7 +128,6 @@
           carDeparting = false;
           carSpeed = 0;
           targetArmAngle = 0;
-          // Smoothly queue next vehicle from horizon
           setTimeout(() => {
             carY = 48;
             plateText = "08412 119 16";
@@ -139,151 +137,145 @@
         carY += 1.8;
       }
 
-      // 1. Sky & Horizon Gradient
+      // 1. Sky & Background Lighting
       if (isLight) {
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, 90);
-        skyGrad.addColorStop(0, '#7DD3FC');
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, 95);
+        skyGrad.addColorStop(0, '#93C5FD');
+        skyGrad.addColorStop(0.6, '#BAE6FD');
         skyGrad.addColorStop(1, '#E0F2FE');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+        // Distant Algiers Urban Backdrop
+        ctx.fillStyle = '#CBD5E1';
+        ctx.fillRect(50, 48, 65, 30);
+        ctx.fillRect(125, 42, 50, 36);
+        ctx.fillRect(320, 50, 80, 28);
       } else {
-        const skyGrad = ctx.createLinearGradient(0, 0, 0, 90);
-        skyGrad.addColorStop(0, '#030712');
-        skyGrad.addColorStop(1, '#0B132B');
+        const skyGrad = ctx.createLinearGradient(0, 0, 0, 95);
+        skyGrad.addColorStop(0, '#020617');
+        skyGrad.addColorStop(0.6, '#0B132B');
+        skyGrad.addColorStop(1, '#111C3A');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+        // Night Skyline Silhouette
+        ctx.fillStyle = '#0F172A';
+        ctx.fillRect(50, 52, 65, 26);
+        ctx.fillRect(125, 46, 50, 32);
+        ctx.fillRect(320, 54, 80, 24);
       }
 
-      // Distant El-Biar Hillside Silhouette
-      ctx.fillStyle = isLight ? '#94A3B8' : '#070E1E';
-      ctx.beginPath();
-      ctx.moveTo(0, 52);
-      ctx.bezierCurveTo(90, 44, 180, 48, 260, 42);
-      ctx.bezierCurveTo(340, 38, 420, 46, 480, 42);
-      ctx.lineTo(480, 54);
-      ctx.lineTo(0, 54);
-      ctx.closePath();
-      ctx.fill();
-
-      // 2. Perspective Roadway Pavement (Voie 1)
-      const roadGrad = ctx.createLinearGradient(0, 46, 0, cvs.height);
+      // 2. Roadway Perspective (Lane 1 Asphalt)
+      const roadGrad = ctx.createLinearGradient(0, 75, 0, cvs.height);
       if (isLight) {
         roadGrad.addColorStop(0, '#64748B');
-        roadGrad.addColorStop(0.35, '#475569');
+        roadGrad.addColorStop(0.4, '#475569');
         roadGrad.addColorStop(1, '#334155');
       } else {
         roadGrad.addColorStop(0, '#0F172A');
-        roadGrad.addColorStop(0.35, '#0B1120');
-        roadGrad.addColorStop(1, '#020617');
+        roadGrad.addColorStop(0.4, '#1E293B');
+        roadGrad.addColorStop(1, '#090D16');
       }
       ctx.fillStyle = roadGrad;
       ctx.beginPath();
-      ctx.moveTo(170, 46); ctx.lineTo(310, 46);
-      ctx.lineTo(452, cvs.height - 20); ctx.lineTo(28, cvs.height - 20);
+      ctx.moveTo(180, 75); ctx.lineTo(300, 75);
+      ctx.lineTo(460, cvs.height); ctx.lineTo(60, cvs.height);
       ctx.closePath(); ctx.fill();
 
-      // Asphalt Micro-Texture Grain
-      ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.025)';
-      for (let i = 0; i < 35; i++) {
-        const rx = 30 + (i * 47) % 410;
-        const ry = 48 + (i * 29) % (cvs.height - 70);
-        ctx.fillRect(rx, ry, 2.5, 1.5);
+      // Road Surface Asphalt Aggregate Texture
+      ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(255, 255, 255, 0.03)';
+      for (let i = 0; i < 50; i++) {
+        const tx = (i * 37) % cvs.width;
+        const ty = 80 + (i * 19) % (cvs.height - 80);
+        ctx.fillRect(tx, ty, 2, 1);
       }
 
-      // White Roadway Shoulder Lines
-      ctx.strokeStyle = isLight ? '#FFFFFF' : 'rgba(241, 245, 249, 0.7)';
-      ctx.lineWidth = 2.5;
+      // Yellow Centerline Dashes (Perspective)
+      ctx.strokeStyle = '#F59E0B';
+      ctx.lineWidth = 3;
+      ctx.setLineDash([16, 14]);
       ctx.beginPath();
-      ctx.moveTo(174, 46); ctx.lineTo(36, cvs.height - 20);
-      ctx.moveTo(306, 46); ctx.lineTo(444, cvs.height - 20);
+      ctx.moveTo(240, 75); ctx.lineTo(260, cvs.height);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // White Stop Bar at Barrier
+      ctx.strokeStyle = '#FFFFFF';
+      ctx.lineWidth = 4;
+      ctx.beginPath();
+      ctx.moveTo(115, 215); ctx.lineTo(395, 215);
       ctx.stroke();
 
-      // Double Solid Yellow Safety Centerline
-      ctx.strokeStyle = '#EAB308';
-      ctx.lineWidth = 1.8;
-      ctx.beginPath();
-      ctx.moveTo(238, 46); ctx.lineTo(232, cvs.height - 20);
-      ctx.moveTo(242, 46); ctx.lineTo(248, cvs.height - 20);
-      ctx.stroke();
+      // Stop Bar Stencil Text ("ARRÊT / STOP / قف")
+      ctx.fillStyle = isLight ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)';
+      ctx.font = 'bold 9px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      const stopText = lang === 'ar' ? 'قـــــف' : (lang === 'en' ? 'STOP' : 'ARRET');
+      ctx.fillText(stopText, 255, 212);
+      ctx.textAlign = 'left';
 
-      // Transverse Stop Line before barrier
-      ctx.strokeStyle = isLight ? '#FFFFFF' : 'rgba(255, 255, 255, 0.85)';
-      ctx.lineWidth = 3.5;
-      ctx.beginPath();
-      ctx.moveTo(98, 162); ctx.lineTo(345, 162);
-      ctx.stroke();
-
-      // 3. Ground Inductive Presence Loop (In front of stop line)
-      const isLoopOccupied = carY >= 110 && carY <= 220;
-      ctx.strokeStyle = isLoopOccupied ? '#10B981' : '#EAB308';
+      // 3. Embedded Inductive Loop Sensor in Lane 1
+      const isLoopOccupied = carY >= 110 && carY <= 240;
+      ctx.strokeStyle = isLoopOccupied ? '#06B6D4' : (isLight ? '#94A3B8' : '#475569');
       ctx.lineWidth = 2;
-      ctx.strokeRect(152, 164, 172, 54);
-      ctx.fillStyle = isLoopOccupied ? 'rgba(16, 185, 129, 0.16)' : 'rgba(234, 179, 8, 0.08)';
-      ctx.fillRect(152, 164, 172, 54);
-
-      // Loop Corner Sealant Chamfer Cuts
-      ctx.strokeStyle = isLoopOccupied ? '#10B981' : '#CA8A04';
-      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(152, 172); ctx.lineTo(160, 164);
-      ctx.moveTo(316, 164); ctx.lineTo(324, 172);
-      ctx.moveTo(152, 210); ctx.lineTo(160, 218);
-      ctx.moveTo(316, 218); ctx.lineTo(324, 210);
+      ctx.moveTo(135, 175); ctx.lineTo(345, 175);
+      ctx.lineTo(375, 228); ctx.lineTo(105, 228);
+      ctx.closePath();
       ctx.stroke();
 
-      ctx.fillStyle = isLoopOccupied ? '#10B981' : (isLight ? '#B45309' : '#FBBF24');
-      ctx.font = 'bold 7px "JetBrains Mono", monospace';
-      const loopLabel = lang === 'ar' ? (isLoopOccupied ? 'مستشعر الحث: مركبة في الموضع' : 'مستشعر الحث: في الانتظار') : (lang === 'en' ? (isLoopOccupied ? 'INDUCTIVE LOOP: IN POSITION' : 'INDUCTIVE LOOP: STANDBY') : (isLoopOccupied ? 'BOUCLE INDUCTIVE : VEHICULE EN POSITION' : 'BOUCLE INDUCTIVE EN ATTENTE'));
-      ctx.fillText(loopLabel, 158, 176);
+      ctx.fillStyle = isLoopOccupied ? 'rgba(6, 182, 212, 0.22)' : 'rgba(0, 0, 0, 0)';
+      ctx.fill();
 
-      // 4. Concrete Safety Curb (Beveled Yellow & Black Blocks on Left Island)
-      for (let i = 0; i < 10; i++) {
-        const t1 = i / 10, t2 = (i + 1) / 10;
-        const y1 = 46 + t1 * (cvs.height - 66);
-        const y2 = 46 + t2 * (cvs.height - 66);
-        const x1 = 174 - t1 * 138;
-        const x2 = 174 - t2 * 138;
+      // Inductive Loop Sealed Corner Cuts
+      ctx.strokeStyle = isLoopOccupied ? '#06B6D4' : (isLight ? '#CBD5E1' : '#334155');
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(135, 183); ctx.lineTo(145, 175);
+      ctx.moveTo(335, 175); ctx.lineTo(345, 183);
+      ctx.moveTo(105, 220); ctx.lineTo(115, 228);
+      ctx.moveTo(365, 228); ctx.lineTo(375, 220);
+      ctx.stroke();
 
-        ctx.fillStyle = (i % 2 === 0) ? '#F59E0B' : (isLight ? '#334155' : '#0F172A');
+      // 4. Concrete Curb Island with Yellow & Black Safety Stripes (Left Side)
+      const curbStartX = 28, curbStartY = 110;
+      const curbW = 95;
+      for (let s = 0; s < 8; s++) {
+        const segY = curbStartY + s * 18;
+        ctx.fillStyle = (s % 2 === 0) ? '#F59E0B' : (isLight ? '#334155' : '#0F172A');
         ctx.beginPath();
-        ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
-        ctx.lineTo(x2 - 16, y2 + 4); ctx.lineTo(x1 - 16, y1 + 4);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = isLight ? '#64748B' : '#1E293B'; ctx.lineWidth = 0.8; ctx.stroke();
+        ctx.moveTo(curbStartX + s * 4, segY);
+        ctx.lineTo(curbStartX + curbW + s * 4, segY);
+        ctx.lineTo(curbStartX + curbW + (s + 1) * 4, segY + 18);
+        ctx.lineTo(curbStartX + (s + 1) * 4, segY + 18);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = isLight ? '#64748B' : '#1E293B';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
       }
 
-      // Safety Impact Bollards (Yellow Steel with 3M Reflective Bands)
-      [[36, 195], [68, 125]].forEach(([bx, by]) => {
-        ctx.fillStyle = '#F59E0B';
-        ctx.beginPath();
-        ctx.roundRect(bx, by, 7, 18, 3.5);
-        ctx.fill();
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(bx, by + 4, 7, 3);
-        ctx.fillRect(bx, by + 10, 7, 3);
-      });
-
-      // 5. Modern Security Guard Booth on Left Island
-      const boothX = 10, boothY = 50, boothW = 62, boothH = 125;
-      // Booth Main Wall (Charcoal Aluminum)
+      // 5. Architectural Security Guard Post (Cabine de Garde)
+      const gbX = 38, gbY = 62, gbW = 82, gbH = 100;
       ctx.fillStyle = isLight ? '#E2E8F0' : '#1E293B';
-      ctx.fillRect(boothX, boothY, boothW, boothH);
+      ctx.fillRect(gbX, gbY, gbW, gbH);
       ctx.strokeStyle = isLight ? '#94A3B8' : '#475569';
-      ctx.lineWidth = 1.4;
-      ctx.strokeRect(boothX, boothY, boothW, boothH);
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(gbX, gbY, gbW, gbH);
 
-      // Booth Overhang Roof Fascia
+      // Booth Projecting Roof Canopy
       ctx.fillStyle = isLight ? '#334155' : '#0F172A';
-      ctx.fillRect(boothX - 3, boothY - 6, boothW + 6, 8);
-      ctx.fillStyle = isLight ? '#CBD5E1' : '#64748B';
-      ctx.fillRect(boothX - 3, boothY - 6, boothW + 6, 1.8);
+      ctx.fillRect(gbX - 4, gbY - 5, gbW + 8, 8);
+      ctx.strokeStyle = isLight ? '#475569' : '#1E293B';
+      ctx.strokeRect(gbX - 4, gbY - 5, gbW + 8, 8);
 
-      // Booth Panoramic Observation Window
-      const winX = boothX + 5, winY = boothY + 12, winW = boothW - 10, winH = 62;
+      // Observation Window
+      const winX = gbX + 6, winY = gbY + 12, winW = gbW - 12, winH = 46;
       if (isLight) {
         const winGrad = ctx.createLinearGradient(winX, winY, winX + winW, winY + winH);
         winGrad.addColorStop(0, '#93C5FD');
-        winGrad.addColorStop(0.5, '#BFDBFE');
+        winGrad.addColorStop(0.5, '#BAE6FD');
         winGrad.addColorStop(1, '#60A5FA');
         ctx.fillStyle = winGrad;
         ctx.fillRect(winX, winY, winW, winH);
@@ -291,78 +283,69 @@
         ctx.strokeRect(winX, winY, winW, winH);
       } else {
         const winGrad = ctx.createLinearGradient(winX, winY, winX + winW, winY + winH);
-        winGrad.addColorStop(0, 'rgba(251, 191, 36, 0.65)');
-        winGrad.addColorStop(1, 'rgba(217, 119, 6, 0.28)');
+        winGrad.addColorStop(0, 'rgba(251, 191, 36, 0.7)');
+        winGrad.addColorStop(1, 'rgba(217, 119, 6, 0.35)');
         ctx.fillStyle = winGrad;
         ctx.fillRect(winX, winY, winW, winH);
         ctx.strokeStyle = '#D97706';
         ctx.strokeRect(winX, winY, winW, winH);
       }
 
-      // Inside Booth: Security Officer Silhouette with Headset
-      ctx.fillStyle = isLight ? 'rgba(30, 41, 59, 0.88)' : 'rgba(15, 23, 42, 0.94)';
+      // Officer Silhouette & Desk Monitors Inside Booth
+      ctx.fillStyle = isLight ? 'rgba(30, 41, 59, 0.9)' : 'rgba(15, 23, 42, 0.95)';
       ctx.beginPath();
-      ctx.arc(winX + winW / 2, winY + 22, 10, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.arc(winX + winW * 0.42, winY + 16, 8, 0, Math.PI * 2); ctx.fill();
       ctx.beginPath();
-      ctx.ellipse(winX + winW / 2, winY + 50, 18, 14, 0, 0, Math.PI);
-      ctx.fill();
+      ctx.ellipse(winX + winW * 0.42, winY + 36, 14, 10, 0, 0, Math.PI); ctx.fill();
 
-      // Glowing Desk Monitor Inside Booth
-      ctx.fillStyle = '#38BDF8';
-      ctx.fillRect(winX + 8, winY + 44, 14, 10);
-      ctx.fillRect(winX + 26, winY + 44, 14, 10);
-
-      // Night Overhead Floodlight Spot onto Access Island
-      if (!isLight) {
-        const floodGrad = ctx.createRadialGradient(boothX + 32, boothY, 5, 180, 150, 160);
-        floodGrad.addColorStop(0, 'rgba(254, 240, 138, 0.24)');
-        floodGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
-        ctx.fillStyle = floodGrad;
-        ctx.beginPath();
-        ctx.moveTo(boothX + 32, boothY); ctx.lineTo(80, 240); ctx.lineTo(340, 240);
-        ctx.closePath(); ctx.fill();
-      }
-
-      // 6. Access Kiosk Totem on Curb Island (CAM 2 Physical Terminal)
-      const kPedX = 86, kPedY = 148;
-      ctx.fillStyle = '#334155';
-      ctx.fillRect(kPedX, kPedY, 14, 46);
-      ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1; ctx.strokeRect(kPedX, kPedY, 14, 46);
-      // Kiosk Touch Display
-      ctx.fillStyle = '#0284C7';
-      ctx.fillRect(kPedX + 2, kPedY + 6, 10, 14);
-      // Kiosk Optical Lens (CAM 2 Aperture)
-      ctx.fillStyle = '#06B6D4';
-      ctx.beginPath(); ctx.arc(kPedX + 7, kPedY + 26, 3, 0, Math.PI * 2); ctx.fill();
-      // RFID Contactless Tap Target
+      // Desk Control Screen Glow (Green/Cyan monitors)
       ctx.fillStyle = '#10B981';
-      ctx.beginPath(); ctx.arc(kPedX + 7, kPedY + 36, 2.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillRect(winX + winW * 0.62, winY + 24, 11, 8);
+      ctx.fillStyle = '#06B6D4';
+      ctx.fillRect(winX + winW * 0.78, winY + 24, 8, 8);
 
-      // 7. Entry Barrier Pedestal & Articulated Boom Arm
-      const bPedX = 104, bPedY = 166;
+      // 6. Driver Access Kiosk Totem (CAM 2 Physical Enclosure)
+      const kioskX = gbX + gbW + 8, kioskY = 175, kioskW = 15, kioskH = 42;
+      ctx.fillStyle = isLight ? '#1E293B' : '#0F172A';
+      ctx.fillRect(kioskX, kioskY, kioskW, kioskH);
+      ctx.strokeStyle = '#0284C7';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(kioskX, kioskY, kioskW, kioskH);
+
+      // Kiosk Optical Camera Aperture Ring (CAM 2 lens)
+      ctx.fillStyle = '#000000';
+      ctx.beginPath(); ctx.arc(kioskX + kioskW / 2, kioskY + 10, 4.5, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = '#06B6D4';
+      ctx.beginPath(); ctx.arc(kioskX + kioskW / 2, kioskY + 10, 2, 0, Math.PI * 2); ctx.fill();
+
+      // Kiosk Card/Ticket Slot
+      ctx.fillStyle = '#F59E0B';
+      ctx.fillRect(kioskX + 3, kioskY + 24, 9, 2);
+
+      // 7. Automatic Barrier Gate Pedestal & Boom Arm
+      const bPedX = gbX + gbW + 28, bPedY = 178;
+      const bPedW = 20, bPedH = 55;
       ctx.fillStyle = '#EA580C'; // RAL 2004 Pure Orange
-      ctx.fillRect(bPedX, bPedY, 18, 50);
-      ctx.strokeStyle = '#9A3412';
-      ctx.lineWidth = 1.2;
-      ctx.strokeRect(bPedX, bPedY, 18, 50);
+      ctx.fillRect(bPedX, bPedY, bPedW, bPedH);
+      ctx.strokeStyle = '#9A3412'; ctx.lineWidth = 1.2;
+      ctx.strokeRect(bPedX, bPedY, bPedW, bPedH);
 
-      // Flashing Strobe Dome on Cabinet Top
+      // Strobe Dome on Cabinet Top
       const strobeActive = Math.abs(armAngle) > 5 && Math.abs(armAngle) < 75;
       const strobeColor = strobeActive ? (Math.floor(frameCount / 4) % 2 === 0 ? '#F59E0B' : '#EF4444') : (armAngle < -50 ? '#10B981' : '#EF4444');
       ctx.fillStyle = strobeColor;
-      ctx.beginPath(); ctx.arc(bPedX + 9, bPedY - 3, 4, Math.PI, 0); ctx.fill();
+      ctx.beginPath(); ctx.arc(bPedX + 10, bPedY - 3, 4.5, Math.PI, 0); ctx.fill();
 
-      // Boom Arm Across Lane
+      // Articulated Boom Arm Across Lane
       ctx.save();
-      ctx.translate(bPedX + 9, bPedY + 16);
+      ctx.translate(bPedX + 10, bPedY + 16);
       ctx.rotate((armAngle * Math.PI) / 180);
 
       ctx.fillStyle = '#F8FAFC';
-      ctx.fillRect(0, -5, 172, 9);
+      ctx.fillRect(0, -5, 175, 9);
       // Red Reflective Diagonal Chevrons
       ctx.fillStyle = '#EF4444';
-      for (let s = 10; s < 168; s += 22) {
+      for (let s = 10; s < 170; s += 22) {
         ctx.beginPath();
         ctx.moveTo(s, -5); ctx.lineTo(s + 11, -5);
         ctx.lineTo(s + 4, 4); ctx.lineTo(s - 7, 4);
@@ -371,12 +354,11 @@
       // Active Continuous LED Neon Strip
       ctx.strokeStyle = armAngle < -40 ? '#10B981' : '#EF4444';
       ctx.lineWidth = 2.4;
-      ctx.beginPath(); ctx.moveTo(2, -5); ctx.lineTo(170, -5); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(2, -5); ctx.lineTo(172, -5); ctx.stroke();
       ctx.restore();
 
       // 8. Overhead Security Portal Structure & Localized Signage
       const portalY = 24, portalH = 22;
-      // Heavy Steel Canopy Box
       ctx.fillStyle = isLight ? '#1E293B' : '#0B1329';
       ctx.fillRect(40, portalY, 400, portalH);
       ctx.strokeStyle = isLight ? '#475569' : '#1E3A8A';
@@ -528,7 +510,7 @@
         ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1 * scale; ctx.stroke();
 
         // Projector Core Lens
-        ctx.fillStyle = '#FEF08A';
+        ctx.fillStyle = isLight ? '#BAE6FD' : '#FEF08A';
         ctx.beginPath(); ctx.arc(hlx + hw * 0.5, hy + hh * 0.5, 5 * scale, 0, Math.PI * 2); ctx.fill();
 
         // Volumetric Forward Light Fan (Night Only)
@@ -549,57 +531,34 @@
       // Front Algerian License Plate
       const pw = w * 0.44, ph = 16 * scale, px = cx - pw / 2, py = gy + gh * 0.88;
       ctx.fillStyle = '#000000';
-      ctx.beginPath(); ctx.roundRect(px - 1.5, py - 1.5, pw + 3, ph + 3, 2); ctx.fill();
-      ctx.fillStyle = '#FFFFFF'; // Front white plate
-      ctx.beginPath(); ctx.roundRect(px, py, pw, ph, 2); ctx.fill();
+      ctx.fillRect(px - 1, py - 1, pw + 2, ph + 2);
+      ctx.fillStyle = '#FDE047'; // Algerian Front Plate Yellow
+      ctx.fillRect(px, py, pw, ph);
 
-      // Blue Left National ID Strip
-      ctx.fillStyle = '#0284C7';
-      ctx.fillRect(px, py, 6 * scale, ph);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = `bold ${5 * scale}px "JetBrains Mono", monospace`;
-      ctx.fillText('DZ', px + 1 * scale, py + ph * 0.7);
-
-      // Plate Text (Embossed)
+      // Plate Text (Serif Numerals)
       ctx.fillStyle = '#000000';
-      ctx.font = `bold ${8.5 * scale}px "JetBrains Mono", monospace`;
+      ctx.font = `bold ${9 * scale}px "JetBrains Mono", monospace`;
       ctx.textAlign = 'center';
-      ctx.fillText(plateText, cx + 3 * scale, py + ph * 0.74);
+      ctx.fillText(plateText, cx, py + ph * 0.72);
       ctx.textAlign = 'left';
 
-      // 10. Live YOLOv11 & PaddleOCR Bounding Box Overlays
+      // 10. Real-Time YOLOv11 Vehicle Bounding Box
       ctx.strokeStyle = '#06B6D4';
       ctx.lineWidth = 1.8;
-      ctx.setLineDash([6, 3]);
-      ctx.strokeRect(x - 6, y + h * 0.2, w + 12, h * 0.85);
-      ctx.setLineDash([]);
-
-      // Corner Reticles
-      const cl = 8;
-      ctx.strokeStyle = '#00FFFF';
-      ctx.lineWidth = 2.4;
-      // Top-Left
-      ctx.beginPath(); ctx.moveTo(x - 6, y + h * 0.2 + cl); ctx.lineTo(x - 6, y + h * 0.2); ctx.lineTo(x - 6 + cl, y + h * 0.2); ctx.stroke();
-      // Top-Right
-      ctx.beginPath(); ctx.moveTo(x + w + 6 - cl, y + h * 0.2); ctx.lineTo(x + w + 6, y + h * 0.2); ctx.lineTo(x + w + 6, y + h * 0.2 + cl); ctx.stroke();
-      // Bottom-Left
-      ctx.beginPath(); ctx.moveTo(x - 6, y + h * 1.05 - cl); ctx.lineTo(x - 6, y + h * 1.05); ctx.lineTo(x - 6 + cl, y + h * 1.05); ctx.stroke();
-      // Bottom-Right
-      ctx.beginPath(); ctx.moveTo(x + w + 6 - cl, y + h * 1.05); ctx.lineTo(x + w + 6, y + h * 1.05); ctx.lineTo(x + w + 6, y + h * 1.05 - cl); ctx.stroke();
-
-      // Top Floating Tag: YOLOv11 Classification
+      ctx.strokeRect(x - 6, y - 4, w + 12, h + 12);
       ctx.fillStyle = 'rgba(6, 182, 212, 0.9)';
-      ctx.fillRect(x - 6, y + h * 0.2 - 14, 110, 14);
+      ctx.fillRect(x - 6, y - 18, 140, 14);
       ctx.fillStyle = '#000000';
-      ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
-      ctx.fillText('YOLOv11: VEHICULE (0.98)', x - 3, y + h * 0.2 - 4);
+      ctx.font = 'bold 8px "JetBrains Mono", monospace';
+      const vehLabel = lang === 'ar' ? 'YOLOv11: مركبة (0.98)' : (lang === 'en' ? 'YOLOv11: VEHICLE (0.98)' : 'YOLOv11: VEHICULE (0.98)');
+      ctx.fillText(vehLabel, x - 2, y - 7);
 
-      // Targeted OCR Bounding Box over Plate
+      // PaddleOCR v4 License Plate Bounding Box
       ctx.strokeStyle = '#10B981';
-      ctx.lineWidth = 1.6;
+      ctx.lineWidth = 1.5;
       ctx.strokeRect(px - 4, py - 3, pw + 8, ph + 6);
       ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
-      ctx.fillRect(px - 4, py - 14, 115, 11);
+      ctx.fillRect(px - 4, py - 14, 125, 11);
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 7px "JetBrains Mono", monospace';
       ctx.fillText(`OCR: ${plateText} (99.4%)`, px - 2, py - 5);
@@ -615,7 +574,6 @@
 
     return {
       triggerVehicle: (plate) => {
-        active = true;
         plateText = plate;
         targetArmAngle = -80;
         setTimeout(() => {
@@ -635,22 +593,19 @@
     const ctx = cvs.getContext('2d');
     cvs.width = 480; cvs.height = 270;
 
-    let active = true; // Always alive with ambient driver
     let spoofMode = false;
     let frameCount = 0;
-    let scanPhase = 0;
     let rppgHistory = [];
     for (let i = 0; i < 44; i++) rppgHistory.push(0);
 
-    // 68-Point Facial Landmark Offsets (Calibrated to face center)
+    // InsightFace / MediaPipe 68-Point Facial Landmark Offsets
     const baseLandmarks = [
       // Jawline (0-14)
       [-46, -14], [-45, 6], [-42, 24], [-36, 40], [-26, 54], [-15, 64], [-5, 70], [0, 72], [5, 70], [15, 64], [26, 54], [36, 40], [42, 24], [45, 6], [46, -14],
-      // Left Eyebrow (15-19)
+      // Eyebrows (15-24)
       [-36, -26], [-28, -32], [-18, -33], [-8, -30], [-2, -24],
-      // Right Eyebrow (20-24)
       [2, -24], [8, -30], [18, -33], [28, -32], [36, -26],
-      // Nose Bridge & Nostril Base (25-33)
+      // Nose Bridge & Base (25-33)
       [0, -22], [0, -12], [0, -3], [0, 8], [-9, 14], [-4, 16], [0, 17], [4, 16], [9, 14],
       // Left Eye Contour (34-39)
       [-26, -16], [-20, -20], [-12, -19], [-7, -15], [-13, -13], [-21, -14],
@@ -662,7 +617,6 @@
 
     function render() {
       frameCount++;
-      scanPhase += 0.045;
       const isLight = document.documentElement.classList.contains('light');
       const lang = window.currentLang || 'fr';
       const I18N = window.I18N || {};
@@ -672,19 +626,21 @@
       // ========================================================
       if (isLight) {
         const skyGrad = ctx.createLinearGradient(0, 0, 0, 110);
-        skyGrad.addColorStop(0, '#7DD3FC');
+        skyGrad.addColorStop(0, '#93C5FD');
+        skyGrad.addColorStop(0.6, '#BAE6FD');
         skyGrad.addColorStop(1, '#E0F2FE');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
       } else {
         const skyGrad = ctx.createLinearGradient(0, 0, 0, 110);
-        skyGrad.addColorStop(0, '#030712');
-        skyGrad.addColorStop(1, '#0B132B');
+        skyGrad.addColorStop(0, '#020617');
+        skyGrad.addColorStop(0.6, '#0B132B');
+        skyGrad.addColorStop(1, '#111C3A');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
       }
 
-      // Background Voie 1 Pavement
+      // Background Voie 1 Pavement Outside Car
       const bgRoadGrad = ctx.createLinearGradient(0, 50, 0, cvs.height);
       if (isLight) {
         bgRoadGrad.addColorStop(0, '#64748B');
@@ -696,7 +652,7 @@
       ctx.fillStyle = bgRoadGrad;
       ctx.fillRect(0, 50, cvs.width, cvs.height - 50);
 
-      // Architectural Consistency: Overhead Steel Portal Truss Canopy (From CAM 1)
+      // Overhead Steel Portal Truss Canopy (Matching CAM 1)
       const pY = 0, pH = 26;
       ctx.fillStyle = isLight ? '#1E293B' : '#0B1329';
       ctx.fillRect(0, pY, cvs.width, pH);
@@ -726,7 +682,7 @@
       ctx.fillText(portalText, 210, pY + 16);
       ctx.textAlign = 'left';
 
-      // Architectural Consistency: Security Guard Cabin on Left Curb (From CAM 1)
+      // Security Guard Cabin on Left Curb (Matching CAM 1)
       const gBoothX = 12, gBoothY = 28, gBoothW = 95, gBoothH = 150;
       ctx.fillStyle = isLight ? '#E2E8F0' : '#1E293B';
       ctx.fillRect(gBoothX, gBoothY, gBoothW, gBoothH);
@@ -743,7 +699,7 @@
       if (isLight) {
         const gWinGrad = ctx.createLinearGradient(gWinX, gWinY, gWinX + gWinW, gWinY + gWinH);
         gWinGrad.addColorStop(0, '#93C5FD');
-        gWinGrad.addColorStop(0.5, '#BFDBFE');
+        gWinGrad.addColorStop(0.5, '#BAE6FD');
         gWinGrad.addColorStop(1, '#60A5FA');
         ctx.fillStyle = gWinGrad;
         ctx.fillRect(gWinX, gWinY, gWinW, gWinH);
@@ -768,7 +724,7 @@
       ctx.ellipse(gWinX + gWinW * 0.45, gWinY + 52, 18, 14, 0, 0, Math.PI);
       ctx.fill();
 
-      // Concrete Curb with Yellow/Black Safety Chevrons (Matching CAM 1)
+      // Concrete Curb with Yellow/Black Safety Stripes (Matching CAM 1)
       const curbBaseY = 175;
       for (let c = 0; c < 7; c++) {
         const cx1 = gBoothX + c * 20;
@@ -785,8 +741,7 @@
       ctx.fillRect(pedX, pedY, pedW, pedH);
       ctx.strokeStyle = '#9A3412'; ctx.lineWidth = 1;
       ctx.strokeRect(pedX, pedY, pedW, pedH);
-      // Pilot Indicator Light
-      ctx.fillStyle = active ? '#10B981' : '#EF4444';
+      ctx.fillStyle = '#10B981';
       ctx.beginPath(); ctx.arc(pedX + 10, pedY + 12, 3, 0, Math.PI * 2); ctx.fill();
 
       // ========================================================
@@ -839,11 +794,11 @@
       ctx.strokeStyle = isLight ? '#64748B' : '#0F172A'; ctx.lineWidth = 1; ctx.stroke();
 
       // Interior Driver Seat Headrest
-      ctx.fillStyle = isLight ? '#1E293B' : '#0B132B';
+      ctx.fillStyle = isLight ? '#334155' : '#0B132B';
       ctx.beginPath();
       ctx.roundRect(190, 48, 80, 75, 18);
       ctx.fill();
-      ctx.strokeStyle = isLight ? '#334155' : '#1E293B'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.strokeStyle = isLight ? '#475569' : '#1E293B'; ctx.lineWidth = 2; ctx.stroke();
 
       // Steering Wheel Rim (Lower Left)
       ctx.strokeStyle = isLight ? '#334155' : '#1E293B';
@@ -869,18 +824,18 @@
       // Kiosk Optical Lens Aperture Ring
       ctx.fillStyle = '#020617';
       ctx.beginPath(); ctx.arc(kX + 22, 115, 16, 0, Math.PI * 2); ctx.fill();
-      ctx.strokeStyle = active ? '#06B6D4' : '#64748B'; ctx.lineWidth = 2; ctx.stroke();
-      // Glass Core Glint
-      ctx.fillStyle = active ? '#38BDF8' : '#334155';
+      ctx.strokeStyle = '#06B6D4'; ctx.lineWidth = 2; ctx.stroke();
+      ctx.fillStyle = '#38BDF8';
       ctx.beginPath(); ctx.arc(kX + 22, 115, 7, 0, Math.PI * 2); ctx.fill();
+
       // Dual 850nm NIR Illuminators
       [100, 130].forEach(ledY => {
-        ctx.fillStyle = active ? '#06B6D4' : '#475569';
+        ctx.fillStyle = '#06B6D4';
         ctx.beginPath(); ctx.arc(kX + 22, ledY, 3, 0, Math.PI * 2); ctx.fill();
       });
 
       // RFID Target Symbol
-      ctx.fillStyle = '#64748B';
+      ctx.fillStyle = isLight ? '#CBD5E1' : '#64748B';
       ctx.font = 'bold 7px "JetBrains Mono", monospace';
       ctx.fillText('RFID/CIB', kX + 6, 210);
 
@@ -931,7 +886,7 @@
         ctx.lineTo(faceCenterX - 28, faceCenterY + 74);
         ctx.closePath(); ctx.fill();
 
-        // Head & Face (Warm Tan Tone)
+        // Head & Face Oval (Warm Natural Skin Tone)
         const skinGrad = ctx.createRadialGradient(faceCenterX - 8, faceCenterY - 10, 8, faceCenterX, faceCenterY + 5, 58);
         skinGrad.addColorStop(0, '#D4A373');
         skinGrad.addColorStop(0.65, '#C68B59');
@@ -942,24 +897,26 @@
         ctx.ellipse(faceCenterX, faceCenterY, 47, 62, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // Hair (Short styled dark brown)
+        // Ears
+        ctx.fillStyle = '#C68B59';
+        ctx.beginPath();
+        ctx.ellipse(faceCenterX - 48, faceCenterY, 6, 12, 0, 0, Math.PI * 2);
+        ctx.ellipse(faceCenterX + 48, faceCenterY, 6, 12, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Natural Hair (Properly Shaped Above Forehead - No Chord Bug!)
         ctx.fillStyle = '#1C1917';
         ctx.beginPath();
-        ctx.arc(faceCenterX, faceCenterY - 18, 48, Math.PI * 0.85, Math.PI * 2.15);
+        ctx.arc(faceCenterX, faceCenterY - 16, 48, Math.PI, Math.PI * 2);
+        ctx.lineTo(faceCenterX + 48, faceCenterY - 2);
+        ctx.lineTo(faceCenterX + 43, faceCenterY - 14);
+        ctx.quadraticCurveTo(faceCenterX + 25, faceCenterY - 32, faceCenterX, faceCenterY - 30);
+        ctx.quadraticCurveTo(faceCenterX - 25, faceCenterY - 32, faceCenterX - 43, faceCenterY - 14);
+        ctx.lineTo(faceCenterX - 48, faceCenterY - 2);
+        ctx.closePath();
         ctx.fill();
 
-        // Eyes & Eyebrows
-        ctx.fillStyle = '#020617';
-        ctx.beginPath();
-        ctx.ellipse(faceCenterX - 18, faceCenterY - 15, 6.5, 4, 0, 0, Math.PI * 2);
-        ctx.ellipse(faceCenterX + 18, faceCenterY - 15, 6.5, 4, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // Corneal Iris Glints
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(faceCenterX - 19, faceCenterY - 17, 2, 2);
-        ctx.fillRect(faceCenterX + 17, faceCenterY - 17, 2, 2);
-
-        // Eyebrows
+        // Natural Eyebrows
         ctx.strokeStyle = '#292524';
         ctx.lineWidth = 3;
         ctx.beginPath();
@@ -967,22 +924,68 @@
         ctx.moveTo(faceCenterX + 8, faceCenterY - 26); ctx.lineTo(faceCenterX + 28, faceCenterY - 24);
         ctx.stroke();
 
-        // Nose Bridge & Base
+        // Natural Eyes (White Sclera, Dark Iris, Pupil, Corneal Glint)
+        const isBlinking = (frameCount % 110 >= 105);
+        if (isBlinking) {
+          ctx.strokeStyle = '#3E2723';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          ctx.moveTo(faceCenterX - 26, faceCenterY - 14); ctx.quadraticCurveTo(faceCenterX - 18, faceCenterY - 12, faceCenterX - 10, faceCenterY - 14);
+          ctx.moveTo(faceCenterX + 10, faceCenterY - 14); ctx.quadraticCurveTo(faceCenterX + 18, faceCenterY - 12, faceCenterX + 26, faceCenterY - 14);
+          ctx.stroke();
+        } else {
+          [-18, 18].forEach(eyeOffsetX => {
+            const eyeX = faceCenterX + eyeOffsetX;
+            const eyeY = faceCenterY - 14;
+            // Sclera
+            ctx.fillStyle = '#F8FAFC';
+            ctx.beginPath();
+            ctx.ellipse(eyeX, eyeY, 8.5, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = '#4A2E18'; ctx.lineWidth = 0.8; ctx.stroke();
+
+            // Iris
+            ctx.fillStyle = '#2D1E12';
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY, 4.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Pupil
+            ctx.fillStyle = '#000000';
+            ctx.beginPath();
+            ctx.arc(eyeX, eyeY, 2.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Specular Corneal Glint
+            ctx.fillStyle = '#FFFFFF';
+            ctx.beginPath();
+            ctx.arc(eyeX - 1.2, eyeY - 1.2, 1.2, 0, Math.PI * 2);
+            ctx.fill();
+          });
+        }
+
+        // Nose Bridge & Contoured Nostrils
         ctx.strokeStyle = '#9A6B48';
         ctx.lineWidth = 1.6;
         ctx.beginPath();
-        ctx.moveTo(faceCenterX, faceCenterY - 15);
-        ctx.lineTo(faceCenterX - 2, faceCenterY + 8);
-        ctx.lineTo(faceCenterX + 6, faceCenterY + 12);
+        ctx.moveTo(faceCenterX, faceCenterY - 18);
+        ctx.lineTo(faceCenterX - 1.5, faceCenterY + 6);
+        ctx.lineTo(faceCenterX + 4.5, faceCenterY + 11);
         ctx.stroke();
 
-        // Lips
-        ctx.fillStyle = '#9F5841';
+        ctx.fillStyle = 'rgba(100, 50, 20, 0.4)';
         ctx.beginPath();
-        ctx.ellipse(faceCenterX, faceCenterY + 28, 14, 5, 0, 0, Math.PI * 2);
+        ctx.ellipse(faceCenterX - 4, faceCenterY + 11, 2.5, 1.5, 0, 0, Math.PI * 2);
+        ctx.ellipse(faceCenterX + 4, faceCenterY + 11, 2.5, 1.5, 0, 0, Math.PI * 2);
         ctx.fill();
 
-        // BIOMETRIC ARCFACE / DLIB 68-POINT MESH OVERLAY
+        // Natural Lips
+        ctx.fillStyle = '#A05240';
+        ctx.beginPath();
+        ctx.ellipse(faceCenterX, faceCenterY + 28, 13, 4.5, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Biometric FaceMesh 68-Point Landmark Constellation
         ctx.fillStyle = 'rgba(6, 182, 212, 0.85)';
         baseLandmarks.forEach(([lx, ly]) => {
           ctx.beginPath();
@@ -1003,22 +1006,25 @@
         ctx.fillRect(bbX, bbY - 16, bbW, 16);
         ctx.fillStyle = '#000000';
         ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
-        ctx.fillText('AMINE HADJ (VIP) | 99.4%', bbX + 4, bbY - 4);
+        const driverTitle = lang === 'ar' ? 'أمين حاج (VIP) | 99.4%' : (lang === 'en' ? 'AMINE HADJ (VIP) | 99.4%' : 'AMINE HADJ (VIP) | 99.4%');
+        ctx.fillText(driverTitle, bbX + 4, bbY - 4);
 
         // Real-Time Arterial Pulse Waveform (rPPG 72 BPM)
         rppgHistory.shift();
         const pulseVal = Math.sin(frameCount * 0.18) * 12 + Math.sin(frameCount * 0.36) * 4;
         rppgHistory.push(pulseVal);
 
-        ctx.fillStyle = 'rgba(6, 20, 36, 0.88)';
+        ctx.fillStyle = 'rgba(6, 20, 36, 0.90)';
         ctx.fillRect(285, 178, 125, 52);
         ctx.strokeStyle = '#06B6D4'; ctx.lineWidth = 1; ctx.strokeRect(285, 178, 125, 52);
 
         ctx.fillStyle = '#38BDF8';
         ctx.font = '7.5px "JetBrains Mono", monospace';
-        ctx.fillText('POULS rPPG : 72 BPM', 290, 190);
+        const rppgTitle = lang === 'ar' ? 'النبض rPPG: 72 ن/د' : (lang === 'en' ? 'PULSE rPPG: 72 BPM' : 'POULS rPPG : 72 BPM');
+        ctx.fillText(rppgTitle, 290, 190);
         ctx.fillStyle = '#10B981';
-        ctx.fillText('VIVACITE OK', 374, 190);
+        const livenessOk = lang === 'ar' ? 'حيوي' : (lang === 'en' ? 'LIVE OK' : 'VIVACITE OK');
+        ctx.fillText(livenessOk, 372, 190);
 
         ctx.strokeStyle = '#10B981';
         ctx.lineWidth = 1.6;
@@ -1031,12 +1037,13 @@
         ctx.stroke();
 
         // ArcFace 512-D Embedding Vector Spectrum
-        ctx.fillStyle = 'rgba(6, 20, 36, 0.88)';
+        ctx.fillStyle = 'rgba(6, 20, 36, 0.90)';
         ctx.fillRect(65, 178, 125, 52);
         ctx.strokeStyle = '#06B6D4'; ctx.lineWidth = 1; ctx.strokeRect(65, 178, 125, 52);
         ctx.fillStyle = '#38BDF8';
         ctx.font = '7.5px "JetBrains Mono", monospace';
-        ctx.fillText('EMBEDDING 512-D', 70, 190);
+        const embedTitle = lang === 'ar' ? 'المتجه 512-D' : 'EMBEDDING 512-D';
+        ctx.fillText(embedTitle, 70, 190);
         ctx.fillStyle = '#10B981';
         ctx.fillText('DIST: 0.42', 145, 190);
 
@@ -1047,60 +1054,28 @@
         }
 
       } else {
-        // PHOTO SPOOF ATTACK (PAPER / IPAD REPLAY)
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-        ctx.fillRect(faceCenterX - 55, faceCenterY - 60, 110, 125);
-        ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 2.5;
-        ctx.strokeRect(faceCenterX - 55, faceCenterY - 60, 110, 125);
+        // PHOTO SPOOF ATTACK (PAPER / SCREEN REPLAY)
+        ctx.fillStyle = '#EF4444';
+        ctx.font = 'bold 12px "JetBrains Mono", monospace';
+        const spoofWarn = lang === 'ar' ? '⚠️ احتيال بصري: إعادة تشغيل شاشة' : (lang === 'en' ? '⚠️ SPOOF ATTACK: SCREEN REPLAY' : '⚠️ ATTAQUE PHOTO : ECRAN REPLAY');
+        ctx.fillText(spoofWarn, 75, 100);
 
-        // Printed Photo Fake Face
-        ctx.fillStyle = '#D4A373';
-        ctx.beginPath(); ctx.ellipse(faceCenterX, faceCenterY - 4, 38, 48, 0, 0, Math.PI * 2); ctx.fill();
-
-        // Moiré Glare Bands
-        ctx.strokeStyle = 'rgba(239, 68, 68, 0.6)';
-        ctx.lineWidth = 2;
-        for (let m = -45; m < 55; m += 10) {
-          ctx.beginPath();
-          ctx.moveTo(faceCenterX - 45, faceCenterY - 50 + m);
-          ctx.lineTo(faceCenterX + 45, faceCenterY - 20 + m);
-          ctx.stroke();
-        }
-
-        // Bounding Box Critical Alarm
-        const bbX = faceCenterX - 58, bbY = faceCenterY - 65, bbW = 116, bbH = 135;
+        // Tablet / Paper Border
         ctx.strokeStyle = '#EF4444';
-        ctx.lineWidth = 2.4;
-        ctx.strokeRect(bbX, bbY, bbW, bbH);
+        ctx.lineWidth = 3;
+        ctx.strokeRect(155, 45, 150, 140);
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(160, 50, 140, 130);
 
-        ctx.fillStyle = '#EF4444';
-        ctx.fillRect(bbX, bbY - 18, bbW, 18);
-        ctx.fillStyle = '#FFFFFF';
-        ctx.font = 'bold 8px "JetBrains Mono", monospace';
-        ctx.fillText('FRAUDE PHOTO REJETEE', bbX + 4, bbY - 5);
-
-        // Flatlining rPPG (0 BPM)
-        ctx.fillStyle = 'rgba(25, 10, 15, 0.9)';
-        ctx.fillRect(285, 178, 125, 52);
-        ctx.strokeStyle = '#EF4444'; ctx.strokeRect(285, 178, 125, 52);
-        ctx.fillStyle = '#EF4444';
-        ctx.font = '7.5px "JetBrains Mono", monospace';
-        ctx.fillText('POULS rPPG : PLAT', 290, 190);
-        ctx.fillText('0 BPM', 380, 190);
-        ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 1.8;
-        ctx.beginPath(); ctx.moveTo(289, 212); ctx.lineTo(405, 212); ctx.stroke();
-
-        // Moiré Fourier Analysis Spike
-        ctx.fillStyle = 'rgba(25, 10, 15, 0.9)';
+        // Fourier Moire High Frequency Analysis
+        ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
         ctx.fillRect(65, 178, 125, 52);
-        ctx.strokeStyle = '#EF4444'; ctx.strokeRect(65, 178, 125, 52);
-        ctx.fillStyle = '#EF4444';
+        ctx.fillStyle = '#FFFFFF';
         ctx.font = '7.5px "JetBrains Mono", monospace';
-        ctx.fillText('SPECTRE FOURIER', 70, 190);
-        ctx.fillText('MOIRÉ 88.4%', 135, 190);
+        ctx.fillText('MOIRE SPECTRUM 88.4%', 70, 190);
         for (let b = 0; b < 10; b++) {
           const bh = b > 5 ? (22 + (b % 3) * 5) : (3 + (b % 2) * 2);
-          ctx.fillStyle = '#EF4444';
+          ctx.fillStyle = '#FFFFFF';
           ctx.fillRect(70 + b * 11.5, 224 - bh, 8.5, bh);
         }
       }
@@ -1129,20 +1104,22 @@
         ctx.fillStyle = nirGrad;
         ctx.beginPath(); ctx.arc(pipX + pipW / 2, pipY + 40, 18, 0, Math.PI * 2); ctx.fill();
 
-        // Bright Corneal Glints
+        // Bright Corneal Retro-Reflection Glints
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(pipX + pipW / 2 - 7, pipY + 36, 2, 2);
         ctx.fillRect(pipX + pipW / 2 + 5, pipY + 36, 2, 2);
 
         ctx.fillStyle = '#10B981';
         ctx.font = 'bold 6.5px "JetBrains Mono", monospace';
-        ctx.fillText('DIFFUSION DERMIQUE OK', pipX + 4, pipY + pipH - 4);
+        const perfText = lang === 'ar' ? 'الانتشار الجلدي: سليم' : (lang === 'en' ? 'DERMAL PERFUSION OK' : 'DIFFUSION DERMIQUE OK');
+        ctx.fillText(perfText, pipX + 4, pipY + pipH - 4);
       } else {
         ctx.fillStyle = '#F8FAFC';
         ctx.fillRect(pipX + 16, pipY + 18, 66, 38);
         ctx.fillStyle = '#EF4444';
         ctx.font = 'bold 6.5px "JetBrains Mono", monospace';
-        ctx.fillText('REFLET VERRE COMPACT', pipX + 4, pipY + pipH - 4);
+        const reflText = lang === 'ar' ? 'انعكاس زجاجي صلب' : (lang === 'en' ? 'GLASS REFLECTION' : 'REFLET VERRE COMPACT');
+        ctx.fillText(reflText, pipX + 4, pipY + pipH - 4);
       }
 
       // Apply CCTV Security OSD
@@ -1207,14 +1184,16 @@
       // 1. Sky & Horizon Gradient
       if (isLight) {
         const skyGrad = ctx.createLinearGradient(0, 0, 0, 95);
-        skyGrad.addColorStop(0, '#7DD3FC');
+        skyGrad.addColorStop(0, '#93C5FD');
+        skyGrad.addColorStop(0.6, '#BAE6FD');
         skyGrad.addColorStop(1, '#E0F2FE');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
       } else {
         const skyGrad = ctx.createLinearGradient(0, 0, 0, 95);
-        skyGrad.addColorStop(0, '#030712');
-        skyGrad.addColorStop(1, '#0B132B');
+        skyGrad.addColorStop(0, '#020617');
+        skyGrad.addColorStop(0.6, '#0B132B');
+        skyGrad.addColorStop(1, '#111C3A');
         ctx.fillStyle = skyGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
       }
@@ -1498,7 +1477,6 @@
       ctx.fillStyle = '#EF4444';
       ctx.beginPath(); ctx.roundRect(carX + 114, vy + 16, 4, 10, 2); ctx.fill();
       if (!isLight) {
-        // Red Taillight Bloom
         const redBloom = ctx.createRadialGradient(carX + 118, vy + 21, 2, carX + 128, vy + 21, 26);
         redBloom.addColorStop(0, 'rgba(239, 68, 68, 0.45)');
         redBloom.addColorStop(1, 'rgba(239, 68, 68, 0)');
@@ -1520,7 +1498,8 @@
       ctx.fillRect(carX - 4, vy - 18, 120, 12);
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 7px "JetBrains Mono", monospace';
-      ctx.fillText(`SORTIE : ${plateText}`, carX - 1, vy - 9);
+      const exitTag = lang === 'ar' ? 'خروج' : (lang === 'en' ? 'EXIT' : 'SORTIE');
+      ctx.fillText(`${exitTag} : ${plateText}`, carX - 1, vy - 9);
 
       // 7. Automatic Barrier Gate Cabinet & Boom Arm
       const barrierX = 248, barrierY = 155;
@@ -1598,169 +1577,171 @@
       const I18N = window.I18N || {};
       const stalls = window.currentStalls || [];
 
-      // 1. Industrial Epoxy Deck Flooring
+      // 1. Industrial Epoxy Parking Deck Floor
       if (isLight) {
-        const floorGrad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
-        floorGrad.addColorStop(0, '#E2E8F0');
-        floorGrad.addColorStop(1, '#CBD5E1');
-        ctx.fillStyle = floorGrad;
+        ctx.fillStyle = '#E2E8F0';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
       } else {
-        const floorGrad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
-        floorGrad.addColorStop(0, '#0F172A');
-        floorGrad.addColorStop(0.5, '#0B1120');
-        floorGrad.addColorStop(1, '#020617');
-        ctx.fillStyle = floorGrad;
+        ctx.fillStyle = '#060B18';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
       }
 
-      // Concrete Expansion Seams
+      // Driving Aisle (Center)
+      ctx.fillStyle = isLight ? '#CBD5E1' : '#0B132B';
+      ctx.fillRect(0, 105, cvs.width, 60);
       ctx.strokeStyle = isLight ? '#94A3B8' : '#1E293B';
       ctx.lineWidth = 1;
-      ctx.beginPath();
-      for (let x = 0; x < cvs.width; x += 68) {
-        ctx.moveTo(x, 24); ctx.lineTo(x, cvs.height - 20);
-      }
-      ctx.stroke();
+      ctx.strokeRect(0, 105, cvs.width, 60);
 
-      // 2. Central Driving Aisle
-      ctx.fillStyle = isLight ? '#F1F5F9' : '#070D18';
-      ctx.fillRect(0, 114, cvs.width, 42);
-      ctx.strokeStyle = isLight ? '#94A3B8' : '#1E293B';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.moveTo(0, 114); ctx.lineTo(cvs.width, 114);
-      ctx.moveTo(0, 156); ctx.lineTo(cvs.width, 156);
-      ctx.stroke();
-
-      // Directional Flow Arrows
-      ctx.fillStyle = isLight ? '#94A3B8' : '#334155';
-      [[150, 135, '➔'], [240, 135, '🡄'], [330, 135, '➔']].forEach(([ax, ay, arrow]) => {
-        ctx.font = 'bold 16px "JetBrains Mono", monospace';
-        ctx.fillText(arrow, ax, ay + 6);
+      // Guidance Direction Arrows
+      ctx.fillStyle = isLight ? 'rgba(255, 255, 255, 0.9)' : 'rgba(148, 163, 184, 0.45)';
+      [110, 240, 370].forEach((ax, idx) => {
+        const dir = idx === 1 ? -1 : 1;
+        ctx.save();
+        ctx.translate(ax, 135);
+        ctx.scale(dir, 1);
+        ctx.beginPath();
+        ctx.moveTo(-12, -3); ctx.lineTo(4, -3); ctx.lineTo(4, -7); ctx.lineTo(14, 0); ctx.lineTo(4, 7); ctx.lineTo(4, 3); ctx.lineTo(-12, 3);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
       });
 
-      // Pedestrian Safety Walkway (Far Right Green Path)
-      ctx.fillStyle = isLight ? 'rgba(16, 185, 129, 0.22)' : 'rgba(16, 185, 129, 0.14)';
-      ctx.fillRect(440, 24, 38, cvs.height - 44);
+      // Pedestrian Safety Green Walkway (Right Edge)
+      ctx.fillStyle = isLight ? '#A7F3D0' : 'rgba(16, 185, 129, 0.2)';
+      ctx.fillRect(425, 0, 55, cvs.height);
       ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1;
-      ctx.beginPath(); ctx.moveTo(440, 24); ctx.lineTo(440, cvs.height - 20); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(425, 0); ctx.lineTo(425, cvs.height); ctx.stroke();
 
       ctx.fillStyle = '#10B981';
-      ctx.font = '7px "JetBrains Mono", monospace';
-      const pedText = lang === 'ar' ? 'مشاة' : (lang === 'en' ? 'WALK' : 'PIÉTONS');
-      ctx.fillText(pedText, 446, 138);
+      ctx.font = 'bold 7px "JetBrains Mono", monospace';
+      ctx.save();
+      ctx.translate(450, 135);
+      ctx.rotate(Math.PI / 2);
+      const pedText = lang === 'ar' ? 'مشاة' : (lang === 'en' ? 'PEDESTRIANS' : 'PIÉTONS');
+      ctx.fillText(pedText, -15, 4);
+      ctx.restore();
 
-      // 3. Render Stalls (Row A: Top, Row B: Bottom)
-      const rowAY = 26;
-      const rowBY = 162;
-      const stallW = 38;
-      const stallH = 82;
-      const startX = 22;
-      const gapX = 17;
-
-      for (let col = 0; col < 7; col++) {
-        const sx = startX + col * (stallW + gapX);
-        renderSingleStall(ctx, sx, rowAY, stallW, stallH, stalls[col] || null, true, isLight);
-        renderSingleStall(ctx, sx, rowBY, stallW, stallH, stalls[col + 7] || null, false, isLight);
+      // 2. Render Top Row (Zone A: A01 to A07)
+      for (let i = 0; i < 7; i++) {
+        const stallId = `A0${i + 1}`;
+        const stallData = stalls.find(s => s.slot_number === stallId) || { status: 'vacant', plate: null };
+        const sx = 20 + i * 56;
+        const sy = 24;
+        renderSingleStall(ctx, sx, sy, 46, 75, stallId, stallData, true, isLight, frameCount);
       }
 
-      // Apply CCTV Effects
+      // 3. Render Bottom Row (Zone B: B01 to B07)
+      for (let i = 0; i < 7; i++) {
+        const stallId = `B0${i + 1}`;
+        const stallData = stalls.find(s => s.slot_number === stallId) || { status: 'vacant', plate: null };
+        const sx = 20 + i * 56;
+        const sy = 171;
+        renderSingleStall(ctx, sx, sy, 46, 75, stallId, stallData, false, isLight, frameCount);
+      }
+
+      // Apply CCTV OSD
       const now = new Date().toLocaleTimeString(lang === 'ar' ? 'ar-DZ' : (lang === 'en' ? 'en-US' : 'fr-DZ'));
-      const camTitle = (I18N[lang] && I18N[lang].cam4_name) || 'CAM-04 : ZONE A & B (AÉRIENNE)';
+      const camTitle = (I18N[lang] && I18N[lang].cam4_name) || 'CAM-04 : ZONE A & B (DECK)';
       drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-04', camTitle, 25.0, now, true);
 
       requestAnimationFrame(render);
     }
-
-    function renderSingleStall(ctx, x, y, w, h, stall, isTopRow, isLight) {
-      const lang = window.currentLang || 'fr';
-      const isOccupied = stall && stall.status === 'occupied';
-      const isVip = stall && stall.status === 'reserved';
-      const slotId = stall ? stall.slot_number : 'A00';
-
-      // Stall Painted Lines
-      ctx.strokeStyle = isLight ? '#94A3B8' : '#334155';
-      ctx.lineWidth = 1.4;
-      ctx.strokeRect(x, y, w, h);
-
-      // Overhead Ultrasonic Guidance Puck Indicator
-      const puckX = x + w / 2;
-      const puckY = isTopRow ? y + h - 6 : y + 6;
-      ctx.fillStyle = isOccupied ? '#EF4444' : (isVip ? '#A855F7' : '#10B981');
-      ctx.beginPath(); ctx.arc(puckX, puckY, 3.5, 0, Math.PI * 2); ctx.fill();
-
-      // Stall Number Stencil
-      ctx.fillStyle = isLight ? '#64748B' : '#94A3B8';
-      ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
-      ctx.fillText(slotId, x + 3, isTopRow ? y + 10 : y + h - 4);
-
-      if (isOccupied) {
-        // High-Detail Top-Down Vehicle Model
-        const carColors = [
-          { body: '#1E3A8A', roof: '#172554' },
-          { body: '#B91C1C', roof: '#7F1D1D' },
-          { body: '#047857', roof: '#064E3B' },
-          { body: '#475569', roof: '#334155' },
-          { body: '#D97706', roof: '#B45309' },
-          { body: '#6B21A8', roof: '#581C87' }
-        ];
-        const seedIndex = (slotId.charCodeAt(1) || 0) % carColors.length;
-        const color = carColors[seedIndex];
-
-        // Vehicle Floor Drop Shadow
-        ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.4)' : 'rgba(0, 0, 0, 0.7)';
-        ctx.beginPath();
-        ctx.roundRect(x + 5, y + 8, w - 10, h - 16, 5);
-        ctx.fill();
-
-        // Car Body Shell
-        ctx.fillStyle = color.body;
-        ctx.beginPath();
-        ctx.roundRect(x + 4, y + 6, w - 8, h - 14, 5);
-        ctx.fill();
-        ctx.strokeStyle = isLight ? '#64748B' : '#334155'; ctx.lineWidth = 1; ctx.stroke();
-
-        // Roof & Glasshouse
-        ctx.fillStyle = color.roof;
-        ctx.beginPath();
-        ctx.roundRect(x + 7, y + 18, w - 14, h - 38, 3);
-        ctx.fill();
-
-        // Windshield (Front)
-        ctx.fillStyle = isLight ? '#38BDF8' : '#0284C7';
-        if (isTopRow) {
-          ctx.fillRect(x + 7, y + h - 22, w - 14, 6); // Facing downward
-        } else {
-          ctx.fillRect(x + 7, y + 12, w - 14, 6); // Facing upward
-        }
-
-        // Side Mirrors
-        ctx.fillStyle = color.body;
-        ctx.fillRect(x + 1, isTopRow ? y + h - 24 : y + 16, 3, 5);
-        ctx.fillRect(x + w - 4, isTopRow ? y + h - 24 : y + 16, 3, 5);
-
-      } else {
-        // Free / Vacant Stall Hatching
-        ctx.strokeStyle = 'rgba(16, 185, 129, 0.25)';
-        ctx.setLineDash([3, 3]);
-        ctx.strokeRect(x + 4, y + 8, w - 8, h - 16);
-        ctx.setLineDash([]);
-        ctx.fillStyle = isVip ? '#A855F7' : '#10B981';
-        const dict = (window.I18N && window.I18N[lang]) || {};
-        const freeText = isVip ? (dict.legend_vip || 'VIP') : (dict.stall_available || 'LIBRE');
-        ctx.fillText(freeText, x + w / 2 - 10, y + h / 2);
-      }
-    }
-
     render();
   }
 
-  // Export to Window Scope
-  window.drawCCTVEffects = drawCCTVEffects;
-  window.setupCam1 = setupCam1;
-  window.setupCam2 = setupCam2;
-  window.setupCam3 = setupCam3;
-  window.setupCam4 = setupCam4;
+  function renderSingleStall(ctx, x, y, w, h, id, data, isTopRow, isLight, frameCount) {
+    const isOccupied = data.status === 'occupied' || data.status === 'vip_occupied';
+    const isVip = data.status === 'reserved' || data.status === 'vip';
+    const lang = window.currentLang || 'fr';
+
+    // Stall Floor Demarcation Lines
+    ctx.strokeStyle = isLight ? '#94A3B8' : '#334155';
+    ctx.lineWidth = 1.2;
+    ctx.setLineDash([4, 2]);
+    ctx.strokeRect(x, y, w, h);
+    ctx.setLineDash([]);
+
+    // Ultrasonic Sensor Indicator Light (Ceiling Puck)
+    const puckY = isTopRow ? y + h - 5 : y + 5;
+    const puckColor = isOccupied ? '#EF4444' : (isVip ? '#A855F7' : '#10B981');
+
+    ctx.fillStyle = puckColor;
+    ctx.beginPath(); ctx.arc(x + w / 2, puckY, 3.5, 0, Math.PI * 2); ctx.fill();
+
+    // Soft Light Pool on Floor
+    const puckGrad = ctx.createRadialGradient(x + w / 2, puckY, 1, x + w / 2, puckY, 14);
+    puckGrad.addColorStop(0, puckColor + (isLight ? '40' : '60'));
+    puckGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = puckGrad;
+    ctx.beginPath(); ctx.arc(x + w / 2, puckY, 14, 0, Math.PI * 2); ctx.fill();
+
+    // Stall Identifier
+    ctx.fillStyle = isLight ? '#475569' : '#64748B';
+    ctx.font = 'bold 7px "JetBrains Mono", monospace';
+    ctx.fillText(id, x + 3, isTopRow ? y + 10 : y + h - 4);
+
+    if (isOccupied) {
+      // Top-Down Vehicle Render
+      const carW = w - 10;
+      const carH = h - 14;
+      const cx = x + 5;
+      const cy = y + 7;
+
+      ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.4)' : 'rgba(0, 0, 0, 0.7)';
+      ctx.beginPath(); ctx.roundRect(cx + 1, cy + 1, carW, carH, 6); ctx.fill();
+
+      // Car Body
+      const carGrad = ctx.createLinearGradient(cx, cy, cx + carW, cy);
+      carGrad.addColorStop(0, '#1E293B');
+      carGrad.addColorStop(0.5, '#334155');
+      carGrad.addColorStop(1, '#1E293B');
+      ctx.fillStyle = carGrad;
+      ctx.beginPath(); ctx.roundRect(cx, cy, carW, carH, 6); ctx.fill();
+      ctx.strokeStyle = isLight ? '#64748B' : '#475569'; ctx.lineWidth = 1; ctx.stroke();
+
+      // Windshield & Rear Window
+      ctx.fillStyle = isLight ? '#38BDF8' : '#0284C7';
+      const wsY = isTopRow ? cy + carH * 0.22 : cy + carH * 0.65;
+      const rwY = isTopRow ? cy + carH * 0.72 : cy + carH * 0.15;
+      ctx.fillRect(cx + 3, wsY, carW - 6, 6);
+      ctx.fillRect(cx + 4, rwY, carW - 8, 5);
+
+      // Roof Surface
+      ctx.fillStyle = isLight ? '#475569' : '#1E293B';
+      const roofY = isTopRow ? cy + carH * 0.34 : cy + carH * 0.28;
+      ctx.fillRect(cx + 4, roofY, carW - 8, carH * 0.35);
+
+    } else {
+      ctx.fillStyle = isLight ? '#059669' : '#10B981';
+      ctx.font = 'bold 7px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      const freeLabel = isVip ? (lang === 'ar' ? 'محجوز' : (lang === 'en' ? 'RESERVED' : 'RÉSERVÉ')) : (lang === 'ar' ? 'شاغرة' : (lang === 'en' ? 'FREE' : 'LIBRE'));
+      ctx.fillText(freeLabel, x + w / 2, y + h / 2 + 3);
+      ctx.textAlign = 'left';
+    }
+  }
+
+  // =========================================================================
+  // BOOTSTRAP CCTV ENGINE
+  // =========================================================================
+  window.initCCTVEngine = function () {
+    const cam1 = setupCam1();
+    const cam2 = setupCam2();
+    const cam3 = setupCam3();
+    setupCam4();
+
+    window.cctvEngine = {
+      triggerCam1: (plate) => { if (cam1) cam1.triggerVehicle(plate); },
+      triggerCam2: (isSpoof) => { if (cam2) cam2.triggerVehicle(isSpoof); },
+      triggerCam3: () => { if (cam3) cam3.openBarrier(); }
+    };
+  };
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', window.initCCTVEngine);
+  } else {
+    window.initCCTVEngine();
+  }
 
 })(window);

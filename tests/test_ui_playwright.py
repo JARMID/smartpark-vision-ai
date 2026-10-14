@@ -56,19 +56,30 @@ async def run_ui_verification():
         await page.screenshot(path="tests/screenshot_cctv_day_en.png")
         print("Captured CCTV Day Mode (EN) screenshot: tests/screenshot_cctv_day_en.png")
 
-        # 5. Trigger Scenario 1 (VIP Entry)
+        # 5. Test Live Camera Expansion Modal (Inspect CAM-02)
+        print("Clicking CAM-02 to open Live HD Mirror Inspector...")
+        await page.click("#cam2-canvas")
+        await asyncio.sleep(1.0)
+        is_modal_visible = await page.is_visible("#cam-modal")
+        assert is_modal_visible, "Expected #cam-modal to be visible!"
+        await page.screenshot(path="tests/screenshot_cam2_inspector_hd.png")
+        print("Captured CAM-02 Live HD Inspector screenshot: tests/screenshot_cam2_inspector_hd.png")
+        await page.click("button[onclick='closeCameraModal()']")
+        await asyncio.sleep(0.5)
+
+        # 6. Trigger Scenario 1 (VIP Entry) in English
         print("Triggering Scenario 1 (VIP Entry)...")
         await page.click("button:has-text('[1] VIP')")
         await asyncio.sleep(2.0)
 
-        # 6. Switch to 3D View to test Day mode 3D
+        # 7. Switch to 3D View to test Day mode 3D
         print("Switching to 3D Digital Twin tab in Day Mode...")
         await page.click("#tab-btn-3d")
         await asyncio.sleep(1.0)
         await page.screenshot(path="tests/screenshot_3d_day.png")
         print("Captured 3D Digital Twin Day Mode screenshot: tests/screenshot_3d_day.png")
 
-        # 7. Check for Console Errors
+        # 8. Check for Console Errors
         print("\n=== Console Errors Report ===")
         filtered_errors = [e for e in console_errors if "favicon" not in e.lower() and "ws" not in e.lower()]
         if filtered_errors:
