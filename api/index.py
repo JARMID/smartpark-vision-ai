@@ -37,13 +37,16 @@ def vercel_root():
     return {"status": "ONLINE", "service": "SmartPark Vision AI Serverless"}
 
 from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException as StarletteHTTPException
 
-@app.exception_handler(404)
-async def custom_404_handler(request: Request, exc):
+@app.exception_handler(StarletteHTTPException)
+async def custom_starlette_404(request: Request, exc: StarletteHTTPException):
     return JSONResponse(
-        status_code=404,
+        status_code=exc.status_code,
         content={
-            "error": "Custom 404",
+            "error": "Custom Starlette HTTPException",
+            "status_code": exc.status_code,
+            "detail": exc.detail,
             "scope_path": request.scope.get("path"),
             "url_path": request.url.path,
             "raw_path": request.scope.get("raw_path", b"").decode(),
