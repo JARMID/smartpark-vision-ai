@@ -36,16 +36,19 @@ async def vercel_path_rewrite_middleware(request: Request, call_next):
 def vercel_root():
     return {"status": "ONLINE", "service": "SmartPark Vision AI Serverless"}
 
-@app.get("/api")
-def vercel_api_root():
-    return {"status": "ONLINE", "service": "SmartPark Vision AI API"}
+from fastapi.responses import JSONResponse
 
-@app.get("/api/index")
-def vercel_index_debug(request: Request):
-    return {
-        "status": "ONLINE",
-        "scope_path": request.scope.get("path"),
-        "url_path": str(request.url),
-        "headers": dict(request.headers),
-    }
+@app.exception_handler(404)
+async def custom_404_handler(request: Request, exc):
+    return JSONResponse(
+        status_code=404,
+        content={
+            "error": "Custom 404",
+            "scope_path": request.scope.get("path"),
+            "url_path": request.url.path,
+            "raw_path": request.scope.get("raw_path", b"").decode(),
+            "matched_path": request.headers.get("x-matched-path"),
+            "headers": dict(request.headers),
+        }
+    )
 
