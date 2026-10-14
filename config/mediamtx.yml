@@ -1,0 +1,38 @@
+# MediaMTX Configuration for SmartPark Vision AI
+# Low-latency WebRTC and RTSP re-streaming from isolated Camera VLAN
+
+api: yes
+apiAddress: :9997
+
+protocols: [tcp]
+
+paths:
+  # Lane 1 Entry ALPR Camera
+  lane1_entry_plate:
+    source: rtsp://192.168.10.101:554/stream1
+    sourceOnDemand: no
+    rtspTransport: tcp
+
+  # Lane 1 Driver Kiosk Dual-Lens Camera (RGB)
+  lane1_driver_rgb:
+    source: rtsp://192.168.10.102:554/stream1
+    sourceOnDemand: no
+    rtspTransport: tcp
+
+  # Lane 1 Driver Kiosk Dual-Lens Camera (850nm NIR)
+  lane1_driver_nir:
+    source: rtsp://192.168.10.103:554/stream1
+    sourceOnDemand: no
+    rtspTransport: tcp
+
+  # Lane 2 Exit ALPR Camera
+  lane2_exit_plate:
+    source: rtsp://192.168.10.104:554/stream1
+    sourceOnDemand: no
+    rtspTransport: tcp
+
+  # Overhead Parking Stalls Overview Camera
+  zone_a_overhead:
+    source: rtsp://192.168.10.105:554/stream1
+    sourceOnDemand: no
+    rtspTransport: tcp

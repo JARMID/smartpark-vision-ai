@@ -1,0 +1,93 @@
+version: '3.8'
+
+# SmartPark Vision AI (Algeria Sovereign Edition)
+# Self-Hosted Local Infrastructure Stack (Docker Compose)
+# Compliant with Algerian Law 18-07 & Law 25-11 (Data Sovereignty)
+
+services:
+  # 1. PostgreSQL 16 with pgvector extension enabled
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: smartpark_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: smartpark_db
+      POSTGRES_USER: smartpark_admin
+      POSTGRES_PASSWORD: smartpark_secure_password_2026
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docs/BACKEND_SCHEMA.sql:/docker-entrypoint-initdb.d/01_init_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U smartpark_admin -d smartpark_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - smartpark_internal
+
+  # 2. MinIO S3-Compatible Local Object Storage (30-Day Encrypted Media Retention)
+  minio:
+    image: minio/minio:latest
+    container_name: smartpark_minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minio_smartpark_admin
+      MINIO_ROOT_PASSWORD: minio_secure_key_2026
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+    networks:
+      - smartpark_internal
+
+  # 3. MediaMTX RTSP & WebRTC Media Server
+  mediamtx:
+    image: bluenviron/mediamtx:latest
+    container_name: smartpark_mediamtx
+    restart: unless-stopped
+    ports:
+      - "8554:8554"   # RTSP stream port
+      - "8889:8889"   # WebRTC signaling port
+      - "8888:8888"   # HLS stream port
+      - "9997:9997"   # Management API
+    volumes:
+      - ./config/mediamtx.yml:/mediamtx.yml:ro
+    networks:
+      - smartpark_internal
+
+  # 4. PostgREST Instant REST API
+  postgrest:
+    image: postgrest/postgrest:latest
+    container_name: smartpark_postgrest
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGRST_DB_URI: postgres://smartpark_admin:smartpark_secure_password_2026@postgres:5432/smartpark_db
+      PGRST_DB_SCHEMAS: public
+      PGRST_DB_ANON_ROLE: smartpark_admin
+      PGRST_OPENAPI_SERVER_PROXY_URI: http://localhost:3001
+    ports:
+      - "3001:3000"
+    networks:
+      - smartpark_internal
+
+volumes:
+  postgres_data:
+    driver: local
+  minio_data:
+    driver: local
+
+networks:
+  smartpark_internal:
+    driver: bridge
