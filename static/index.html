@@ -11,6 +11,7 @@
   <!-- Three.js & OrbitControls CDN for 3D Digital Twin -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  <script src="./three_digital_twin.js"></script>
   <!-- Google Fonts: Inter & JetBrains Mono -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -889,273 +890,25 @@
     }
 
     // =======================================================
-    // 3D DIGITAL TWIN (THREE.JS SCENE)
+    // 3D DIGITAL TWIN (THREE.JS MODULAR ENGINE)
     // =======================================================
-    let scene, camera, renderer, controls;
-    let barrierArm1, barrierArm2;
-    let animatedCar = null;
+    let twin = null;
     let is3DInitialized = false;
 
     function init3D() {
-      const container = document.getElementById('threejs-mount');
-      if (!container || is3DInitialized || typeof THREE === 'undefined') return;
-
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0x070A12);
-      scene.fog = new THREE.FogExp2(0x070A12, 0.015);
-
-      const w = container.clientWidth || 800;
-      const h = container.clientHeight || 500;
-      camera = new THREE.PerspectiveCamera(45, w / h, 0.5, 500);
-      camera.position.set(28, 24, 32);
-
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-      renderer.setSize(w, h);
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      container.appendChild(renderer.domElement);
-
-      if (typeof THREE.OrbitControls !== 'undefined') {
-        controls = new THREE.OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-        controls.dampingFactor = 0.05;
-        controls.maxPolarAngle = Math.PI / 2.05;
-        controls.minDistance = 8;
-        controls.maxDistance = 90;
-        controls.target.set(0, 0, 0);
+      if (is3DInitialized) return;
+      if (typeof ParkingDigitalTwin !== 'undefined') {
+        twin = new ParkingDigitalTwin('threejs-mount');
+        is3DInitialized = true;
       }
-
-      // Lights
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
-      scene.add(ambientLight);
-
-      const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-      dirLight.position.set(20, 40, 20);
-      dirLight.castShadow = true;
-      dirLight.shadow.mapSize.width = 1024;
-      dirLight.shadow.mapSize.height = 1024;
-      scene.add(dirLight);
-
-      // Floor Tarmac
-      const floorGeo = new THREE.PlaneGeometry(60, 45);
-      const floorMat = new THREE.MeshStandardMaterial({ color: 0x0F1626, roughness: 0.85, metalness: 0.1 });
-      const floor = new THREE.Mesh(floorGeo, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.receiveShadow = true;
-      scene.add(floor);
-
-      // Grid helper
-      const grid = new THREE.GridHelper(60, 30, 0x1E293B, 0x111827);
-      grid.position.y = 0.01;
-      scene.add(grid);
-
-      // Entry / Exit Drive Aisle striping
-      const aisleGeo = new THREE.PlaneGeometry(8, 45);
-      const aisleMat = new THREE.MeshBasicMaterial({ color: 0x0A0F1D });
-      const aisle = new THREE.Mesh(aisleGeo, aisleMat);
-      aisle.rotation.x = -Math.PI / 2;
-      aisle.position.set(0, 0.02, 0);
-      scene.add(aisle);
-
-      // Barrier Gate 1 (Entry)
-      const barrierPillar1 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.8, 1.8, 0.8),
-        new THREE.MeshStandardMaterial({ color: 0xF59E0B, metalness: 0.5, roughness: 0.4 })
-      );
-      barrierPillar1.position.set(-3.2, 0.9, -15);
-      barrierPillar1.castShadow = true;
-      scene.add(barrierPillar1);
-
-      barrierArm1 = new THREE.Mesh(
-        new THREE.BoxGeometry(6.5, 0.15, 0.15),
-        new THREE.MeshStandardMaterial({ color: 0xEAB308, roughness: 0.3 })
-      );
-      barrierArm1.position.set(0.2, 1.6, -15);
-      barrierArm1.castShadow = true;
-      scene.add(barrierArm1);
-
-      // Barrier Gate 2 (Exit)
-      const barrierPillar2 = new THREE.Mesh(
-        new THREE.BoxGeometry(0.8, 1.8, 0.8),
-        new THREE.MeshStandardMaterial({ color: 0xF59E0B, metalness: 0.5, roughness: 0.4 })
-      );
-      barrierPillar2.position.set(3.2, 0.9, 15);
-      barrierPillar2.castShadow = true;
-      scene.add(barrierPillar2);
-
-      barrierArm2 = new THREE.Mesh(
-        new THREE.BoxGeometry(6.5, 0.15, 0.15),
-        new THREE.MeshStandardMaterial({ color: 0xEAB308, roughness: 0.3 })
-      );
-      barrierArm2.position.set(-0.2, 1.6, 15);
-      barrierArm2.castShadow = true;
-      scene.add(barrierArm2);
-
-      // Kiosk post with glowing screen
-      const kiosk = new THREE.Mesh(
-        new THREE.BoxGeometry(0.5, 1.5, 0.5),
-        new THREE.MeshStandardMaterial({ color: 0x1E293B, metalness: 0.7 })
-      );
-      kiosk.position.set(-3.8, 0.75, -13.5);
-      scene.add(kiosk);
-
-      const kioskScreen = new THREE.Mesh(
-        new THREE.PlaneGeometry(0.3, 0.4),
-        new THREE.MeshBasicMaterial({ color: 0x06B6D4 })
-      );
-      kioskScreen.position.set(-3.54, 1.2, -13.5);
-      kioskScreen.rotation.y = Math.PI / 2;
-      scene.add(kioskScreen);
-
-      // Build 14 Parking Stalls with Pylons & Parked Cars
-      build3DStalls();
-
-      // Camera Cones (Wireframe Frustums)
-      createCameraFrustum(-4, 4, -18, 0, 0, -10, 0x10B981); // Cam 1
-      createCameraFrustum(4, 4, 18, 0, 0, 10, 0x06B6D4);   // Cam 3
-
-      is3DInitialized = true;
-
-      function animate() {
-        requestAnimationFrame(animate);
-        if (controls) controls.update();
-        renderer.render(scene, camera);
-      }
-      animate();
-
-      window.addEventListener('resize', onWindowResize);
-    }
-
-    function createCameraFrustum(x, y, z, tx, ty, tz, color) {
-      const coneGeo = new THREE.ConeGeometry(2.5, 6, 4, 1, true);
-      const coneMat = new THREE.MeshBasicMaterial({ color: color, wireframe: true, transparent: true, opacity: 0.25 });
-      const cone = new THREE.Mesh(coneGeo, coneMat);
-      cone.position.set(x, y, z);
-      cone.lookAt(tx, ty, tz);
-      cone.rotateX(Math.PI / 2);
-      scene.add(cone);
-    }
-
-    function build3DStalls() {
-      // Left stalls (Zone A & B)
-      for (let i = 0; i < 7; i++) {
-        const z = -15 + i * 5;
-        createStall(-12, z, i < 4 ? 'A' : 'B', i + 1);
-      }
-      // Right stalls (Zone C & D)
-      for (let i = 0; i < 7; i++) {
-        const z = -15 + i * 5;
-        createStall(12, z, i < 4 ? 'B' : 'C', i + 1);
-      }
-    }
-
-    const stallMeshes = [];
-    function createStall(x, z, zone, num) {
-      const stallLine = new THREE.LineSegments(
-        new THREE.EdgesGeometry(new THREE.BoxGeometry(6, 0.05, 3.8)),
-        new THREE.MeshBasicMaterial({ color: 0x475569 })
-      );
-      stallLine.position.set(x, 0.03, z);
-      scene.add(stallLine);
-
-      // Overhead Beacon LED
-      const beacon = new THREE.Mesh(
-        new THREE.SphereGeometry(0.2, 16, 16),
-        new THREE.MeshBasicMaterial({ color: 0x10B981 })
-      );
-      beacon.position.set(x, 2.5, z);
-      scene.add(beacon);
-
-      // Park a 3D Car in selected bays
-      let car = null;
-      if (Math.random() > 0.35) {
-        car = create3DCar(x, z, Math.random() > 0.5 ? 0x1E293B : 0x0284C7);
-        beacon.material.color.setHex(0xEF4444);
-      }
-
-      stallMeshes.push({ x, z, beacon, car, slot_id: `${zone}0${num}` });
-    }
-
-    function create3DCar(x, z, colorHex) {
-      const carGroup = new THREE.Group();
-      // Body
-      const body = new THREE.Mesh(
-        new THREE.BoxGeometry(4.2, 1.1, 2.2),
-        new THREE.MeshStandardMaterial({ color: colorHex, roughness: 0.3, metalness: 0.6 })
-      );
-      body.position.y = 0.7;
-      body.castShadow = true;
-      carGroup.add(body);
-
-      // Cabin / Roof
-      const cabin = new THREE.Mesh(
-        new THREE.BoxGeometry(2.3, 0.85, 1.8),
-        new THREE.MeshStandardMaterial({ color: 0x0A0F1D, roughness: 0.1, metalness: 0.9 })
-      );
-      cabin.position.set(-0.2, 1.6, 0);
-      cabin.castShadow = true;
-      carGroup.add(cabin);
-
-      // Headlights
-      const light1 = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.2, 0.4), new THREE.MeshBasicMaterial({ color: 0xFEF08A }));
-      light1.position.set(2.1, 0.7, 0.7);
-      carGroup.add(light1);
-      const light2 = light1.clone();
-      light2.position.set(2.1, 0.7, -0.7);
-      carGroup.add(light2);
-
-      carGroup.position.set(x, 0, z);
-      scene.add(carGroup);
-      return carGroup;
-    }
-
-    function onWindowResize() {
-      const container = document.getElementById('threejs-mount');
-      if (!container || !renderer || !camera) return;
-      const w = container.clientWidth;
-      const h = container.clientHeight;
-      camera.aspect = w / h;
-      camera.updateProjectionMatrix();
-      renderer.setSize(w, h);
     }
 
     function setCameraPreset(view) {
-      if (!camera || !controls) return;
-      if (view === 'isometric') {
-        camera.position.set(28, 24, 32);
-        controls.target.set(0, 0, 0);
-      } else if (view === 'entry') {
-        camera.position.set(-2, 4, -22);
-        controls.target.set(-2, 1.2, -14);
-      } else if (view === 'kiosk') {
-        camera.position.set(-6, 2.5, -14);
-        controls.target.set(-3.5, 1.2, -13.5);
-      } else if (view === 'exit') {
-        camera.position.set(2, 4, 10);
-        controls.target.set(0, 1.2, 18);
-      } else if (view === 'top') {
-        camera.position.set(0, 48, 0.1);
-        controls.target.set(0, 0, 0);
-      }
-      controls.update();
+      if (twin) twin.setCameraPreset(view);
     }
 
     function trigger3DGateAnimation(isOpen) {
-      if (!barrierArm1) return;
-      const targetRot = isOpen ? -Math.PI / 2.3 : 0;
-      let cur = barrierArm1.rotation.z;
-      const step = (targetRot - cur) / 15;
-      let count = 0;
-      const anim = setInterval(() => {
-        barrierArm1.rotation.z += step;
-        count++;
-        if (count >= 15) {
-          barrierArm1.rotation.z = targetRot;
-          clearInterval(anim);
-        }
-      }, 20);
-
+      if (twin) twin.setGate1(isOpen);
       document.getElementById('barrier-text-3d').innerText = isOpen ? 'OUVERTE (180ms)' : 'FERMÉE';
       document.getElementById('barrier-text-3d').className = isOpen ? 'text-emeraldAccent font-bold' : 'text-red-400 font-bold';
     }
@@ -1354,49 +1107,314 @@
       const ctx = cvs.getContext('2d');
       cvs.width = 480; cvs.height = 270;
       let active = false, spoofMode = false;
+      let frameCount = 0;
+      let scanPhase = 0;
+      let rppgHistory = [];
+      for (let i = 0; i < 40; i++) rppgHistory.push(0);
+
+      // 68 Landmark base offsets relative to face center
+      const baseLandmarks = [
+        // Jawline (0-14)
+        [-48, -10], [-46, 8], [-42, 25], [-35, 40], [-25, 52], [-14, 60], [-5, 65], [0, 67], [5, 65], [14, 60], [25, 52], [35, 40], [42, 25], [46, 8], [48, -10],
+        // Left Eyebrow (15-19)
+        [-36, -22], [-28, -27], [-18, -28], [-8, -25], [-2, -20],
+        // Right Eyebrow (20-24)
+        [2, -20], [8, -25], [18, -28], [28, -27], [36, -22],
+        // Nose bridge & nostrils (25-33)
+        [0, -18], [0, -10], [0, -2], [0, 6], [-8, 12], [-4, 14], [0, 15], [4, 14], [8, 12],
+        // Left Eye (34-39)
+        [-26, -14], [-20, -17], [-12, -16], [-8, -13], [-14, -11], [-22, -12],
+        // Right Eye (40-45)
+        [8, -13], [12, -16], [20, -17], [26, -14], [22, -12], [14, -11],
+        // Outer Lips (46-57)
+        [-20, 28], [-12, 24], [-5, 23], [0, 24], [5, 23], [12, 24], [20, 28], [12, 36], [5, 38], [0, 39], [-5, 38], [-12, 36],
+        // Inner Lips (58-65)
+        [-15, 28], [-5, 27], [0, 28], [5, 27], [15, 28], [5, 31], [0, 32], [-5, 31]
+      ];
 
       function render() {
+        frameCount++;
+        scanPhase += 0.05;
+
+        // 1. Cockpit & Cabin Environment
         ctx.fillStyle = '#040711';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Window Frame
+        // Windshield pillar (A-Pillar)
+        ctx.fillStyle = '#0B1222';
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(70, 0); ctx.lineTo(110, cvs.height); ctx.lineTo(0, cvs.height);
+        ctx.closePath(); ctx.fill();
+
+        // Car Roof & Window Frame
         ctx.strokeStyle = '#1E293B';
-        ctx.lineWidth = 12;
-        ctx.strokeRect(40, 20, 400, 230);
+        ctx.lineWidth = 14;
+        ctx.strokeRect(60, 15, 380, 240);
 
+        // Driver Window Outer Glass Tint
+        const glassGrad = ctx.createLinearGradient(70, 20, 430, 250);
+        glassGrad.addColorStop(0, 'rgba(15, 23, 42, 0.4)');
+        glassGrad.addColorStop(1, 'rgba(2, 6, 23, 0.7)');
+        ctx.fillStyle = glassGrad;
+        ctx.fillRect(68, 22, 364, 226);
+
+        // Steering Wheel Rim (Silhouette in lower left)
+        ctx.strokeStyle = '#1E293B';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(105, 250, 48, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.stroke();
+
+        // Dual-Lens Grid Overlay (Cross-hair reticle)
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(240, 25); ctx.lineTo(240, 245);
+        ctx.moveTo(70, 135); ctx.lineTo(430, 135);
+        ctx.stroke();
+
+        // 2. Active Driver Biometric Processing
         if (active) {
+          const faceCenterX = 240;
+          const faceCenterY = 118 + Math.sin(frameCount * 0.03) * 1.5;
+
           if (!spoofMode) {
-            ctx.fillStyle = '#334155';
-            ctx.beginPath(); ctx.arc(240, 115, 42, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.ellipse(240, 205, 80, 50, 0, 0, Math.PI); ctx.fill();
+            // === AUTHENTIC DRIVER PASSENGER ===
+            ctx.fillStyle = '#1E293B';
+            ctx.beginPath();
+            ctx.arc(faceCenterX, faceCenterY - 5, 48, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.beginPath();
+            ctx.ellipse(faceCenterX, faceCenterY + 85, 95, 55, 0, 0, Math.PI);
+            ctx.fill();
 
-            // ArcFace Bounding Box
+            // ArcFace 512-D Bounding Box with Corner Brackets
+            const boxX = faceCenterX - 65;
+            const boxY = faceCenterY - 60;
+            const boxW = 130;
+            const boxH = 145;
+
             ctx.strokeStyle = '#06B6D4';
-            ctx.lineWidth = 2;
-            ctx.strokeRect(185, 65, 110, 120);
+            ctx.lineWidth = 1.5;
+            const bLen = 14;
+            ctx.beginPath();
+            ctx.moveTo(boxX, boxY + bLen); ctx.lineTo(boxX, boxY); ctx.lineTo(boxX + bLen, boxY);
+            ctx.moveTo(boxX + boxW - bLen, boxY); ctx.lineTo(boxX + boxW, boxY); ctx.lineTo(boxX + boxW, boxY + bLen);
+            ctx.moveTo(boxX, boxY + boxH - bLen); ctx.lineTo(boxX, boxY + boxH); ctx.lineTo(boxX + bLen, boxY + boxH);
+            ctx.moveTo(boxX + boxW - bLen, boxY + boxH); ctx.lineTo(boxX + boxW, boxY + boxH); ctx.lineTo(boxX + boxW, boxY + boxH - bLen);
+            ctx.stroke();
 
-            // 5 Landmarks
+            // Laser Scan Sweep Line
+            const sweepY = boxY + ((Math.sin(scanPhase * 1.5) + 1) / 2) * boxH;
+            const sweepGrad = ctx.createLinearGradient(boxX, sweepY, boxX + boxW, sweepY);
+            sweepGrad.addColorStop(0, 'rgba(6, 182, 212, 0)');
+            sweepGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.85)');
+            sweepGrad.addColorStop(1, 'rgba(6, 182, 212, 0)');
+            ctx.strokeStyle = sweepGrad;
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(boxX + 2, sweepY); ctx.lineTo(boxX + boxW - 2, sweepY);
+            ctx.stroke();
+
+            // 68-Point Landmark Mesh
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.22)';
+            ctx.lineWidth = 0.8;
+            ctx.beginPath();
+            for (let i = 0; i < baseLandmarks.length - 1; i++) {
+              if (i === 14 || i === 19 || i === 24 || i === 33 || i === 39 || i === 45 || i === 57) continue;
+              const p1 = baseLandmarks[i];
+              const p2 = baseLandmarks[i + 1];
+              ctx.moveTo(faceCenterX + p1[0], faceCenterY + p1[1]);
+              ctx.lineTo(faceCenterX + p2[0], faceCenterY + p2[1]);
+            }
+            ctx.stroke();
+
+            // Landmark Dots
             ctx.fillStyle = '#06B6D4';
-            ctx.beginPath(); ctx.arc(222, 105, 3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(258, 105, 3, 0, Math.PI * 2); ctx.fill();
-            ctx.beginPath(); ctx.arc(240, 120, 2.5, 0, Math.PI * 2); ctx.fill();
+            baseLandmarks.forEach((pt) => {
+              const px = faceCenterX + pt[0];
+              const py = faceCenterY + pt[1];
+              ctx.fillRect(px - 1, py - 1, 2, 2);
+            });
+
+            // Pupils with Gaze Reticle
+            ctx.fillStyle = '#10B981';
+            ctx.beginPath();
+            ctx.arc(faceCenterX - 14, faceCenterY - 14, 2.5, 0, Math.PI * 2);
+            ctx.arc(faceCenterX + 14, faceCenterY - 14, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // MiniFASNet Real-time Pulse (rPPG Waveform update)
+            const pulse = Math.sin(frameCount * 0.22) * 8 * (Math.random() * 0.15 + 0.85);
+            rppgHistory.shift();
+            rppgHistory.push(pulse);
+
+            // Draw rPPG Live Waveform Box (Lower Right)
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.75)';
+            ctx.fillRect(295, 180, 125, 48);
+            ctx.strokeStyle = '#1E293B';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(295, 180, 125, 48);
+
+            ctx.fillStyle = '#94A3B8';
+            ctx.font = '8px JetBrains Mono';
+            ctx.fillText('rPPG POULS TISSULAIRE', 300, 191);
+            ctx.fillStyle = '#10B981';
+            ctx.fillText('72 BPM [RÉEL]', 370, 191);
+
+            ctx.strokeStyle = '#10B981';
+            ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            rppgHistory.forEach((val, i) => {
+              const hx = 298 + i * 2.9;
+              const hy = 208 + val;
+              if (i === 0) ctx.moveTo(hx, hy);
+              else ctx.lineTo(hx, hy);
+            });
+            ctx.stroke();
+
+            // Telemetry Floating Badges
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.85)';
+            ctx.fillRect(faceCenterX - 65, boxY - 16, 130, 14);
+            ctx.fillStyle = '#06B6D4';
+            ctx.font = 'bold 8px JetBrains Mono';
+            ctx.fillText('ARCFACE 512-D | FAISS MATCH', faceCenterX - 60, boxY - 6);
+
+            // MiniFASNet FFT Frequency Bars (Lower Left)
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.75)';
+            ctx.fillRect(80, 180, 125, 48);
+            ctx.strokeStyle = '#1E293B';
+            ctx.strokeRect(80, 180, 125, 48);
+            ctx.fillStyle = '#94A3B8';
+            ctx.fillText('SPECTRE FOURIER (MOIRÉ)', 85, 191);
+            for (let b = 0; b < 10; b++) {
+              const bh = Math.sin(frameCount * 0.15 + b) * 8 + 10;
+              ctx.fillStyle = b > 7 ? '#3B82F6' : '#10B981';
+              ctx.fillRect(85 + b * 11, 222 - bh, 8, bh);
+            }
+
           } else {
-            // Spoof tablet in window
-            ctx.fillStyle = '#0F172A';
-            ctx.strokeStyle = '#EF4444';
+            // === FRAUD SPOOF ATTACK (TABLET / PHOTO REPLAY ATTACK) ===
+            const devX = 160, devY = 48, devW = 160, devH = 175;
+
+            // Device Outer Body with Warning Red Strobe
+            const glowAlpha = (Math.sin(frameCount * 0.25) + 1) / 2;
+            ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 + glowAlpha * 0.6})`;
             ctx.lineWidth = 3;
-            ctx.fillRect(170, 50, 140, 160);
-            ctx.strokeRect(170, 50, 140, 160);
-            ctx.fillStyle = '#EF4444';
+            ctx.strokeRect(devX - 4, devY - 4, devW + 8, devH + 8);
+
+            ctx.fillStyle = '#0F172A';
+            ctx.beginPath();
+            ctx.roundRect(devX, devY, devW, devH, 8);
+            ctx.fill();
+            ctx.strokeStyle = '#EF4444';
+            ctx.lineWidth = 2;
+            ctx.stroke();
+
+            // Tablet Screen Glass with High Specular Glare & Moiré Lines
+            const screenGrad = ctx.createLinearGradient(devX, devY, devX + devW, devY + devH);
+            screenGrad.addColorStop(0, '#1E293B');
+            screenGrad.addColorStop(0.4, '#334155');
+            screenGrad.addColorStop(0.45, '#E2E8F0');
+            screenGrad.addColorStop(0.52, '#1E293B');
+            screenGrad.addColorStop(1, '#0F172A');
+            ctx.fillStyle = screenGrad;
+            ctx.fillRect(devX + 6, devY + 6, devW - 12, devH - 12);
+
+            // Fake 2D Printed Face on Tablet
+            ctx.fillStyle = '#475569';
+            ctx.beginPath();
+            ctx.arc(devX + devW / 2, devY + 70, 38, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Digital Screen Pixel Grid
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+            ctx.lineWidth = 1;
+            for (let y = devY + 10; y < devY + devH - 10; y += 5) {
+              ctx.beginPath();
+              ctx.moveTo(devX + 8, y);
+              ctx.lineTo(devX + devW - 8, y);
+              ctx.stroke();
+            }
+
+            // Target Bounding Box locked with REJECT WARNING
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
+            ctx.fillRect(devX + 6, devY + devH - 32, devW - 12, 24);
+            ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 9px JetBrains Mono';
-            ctx.fillText('ALERTE FRAUDE PHOTO', 178, 42);
+            ctx.textAlign = 'center';
+            ctx.fillText('REJET : VIVACITÉ 14.8%', devX + devW / 2, devY + devH - 17);
+            ctx.textAlign = 'left';
+
+            // Flatline rPPG
+            ctx.fillStyle = 'rgba(20, 10, 15, 0.85)';
+            ctx.fillRect(295, 180, 125, 48);
+            ctx.strokeStyle = '#EF4444';
+            ctx.strokeRect(295, 180, 125, 48);
+            ctx.fillStyle = '#EF4444';
+            ctx.font = '8px JetBrains Mono';
+            ctx.fillText('rPPG PULSE : ABSENT', 300, 191);
+            ctx.strokeStyle = '#EF4444';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.moveTo(298, 210); ctx.lineTo(415, 210);
+            ctx.stroke();
+
+            // Moiré Spike Bar Chart
+            ctx.fillStyle = 'rgba(20, 10, 15, 0.85)';
+            ctx.fillRect(80, 180, 125, 48);
+            ctx.strokeStyle = '#EF4444';
+            ctx.strokeRect(80, 180, 125, 48);
+            ctx.fillStyle = '#EF4444';
+            ctx.fillText('ANOMALIE MOIRÉ 84.7%', 85, 191);
+            for (let b = 0; b < 10; b++) {
+              const bh = b > 5 ? 24 : 6;
+              ctx.fillStyle = '#EF4444';
+              ctx.fillRect(85 + b * 11, 222 - bh, 8, bh);
+            }
           }
         }
 
+        // 3. PIP Viewport (Top Right): Synchronized 850nm NIR Anti-Spoof Channel
+        const pipX = 350, pipY = 24, pipW = 105, pipH = 68;
+        ctx.fillStyle = '#030712';
+        ctx.fillRect(pipX, pipY, pipW, pipH);
+        ctx.strokeStyle = spoofMode && active ? '#EF4444' : '#06B6D4';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(pipX, pipY, pipW, pipH);
+
+        ctx.fillStyle = spoofMode && active ? '#EF4444' : '#06B6D4';
+        ctx.font = 'bold 7px JetBrains Mono';
+        ctx.fillText('NIR 850nm SPECTRUM', pipX + 4, pipY + 9);
+
+        if (active) {
+          if (!spoofMode) {
+            ctx.fillStyle = '#64748B';
+            ctx.beginPath();
+            ctx.arc(pipX + pipW / 2, pipY + 38, 18, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#10B981';
+            ctx.font = '7px JetBrains Mono';
+            ctx.fillText('DIFFUSION: OK', pipX + 4, pipY + pipH - 4);
+          } else {
+            ctx.fillStyle = '#F8FAFC';
+            ctx.fillRect(pipX + 22, pipY + 16, 60, 42);
+            ctx.fillStyle = '#EF4444';
+            ctx.font = 'bold 7px JetBrains Mono';
+            ctx.fillText('ÉCRAN VERRE DÉTECTÉ', pipX + 4, pipY + pipH - 4);
+          }
+        } else {
+          ctx.fillStyle = '#475569';
+          ctx.font = '7px JetBrains Mono';
+          ctx.fillText('EN ATTENTE CONDUCTEUR', pipX + 4, pipY + 38);
+        }
+
+        // 4. Global HUD Footer Status
         ctx.fillStyle = '#94A3B8';
-        ctx.font = '10px JetBrains Mono';
+        ctx.font = '9px JetBrains Mono';
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`CAM-02 [BORNE DUAL-LENS] | ${now} | 25 FPS`, 10, cvs.height - 10);
+        ctx.fillText(`CAM-02 [BORNE DUAL-LENS RGB+NIR] | ${now} | 25.0 FPS`, 10, cvs.height - 8);
+
         requestAnimationFrame(render);
       }
       render();
@@ -1413,33 +1431,189 @@
       const cvs = document.getElementById('cam3-canvas');
       const ctx = cvs.getContext('2d');
       cvs.width = 480; cvs.height = 270;
-      let armAngle = 0, targetAngle = 0, carX = 140, carRolling = false;
+
+      let armAngle = 0;
+      let targetAngle = 0;
+      let carX = -120;
+      let carRolling = false;
+      let frameCount = 0;
 
       function render() {
+        frameCount++;
         ctx.fillStyle = '#060A14';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Exit Roadway
-        ctx.fillStyle = '#0F172A';
-        ctx.fillRect(40, 80, 400, 130);
+        // 1. Perspective Exit Roadway
+        const roadGrad = ctx.createLinearGradient(0, 80, 0, 240);
+        roadGrad.addColorStop(0, '#0F172A');
+        roadGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = roadGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 110); ctx.lineTo(cvs.width, 110);
+        ctx.lineTo(cvs.width, 245); ctx.lineTo(0, 245);
+        ctx.closePath(); ctx.fill();
 
-        // Pillar
-        ctx.fillStyle = '#F59E0B';
-        ctx.fillRect(380, 70, 24, 110);
+        // Asphalt White Dashed Lane Centerline
+        ctx.strokeStyle = '#475569';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([16, 14]);
+        ctx.beginPath();
+        ctx.moveTo(0, 175); ctx.lineTo(cvs.width, 175);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
-        armAngle += (targetAngle - armAngle) * 0.1;
-        ctx.save();
-        ctx.translate(392, 100);
-        ctx.rotate((armAngle * Math.PI) / 180);
+        // Roadway Curb with Alternating Yellow/Black Safety Striping
+        for (let x = 0; x < cvs.width; x += 30) {
+          ctx.fillStyle = (Math.floor(x / 30) % 2 === 0) ? '#EAB308' : '#0F172A';
+          ctx.fillRect(x, 238, 30, 8);
+          ctx.fillRect(x, 102, 30, 8);
+        }
+
+        // 2. Embedded Inductive Loops in Asphalt
+        const isLoopAOccupied = carRolling && carX >= 110 && carX <= 260;
+        ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : '#334155';
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(140, 130, 85, 90);
+        ctx.fillStyle = isLoopAOccupied ? 'rgba(6, 182, 212, 0.18)' : 'rgba(30, 41, 59, 0.3)';
+        ctx.fillRect(140, 130, 85, 90);
+        ctx.fillStyle = isLoopAOccupied ? '#06B6D4' : '#64748B';
+        ctx.font = '8px JetBrains Mono';
+        ctx.fillText('BOUCLE A', 145, 142);
+
+        const isLoopBOccupied = carRolling && carX >= 265 && carX <= 420;
+        ctx.strokeStyle = isLoopBOccupied ? '#10B981' : '#334155';
+        ctx.lineWidth = 1.8;
+        ctx.strokeRect(285, 130, 85, 90);
+        ctx.fillStyle = isLoopBOccupied ? 'rgba(16, 185, 129, 0.18)' : 'rgba(30, 41, 59, 0.3)';
+        ctx.fillRect(285, 130, 85, 90);
+        ctx.fillStyle = isLoopBOccupied ? '#10B981' : '#64748B';
+        ctx.fillText('BOUCLE B', 290, 142);
+
+        // 3. Optical Safety Photocell Beam
+        const isBeamBroken = carRolling && carX >= 180 && carX <= 320;
         ctx.fillStyle = '#EAB308';
-        ctx.fillRect(-250, -5, 250, 10);
-        ctx.restore();
+        ctx.fillRect(250, 102, 6, 14);
+        ctx.fillRect(250, 232, 6, 14);
+        ctx.strokeStyle = isBeamBroken ? '#EF4444' : '#06B6D4';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(253, 116); ctx.lineTo(253, 232);
+        ctx.stroke();
+        ctx.setLineDash([]);
 
+        // 4. Overhead Structural Steel Toll Gantry
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(15, 20, 16, 100);
+        ctx.fillRect(450, 20, 16, 100);
+        ctx.fillStyle = '#0F172A';
+        ctx.fillRect(15, 20, 450, 22);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(15, 20, 450, 22);
+
+        // VMS LED Matrix Panel
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(110, 24, 260, 26);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(110, 24, 260, 26);
+
+        ctx.font = 'bold 9px JetBrains Mono';
+        if (targetAngle < -40) {
+          ctx.fillStyle = '#10B981';
+          ctx.fillText('VOIE 02 : SORTIE ACCORDÉE | BONNE ROUTE', 125, 41);
+        } else {
+          ctx.fillStyle = '#F59E0B';
+          ctx.fillText('VOIE 02 : PÉAGE AUTOMATIQUE | 100 DZD', 130, 41);
+        }
+
+        // Gantry-mounted ALPR Camera with pulsing IR ring
+        ctx.fillStyle = '#0284C7';
+        ctx.fillRect(75, 42, 22, 14);
+        ctx.fillStyle = '#E2E8F0';
+        ctx.beginPath(); ctx.arc(75, 49, 4, 0, Math.PI * 2); ctx.fill();
+        if (carRolling && carX < 240) {
+          ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
+          ctx.beginPath(); ctx.arc(75, 49, 10, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // 5. Vehicle Moving Through Exit Lane
         if (carRolling) {
-          ctx.fillStyle = '#334155';
-          ctx.fillRect(carX, 120, 100, 50);
-          carX += 3;
-          if (carX > cvs.width) {
+          carX += 3.2;
+
+          const vy = 142;
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+          ctx.beginPath();
+          ctx.ellipse(carX + 55, vy + 46, 60, 12, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Vehicle Body
+          const carGrad = ctx.createLinearGradient(carX, vy, carX, vy + 40);
+          carGrad.addColorStop(0, '#334155');
+          carGrad.addColorStop(0.5, '#1E293B');
+          carGrad.addColorStop(1, '#0F172A');
+          ctx.fillStyle = carGrad;
+          ctx.beginPath();
+          ctx.roundRect(carX, vy + 14, 110, 30, 5);
+          ctx.fill();
+
+          // Cabin & Windows
+          ctx.fillStyle = '#0284C7';
+          ctx.beginPath();
+          ctx.moveTo(carX + 22, vy + 14);
+          ctx.lineTo(carX + 42, vy);
+          ctx.lineTo(carX + 85, vy);
+          ctx.lineTo(carX + 98, vy + 14);
+          ctx.closePath();
+          ctx.fill();
+
+          // Wheels & Rims
+          [carX + 26, carX + 86].forEach(wx => {
+            ctx.fillStyle = '#020617';
+            ctx.beginPath(); ctx.arc(wx, vy + 42, 11, 0, Math.PI * 2); ctx.fill();
+            ctx.fillStyle = '#94A3B8';
+            ctx.beginPath(); ctx.arc(wx, vy + 42, 5, 0, Math.PI * 2); ctx.fill();
+          });
+
+          // Headlights
+          ctx.fillStyle = '#FEF08A';
+          ctx.fillRect(carX + 107, vy + 20, 3, 8);
+          const beamGrad = ctx.createLinearGradient(carX + 110, vy + 24, carX + 180, vy + 24);
+          beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+          beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+          ctx.fillStyle = beamGrad;
+          ctx.beginPath();
+          ctx.moveTo(carX + 110, vy + 18);
+          ctx.lineTo(carX + 180, vy + 8);
+          ctx.lineTo(carX + 180, vy + 44);
+          ctx.lineTo(carX + 110, vy + 32);
+          ctx.closePath();
+          ctx.fill();
+
+          // Taillights
+          ctx.fillStyle = '#EF4444';
+          ctx.fillRect(carX, vy + 20, 3, 8);
+
+          // Rear Algerian License Plate
+          ctx.fillStyle = '#FDE047';
+          ctx.fillRect(carX + 2, vy + 30, 26, 8);
+          ctx.fillStyle = '#000000';
+          ctx.font = 'bold 5px JetBrains Mono';
+          ctx.fillText('08192 120 09', carX + 3, vy + 36);
+
+          // ALPR Targeting Reticle
+          if (carX < 230) {
+            ctx.strokeStyle = '#10B981';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(carX - 4, vy + 25, 38, 18);
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.9)';
+            ctx.fillRect(carX - 10, vy + 3, 90, 14);
+            ctx.fillStyle = '#10B981';
+            ctx.font = 'bold 7px JetBrains Mono';
+            ctx.fillText('SATIM CIB PAYÉ [09]', carX - 6, vy + 13);
+          }
+
+          if (carX > cvs.width + 50) {
             carRolling = false;
             targetAngle = 0;
             document.getElementById('cam3-arm-text').innerText = 'BAISSÉE';
@@ -1447,17 +1621,82 @@
           }
         }
 
+        // 6. Automatic Industrial Barrier Pillar & Articulated Boom Arm
+        const pillarX = 265, pillarY = 85, pillarW = 26, pillarH = 145;
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(pillarX, pillarY, pillarW, pillarH);
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(pillarX + 2, pillarY + 12, pillarW - 4, 18);
+
+        const beaconActive = targetAngle < -40;
+        ctx.fillStyle = beaconActive ? '#10B981' : '#EF4444';
+        ctx.beginPath();
+        ctx.arc(pillarX + pillarW / 2, pillarY - 2, 7, Math.PI, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = beaconActive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.25)';
+        ctx.beginPath();
+        ctx.arc(pillarX + pillarW / 2, pillarY - 2, 14, 0, Math.PI * 2);
+        ctx.fill();
+
+        armAngle += (targetAngle - armAngle) * 0.08;
+
+        ctx.save();
+        ctx.translate(pillarX + 10, pillarY + 28);
+        ctx.rotate((armAngle * Math.PI) / 180);
+
+        const boomLength = 195;
+        const boomHeight = 11;
+
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(-boomLength, -boomHeight / 2, boomLength, boomHeight);
+
+        // Retro-reflective Red Hazard Stripes
+        ctx.fillStyle = '#EF4444';
+        for (let s = 10; s < boomLength - 10; s += 24) {
+          ctx.beginPath();
+          ctx.moveTo(-s, -boomHeight / 2);
+          ctx.lineTo(-s - 10, boomHeight / 2);
+          ctx.lineTo(-s - 20, boomHeight / 2);
+          ctx.lineTo(-s - 10, -boomHeight / 2);
+          ctx.closePath();
+          ctx.fill();
+        }
+
+        // Active Embedded LED Neon Strip
+        const ledColor = beaconActive ? '#10B981' : (Math.abs(armAngle - targetAngle) > 5 ? '#F59E0B' : '#EF4444');
+        ctx.strokeStyle = ledColor;
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(-boomLength + 6, 0);
+        ctx.lineTo(-4, 0);
+        ctx.stroke();
+
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = '#CBD5E1';
+        ctx.beginPath();
+        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.restore();
+
+        // 7. HUD Footer Telemetry
         ctx.fillStyle = '#94A3B8';
-        ctx.font = '10px JetBrains Mono';
+        ctx.font = '9px JetBrains Mono';
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`CAM-03 [SORTIE ALPR] | ${now} | 25 FPS`, 10, cvs.height - 10);
+        ctx.fillText(`CAM-03 [SORTIE VOIE 2 ALPR & PORTIQUE] | ${now} | 25.0 FPS`, 10, cvs.height - 8);
+
         requestAnimationFrame(render);
       }
       render();
 
       return {
         openBarrier: () => {
-          targetAngle = -75; carRolling = true; carX = 80;
+          targetAngle = -80;
+          carRolling = true;
+          carX = -80;
           document.getElementById('cam3-arm-text').innerText = 'LEVÉE (OUVERT)';
           document.getElementById('cam3-arm-text').className = 'text-emeraldAccent font-semibold';
         }
