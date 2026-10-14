@@ -40,3 +40,12 @@ def vercel_root():
 def vercel_api_root():
     return {"status": "ONLINE", "service": "SmartPark Vision AI API"}
 
+@app.get("/api/index")
+def vercel_index_debug(request: Request):
+    return {
+        "status": "ONLINE",
+        "scope_path": request.scope.get("path"),
+        "url_path": str(request.url),
+        "headers": dict(request.headers),
+    }
+
