@@ -11,7 +11,11 @@ import threading
 import time
 from typing import Callable, Dict, Optional, Tuple, Any
 import numpy as np
-import cv2
+
+try:
+    import cv2
+except ImportError:
+    cv2 = None
 
 logger = logging.getLogger("smartpark.camera.rtsp")
 
@@ -150,6 +154,15 @@ class RtspStreamWorker:
         Detects vehicle entrance into the designated lane ROI without physical ground loops.
         """
         roi = self.get_roi_crop(frame)
+        if cv2 is None:
+            gray = np.mean(roi, axis=2).astype(np.float32)
+            if self._previous_roi_gray is None:
+                self._previous_roi_gray = gray
+                return False
+            delta = np.abs(self._previous_roi_gray - gray)
+            self._previous_roi_gray = gray
+            return bool(float(np.mean(delta)) > 15.0)
+
         gray = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
         gray = cv2.GaussianBlur(gray, (21, 21), 0)
 
@@ -172,7 +185,7 @@ class RtspStreamWorker:
     def capture_snapshot(self, output_path: str) -> bool:
         """Save the latest high-resolution frame to disk for evidentiary logging."""
         frame, _, status = self.get_latest_frame()
-        if frame is None or status != CameraStreamStatus.STREAMING:
+        if frame is None or status != CameraStreamStatus.STREAMING or cv2 is None:
             return False
         try:
             return cv2.imwrite(output_path, frame)
@@ -232,6 +245,12 @@ class RtspStreamWorker:
         """Real RTSP stream capture using OpenCV VideoCapture with TCP transport."""
         with self._lock:
             self._status = CameraStreamStatus.CONNECTING
+
+        if cv2 is None:
+            with self._lock:
+                self._status = CameraStreamStatus.ERROR
+                self._last_error = "OpenCV (cv2) is not installed in this environment."
+            return
 
         # Set transport options in RTSP pipeline
         pipeline_url = self.rtsp_url
