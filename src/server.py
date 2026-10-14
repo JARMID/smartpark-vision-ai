@@ -874,6 +874,14 @@ def serve_three_digital_twin():
     raise HTTPException(status_code=404)
 
 
+@app.get("/cctv_engine.js")
+def serve_cctv_engine():
+    f = os.path.join(STATIC_DIR, "cctv_engine.js")
+    if os.path.exists(f):
+        return FileResponse(f, media_type="application/javascript")
+    raise HTTPException(status_code=404)
+
+
 @app.get("/favicon.ico")
 def serve_favicon():
     from fastapi.responses import Response
