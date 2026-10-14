@@ -8,50 +8,18 @@ if root_dir not in sys.path:
 from fastapi import Request
 from src.server import app
 
-# Register route aliases so both /api/xxx and /xxx resolve seamlessly
-for route in list(app.routes):
-    if hasattr(route, "path") and route.path.startswith("/api/"):
-        stripped = route.path[4:]  # e.g., '/status', '/cameras', '/simulate'
-        if not any(getattr(r, "path", None) == stripped for r in app.routes):
-            app.add_api_route(
-                stripped,
-                route.endpoint,
-                methods=route.methods,
-                response_model=getattr(route, "response_model", None),
-            )
-
 @app.middleware("http")
 async def vercel_path_rewrite_middleware(request: Request, call_next):
-    matched_path = request.headers.get("x-matched-path")
-    if matched_path and request.scope["path"] in ("/api/index.py", "/api/index", "/api"):
-        request.scope["path"] = matched_path
-    elif request.scope["path"].startswith("/api/index/"):
-        request.scope["path"] = request.scope["path"].replace("/api/index", "/api", 1)
-    elif request.scope["path"].startswith("/api/index.py/"):
-        request.scope["path"] = request.scope["path"].replace("/api/index.py", "/api", 1)
+    orig = request.query_params.get("__orig_path")
+    if orig:
+        clean = orig if orig.startswith("/") else f"/{orig}"
+        target = f"/api{clean}" if not clean.startswith("/api") else clean
+        request.scope["path"] = target
+    elif request.scope.get("path") in ("/api/index.py", "/api/index"):
+        request.scope["path"] = "/api"
     
     return await call_next(request)
 
-@app.get("/")
-def vercel_root():
-    return {"status": "ONLINE", "service": "SmartPark Vision AI Serverless"}
-
-from fastapi.responses import JSONResponse
-from starlette.exceptions import HTTPException as StarletteHTTPException
-
-@app.exception_handler(StarletteHTTPException)
-async def custom_starlette_404(request: Request, exc: StarletteHTTPException):
-    return JSONResponse(
-        status_code=exc.status_code,
-        content={
-            "error": "Custom Starlette HTTPException",
-            "status_code": exc.status_code,
-            "detail": exc.detail,
-            "scope_path": request.scope.get("path"),
-            "url_path": request.url.path,
-            "raw_path": request.scope.get("raw_path", b"").decode(),
-            "matched_path": request.headers.get("x-matched-path"),
-            "headers": dict(request.headers),
-        }
-    )
-
+@app.get("/api")
+def vercel_api_root():
+    return {"status": "ONLINE", "service": "SmartPark Vision AI Sovereign Server"}
