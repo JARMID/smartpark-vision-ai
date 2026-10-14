@@ -84,6 +84,67 @@ class TestServerAPI(unittest.TestCase):
         self.assertIn("dpia_summary", data)
         self.assertIn("processing_register", data)
 
+    def test_chargily_checkout_and_pay(self):
+        # 1. Create checkout
+        checkout_res = self.client.post("/api/chargily/create-checkout", json={
+            "plate": "08192 120 09",
+            "amount_dzd": 200.0,
+            "card_type": "EDAHABIA"
+        })
+        self.assertEqual(checkout_res.status_code, 200)
+        cdata = checkout_res.json()
+        self.assertIn("checkout_id", cdata)
+        self.assertEqual(cdata["amount_dzd"], 200.0)
+
+        # 2. Pay checkout with valid 6-digit OTP
+        pay_res = self.client.post("/api/chargily/pay", json={
+            "checkout_id": cdata["checkout_id"],
+            "otp_code": "481902"
+        })
+        self.assertEqual(pay_res.status_code, 200)
+        pdata = pay_res.json()
+        self.assertTrue(pdata["success"])
+        self.assertEqual(pdata["status"], "PAID")
+        self.assertTrue(pdata["barrier_opened"])
+
+    def test_guard_manual_decision_grant_and_deny(self):
+        grant_res = self.client.post("/api/guard/decision", json={
+            "plate": "04122 118 16",
+            "decision": "grant",
+            "reason": "Épouse du titulaire vérifiée"
+        })
+        self.assertEqual(grant_res.status_code, 200)
+        self.assertTrue(grant_res.json()["barrier_opened"])
+
+        deny_res = self.client.post("/api/guard/decision", json={
+            "plate": "04122 118 16",
+            "decision": "deny",
+            "reason": "Conducteur non autorisé"
+        })
+        self.assertEqual(deny_res.status_code, 200)
+        self.assertFalse(deny_res.json()["barrier_opened"])
+
+    def test_slot_toggle(self):
+        res = self.client.post("/api/slots/toggle", json={
+            "slot_number": "A03"
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data["success"])
+        self.assertIn("occupancy", data)
+
+    def test_ticket_generation(self):
+        res = self.client.post("/api/tickets/generate", json={
+            "plate": "08412 00 16",
+            "zone": "Zone B"
+        })
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("ticket_id", data)
+        self.assertIn("qr_data", data)
+        self.assertIn("barcode", data)
+        self.assertEqual(data["plate"], "08412 00 16")
+
 
 if __name__ == "__main__":
     unittest.main()

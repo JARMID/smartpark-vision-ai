@@ -154,6 +154,34 @@ class BarrierOverrideRequest(BaseModel):
     duration_ms: int = 500
 
 
+class ChargilyCheckoutRequest(BaseModel):
+    plate: str = "08192 120 09"
+    amount_dzd: float = 200.0
+    card_type: str = "EDAHABIA"
+
+
+class ChargilyPayRequest(BaseModel):
+    checkout_id: str
+    otp_code: str = "481902"
+
+
+class GuardDecisionRequest(BaseModel):
+    plate: str
+    decision: str  # 'grant' or 'deny'
+    reason: Optional[str] = "Validation manuelle de l'agent de garde"
+
+
+class SlotToggleRequest(BaseModel):
+    slot_number: str
+    new_status: Optional[str] = None
+    plate: Optional[str] = None
+
+
+class TicketGenerateRequest(BaseModel):
+    plate: str = "08412 00 16"
+    zone: str = "Zone B"
+
+
 # REST Endpoints
 @app.get("/api/status")
 def get_system_status():
@@ -406,6 +434,153 @@ def get_anpdp_compliance():
             "statutory_deadline_hours": 120,  # 5 calendar days under Law 25-11
             "last_audit_scan": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         },
+    }
+
+
+@app.post("/api/chargily/create-checkout")
+async def create_chargily_checkout(req: ChargilyCheckoutRequest):
+    checkout_id = f"ch_inv_{int(time.time())}"
+    return {
+        "checkout_id": checkout_id,
+        "amount_dzd": req.amount_dzd,
+        "card_type": req.card_type,
+        "plate": req.plate,
+        "status": "pending",
+        "qr_payment_url": f"https://pay.chargily.net/test/checkout/{checkout_id}",
+        "expires_in_minutes": 15,
+        "tariff_breakdown": {
+            "base_fee": 100.0,
+            "duration_hours": 2,
+            "total_dzd": req.amount_dzd,
+        },
+    }
+
+
+@app.post("/api/chargily/pay")
+async def process_chargily_payment(req: ChargilyPayRequest):
+    now_str = datetime.now().strftime("%H:%M:%S")
+    # Verify mock OTP (accepts 481902 or any 6-digit string)
+    if len(req.otp_code) != 6:
+        raise HTTPException(status_code=400, detail="Code OTP invalide (6 chiffres requis)")
+
+    # Open exit barrier
+    res = orchestrator.barrier_controller.trigger_barrier_open(
+        channel=2, duration_ms=500, force_override=True
+    )
+
+    event = {
+        "id": len(RECENT_EVENTS) + 1,
+        "timestamp": now_str,
+        "camera_id": "CAM-03 (Sortie)",
+        "plate": "08192 120 09",
+        "wilaya": "Blida (09)",
+        "driver": "Visiteur Réglé (Chargily Pay)",
+        "result": "cleared_exit",
+        "barrier_opened": True,
+        "amount_paid_dzd": 200.0,
+        "grace_period_remaining": "14 min",
+        "message": "Paiement en ligne validé. Barrière sortie levée.",
+    }
+    RECENT_EVENTS.insert(0, event)
+    await ws_manager.broadcast({"type": "EXIT_CLEARED", "data": event})
+
+    return {
+        "success": True,
+        "checkout_id": req.checkout_id,
+        "status": "PAID",
+        "barrier_opened": True,
+        "receipt_number": f"REC-DZ-{int(time.time()) % 100000}",
+        "grace_window_minutes": 15,
+        "paid_at": now_str,
+    }
+
+
+@app.post("/api/guard/decision")
+async def guard_manual_decision(req: GuardDecisionRequest):
+    now_str = datetime.now().strftime("%H:%M:%S")
+    if req.decision == "grant":
+        res = orchestrator.barrier_controller.trigger_barrier_open(
+            channel=1, duration_ms=500, force_override=True
+        )
+        event = {
+            "id": len(RECENT_EVENTS) + 1,
+            "timestamp": now_str,
+            "camera_id": "CAM-01 (Borne)",
+            "plate": req.plate,
+            "wilaya": "Alger (16)",
+            "driver": "Validation Exceptionnelle (Garde)",
+            "result": "cleared_vip",
+            "barrier_opened": True,
+            "distance": 0.62,
+            "liveness": 0.97,
+            "message": f"Accès accordé manuellement : {req.reason}",
+        }
+        RECENT_EVENTS.insert(0, event)
+        await ws_manager.broadcast({"type": "GATE_EVENT", "data": event})
+        return {"success": True, "action": "granted", "barrier_opened": True}
+    else:
+        event = {
+            "id": len(RECENT_EVENTS) + 1,
+            "timestamp": now_str,
+            "camera_id": "CAM-01 (Borne)",
+            "plate": req.plate,
+            "wilaya": "Alger (16)",
+            "driver": "Refus d'Accès (Garde)",
+            "result": "denied_blacklist",
+            "barrier_opened": False,
+            "message": f"Accès refusé par le garde : {req.reason}",
+        }
+        RECENT_EVENTS.insert(0, event)
+        await ws_manager.broadcast({"type": "SECURITY_ALERT", "data": event})
+        return {"success": True, "action": "denied", "barrier_opened": False}
+
+
+@app.post("/api/slots/toggle")
+async def toggle_slot(req: SlotToggleRequest):
+    slot = next((s for s in PARKING_SLOTS if s["slot_number"] == req.slot_number), None)
+    if not slot:
+        raise HTTPException(status_code=404, detail="Stalle non trouvée")
+
+    if req.new_status:
+        slot["status"] = req.new_status
+        slot["plate"] = req.plate if req.new_status == "occupied" else None
+    else:
+        # Toggle cycle: vacant -> occupied -> reserved -> vacant
+        cycle = {"vacant": "occupied", "occupied": "reserved", "reserved": "vacant"}
+        slot["status"] = cycle.get(slot["status"], "vacant")
+        if slot["status"] == "occupied":
+            slot["plate"] = req.plate or "104822 119 16"
+        else:
+            slot["plate"] = None
+
+    occupied = sum(1 for s in PARKING_SLOTS if s["status"] == "occupied")
+    total = len(PARKING_SLOTS)
+    update_data = {
+        "type": "SLOTS_UPDATED",
+        "slots": PARKING_SLOTS,
+        "occupancy": {
+            "occupied": occupied,
+            "total": total,
+            "percentage": round((occupied / total) * 100, 1),
+        },
+    }
+    await ws_manager.broadcast(update_data)
+    return {"success": True, "slot": slot, "occupancy": update_data["occupancy"]}
+
+
+@app.post("/api/tickets/generate")
+async def generate_ticket(req: TicketGenerateRequest):
+    now = datetime.now()
+    ticket_id = f"TK-{now.strftime('%Y%m%d')}-{int(time.time()) % 10000:04d}"
+    return {
+        "ticket_id": ticket_id,
+        "plate": req.plate,
+        "entry_timestamp": now.strftime("%Y-%m-%d %H:%M:%S"),
+        "zone": req.zone,
+        "tariff_rate_dzd_per_hour": 100.0,
+        "qr_data": f"SMARTPARK-DZ|{ticket_id}|{req.plate}|{int(time.time())}",
+        "barcode": f"DZ{int(time.time()) % 10000000000:010d}",
+        "anpdp_notice": "Données conservées 30 jours au titre de la sécurité du site (Loi 18-07).",
     }
 
 
