@@ -1033,74 +1033,418 @@
     // =======================================================
     // CAMERAS & VIDEO CANVAS
     // =======================================================
+    // =======================================================
+    // SHARED HIGH-DEFINITION CCTV SECURITY OVERLAY
+    // =======================================================
+    function drawCCTVEffects(ctx, w, h, camCode, camTitle, fps = 25.0, nowStr = '', isRec = true) {
+      // 1. Horizontal CRT / CCTV Micro-Scanlines
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+      for (let y = 0; y < h; y += 3) {
+        ctx.fillRect(0, y, w, 1);
+      }
+
+      // 2. Optical Security Lens Barrel Vignette
+      const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.42, w / 2, h / 2, w * 0.72);
+      vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+      vig.addColorStop(1, 'rgba(2, 6, 18, 0.65)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, w, h);
+
+      // 3. Dynamic Low-Light Sensor Grain / Noise
+      ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+      const seed = (Date.now() % 1000) * 0.01;
+      for (let i = 0; i < 90; i++) {
+        const rx = Math.abs((Math.sin(seed + i * 1.7) * 43758.5453) % w);
+        const ry = Math.abs((Math.cos(seed + i * 2.3) * 43758.5453) % h);
+        ctx.fillRect(rx, ry, 1, 1);
+      }
+
+      // 4. CCTV Top Header Bar
+      ctx.fillStyle = 'rgba(4, 8, 20, 0.88)';
+      ctx.fillRect(0, 0, w, 22);
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.8)';
+      ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(0, 22); ctx.lineTo(w, 22); ctx.stroke();
+
+      // Blinking REC Status Indicator
+      const blink = Math.floor(Date.now() / 600) % 2 === 0;
+      if (isRec && blink) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath(); ctx.arc(12, 11, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#FCA5A5';
+        ctx.font = 'bold 8px JetBrains Mono';
+        ctx.fillText('REC', 20, 14);
+      } else {
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = 'bold 8px JetBrains Mono';
+        ctx.fillText('STBY', 14, 14);
+      }
+
+      ctx.fillStyle = '#F1F5F9';
+      ctx.font = 'bold 9px JetBrains Mono';
+      ctx.fillText(`${camCode} [${camTitle}]`, 48, 14);
+
+      // Real-Time ISO Timecode with Milliseconds
+      ctx.fillStyle = '#38BDF8';
+      ctx.textAlign = 'right';
+      const timeText = nowStr || new Date().toISOString().replace('T', ' ').substring(0, 19);
+      ctx.fillText(`${timeText} UTC+1`, w - 10, 14);
+      ctx.textAlign = 'left';
+
+      // 5. CCTV Bottom Telemetry Footer
+      ctx.fillStyle = 'rgba(4, 8, 20, 0.88)';
+      ctx.fillRect(0, h - 20, w, 20);
+      ctx.strokeStyle = 'rgba(30, 41, 59, 0.8)';
+      ctx.beginPath(); ctx.moveTo(0, h - 20); ctx.lineTo(w, h - 20); ctx.stroke();
+
+      ctx.fillStyle = '#94A3B8';
+      ctx.font = '8px JetBrains Mono';
+      ctx.fillText(`1080p50 H.265 | NVDEC 4.8 Mb/s | EXPO: 1/1000s | LOI 18-07 SUR SITE`, 10, h - 7);
+
+      ctx.textAlign = 'right';
+      ctx.fillStyle = '#10B981';
+      ctx.fillText(`${fps.toFixed(1)} FPS | BUFFER: 12ms | VENDOR: AXIS/HIK-DZ`, w - 10, h - 7);
+      ctx.textAlign = 'left';
+    }
+
+    // =======================================================
+    // CAM 1 : VOIE 1 ENTRÉE PRINCIPALE (ALPR PERSPECTIVE)
+    // =======================================================
     function setupCam1() {
       const cvs = document.getElementById('cam1-canvas');
       const ctx = cvs.getContext('2d');
       cvs.width = 480; cvs.height = 270;
       let carY = 320, active = false, plateText = "104822 119 16", scanY = 0;
+      let frameCount = 0;
 
       function render() {
+        frameCount++;
         ctx.fillStyle = '#060A14';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Perspective Roadway
-        ctx.fillStyle = '#0F172A';
-        ctx.beginPath(); ctx.moveTo(170, 60); ctx.lineTo(310, 60); ctx.lineTo(440, cvs.height); ctx.lineTo(40, cvs.height); ctx.closePath(); ctx.fill();
+        // 1. Night Checkpoint Roadway
+        const roadGrad = ctx.createLinearGradient(0, 40, 0, cvs.height);
+        roadGrad.addColorStop(0, '#0F172A');
+        roadGrad.addColorStop(1, '#020617');
+        ctx.fillStyle = roadGrad;
+        ctx.beginPath();
+        ctx.moveTo(170, 45); ctx.lineTo(310, 45);
+        ctx.lineTo(450, cvs.height - 20); ctx.lineTo(30, cvs.height - 20);
+        ctx.closePath(); ctx.fill();
 
-        // Inductive loop coil marking
+        // White Roadway Shoulder Lines
+        ctx.strokeStyle = 'rgba(241, 245, 249, 0.6)';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath();
+        ctx.moveTo(175, 45); ctx.lineTo(38, cvs.height - 20);
+        ctx.moveTo(305, 45); ctx.lineTo(442, cvs.height - 20);
+        ctx.stroke();
+
+        // Double Solid Yellow Safety Centerline
         ctx.strokeStyle = '#EAB308';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(160, 175, 160, 45);
-        ctx.fillStyle = 'rgba(234, 179, 8, 0.08)';
-        ctx.fillRect(160, 175, 160, 45);
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(238, 45); ctx.lineTo(232, cvs.height - 20);
+        ctx.moveTo(242, 45); ctx.lineTo(248, cvs.height - 20);
+        ctx.stroke();
 
-        if (active) {
-          if (carY > 155) carY -= 2.5;
-          const scale = (carY - 60) / 160;
-          const w = 150 * scale, h = 85 * scale, x = 240 - w / 2;
+        // 2. Concrete Safety Curb (Beveled Yellow & Black Blocks)
+        for (let i = 0; i < 9; i++) {
+          const t1 = i / 9, t2 = (i + 1) / 9;
+          const y1 = 45 + t1 * (cvs.height - 65);
+          const y2 = 45 + t2 * (cvs.height - 65);
+          const x1 = 175 - t1 * 137;
+          const x2 = 175 - t2 * 137;
 
-          ctx.fillStyle = '#1E293B';
-          ctx.beginPath(); ctx.roundRect(x, carY, w, h, 6); ctx.fill();
-          ctx.strokeStyle = '#475569'; ctx.stroke();
-
-          // Windshield
-          ctx.fillStyle = '#0284C7';
-          ctx.beginPath(); ctx.roundRect(x + w * 0.15, carY + h * 0.1, w * 0.7, h * 0.35, 4); ctx.fill();
-
-          // Front Plate
-          const pw = w * 0.45, ph = h * 0.2, px = 240 - pw / 2, py = carY + h * 0.65;
-          ctx.fillStyle = '#FDE047';
-          ctx.fillRect(px, py, pw, ph);
-
-          // Plate text
-          ctx.fillStyle = '#000000';
-          ctx.font = `bold ${Math.max(8, Math.round(9 * scale))}px JetBrains Mono`;
-          ctx.textAlign = 'center';
-          ctx.fillText(plateText, 240, py + ph * 0.72);
-          ctx.textAlign = 'left';
-
-          // ALPR Laser Scan
-          scanY = (scanY + 2) % (ph + 10);
-          ctx.strokeStyle = '#10B981';
-          ctx.lineWidth = 1.5;
-          ctx.beginPath(); ctx.moveTo(px - 4, py + scanY); ctx.lineTo(px + pw + 4, py + scanY); ctx.stroke();
+          ctx.fillStyle = (i % 2 === 0) ? '#F59E0B' : '#0F172A';
+          ctx.beginPath();
+          ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+          ctx.lineTo(x2 - 14, y2 + 4); ctx.lineTo(x1 - 14, y1 + 4);
+          ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.8; ctx.stroke();
         }
 
-        ctx.fillStyle = '#94A3B8';
-        ctx.font = '10px JetBrains Mono';
+        // 3. Security Guard Booth on Left
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(8, 55, 55, 115);
+        ctx.strokeStyle = '#475569';
+        ctx.strokeRect(8, 55, 55, 115);
+
+        // Booth Window with Warm Golden Glow
+        const windowGrad = ctx.createLinearGradient(12, 65, 58, 120);
+        windowGrad.addColorStop(0, 'rgba(251, 191, 36, 0.5)');
+        windowGrad.addColorStop(1, 'rgba(217, 119, 6, 0.2)');
+        ctx.fillStyle = windowGrad;
+        ctx.fillRect(12, 65, 47, 55);
+        ctx.strokeStyle = '#D97706';
+        ctx.strokeRect(12, 65, 47, 55);
+
+        // Security Guard Silhouette Inside Window
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.beginPath();
+        ctx.arc(36, 85, 10, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.ellipse(36, 112, 16, 12, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Overhead Security Floodlight Spot
+        const floodGrad = ctx.createRadialGradient(35, 55, 5, 180, 150, 160);
+        floodGrad.addColorStop(0, 'rgba(254, 240, 138, 0.25)');
+        floodGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+        ctx.fillStyle = floodGrad;
+        ctx.beginPath();
+        ctx.moveTo(35, 55); ctx.lineTo(80, 240); ctx.lineTo(340, 240);
+        ctx.closePath(); ctx.fill();
+
+        // 4. Ground Inductive Presence Loop (Embedded in Asphalt)
+        ctx.strokeStyle = active ? '#10B981' : '#EAB308';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(155, 160, 170, 52);
+        ctx.fillStyle = active ? 'rgba(16, 185, 129, 0.14)' : 'rgba(234, 179, 8, 0.08)';
+        ctx.fillRect(155, 160, 170, 52);
+
+        ctx.fillStyle = active ? '#10B981' : '#FBBF24';
+        ctx.font = 'bold 7px JetBrains Mono';
+        ctx.fillText(active ? '● BOUCLE INDUCTIVE : VÉHICULE EN POSITION' : 'BOUCLE INDUCTIVE EN ATTENTE', 160, 172);
+
+        // 5. Entry Barrier Pedestal & Articulated Boom Arm
+        const bPedX = 100, bPedY = 165;
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(bPedX, bPedY, 18, 48);
+        ctx.strokeStyle = '#B45309';
+        ctx.strokeRect(bPedX, bPedY, 18, 48);
+
+        // Pilot LED on Cabinet
+        ctx.fillStyle = active ? '#10B981' : '#EF4444';
+        ctx.beginPath(); ctx.arc(bPedX + 9, bPedY + 10, 3.5, 0, Math.PI * 2); ctx.fill();
+
+        // Boom Arm Across Lane
+        const armRaised = active && carY <= 170;
+        ctx.save();
+        ctx.translate(bPedX + 9, bPedY + 18);
+        ctx.rotate(armRaised ? -Math.PI / 2.3 : 0);
+
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(0, -5, 175, 10);
+        // Red Reflective Diagonal Stripes
+        ctx.fillStyle = '#EF4444';
+        for (let s = 10; s < 170; s += 24) {
+          ctx.beginPath();
+          ctx.moveTo(s, -5); ctx.lineTo(s + 12, -5);
+          ctx.lineTo(s + 4, 5); ctx.lineTo(s - 8, 5);
+          ctx.closePath(); ctx.fill();
+        }
+        // Active LED Neon Strip
+        ctx.strokeStyle = armRaised ? '#10B981' : '#EF4444';
+        ctx.lineWidth = 2.5;
+        ctx.beginPath(); ctx.moveTo(2, -5); ctx.lineTo(173, -5); ctx.stroke();
+        ctx.restore();
+
+        // 6. Photorealistic Approaching Sedan (When Active)
+        if (active) {
+          if (carY > 150) carY -= 2.0;
+          const scale = 0.88;
+          const w = 180 * scale;
+          const h = 105 * scale;
+          const cx = 240;
+          const x = cx - w / 2;
+          const y = carY;
+
+          // Realistic Chassis Ground Shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+          ctx.beginPath();
+          ctx.ellipse(cx, y + h + 2, w * 0.52, 10 * scale, 0, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Main Sedan Body (Curved Aerodynamic Hood & Bumper)
+          const bodyGrad = ctx.createLinearGradient(cx, y, cx, y + h);
+          bodyGrad.addColorStop(0, '#1E293B');
+          bodyGrad.addColorStop(0.35, '#334155');
+          bodyGrad.addColorStop(0.7, '#1E293B');
+          bodyGrad.addColorStop(1, '#0F172A');
+          ctx.fillStyle = bodyGrad;
+          ctx.beginPath();
+          ctx.roundRect(x, y + h * 0.32, w, h * 0.68, 8 * scale);
+          ctx.fill();
+          ctx.strokeStyle = '#475569';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+
+          // Sculpted Hood Creases & Specular Highlights
+          ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.lineWidth = 1.2 * scale;
+          ctx.beginPath();
+          ctx.moveTo(cx - w * 0.28, y + h * 0.32); ctx.lineTo(cx - w * 0.18, y + h * 0.65);
+          ctx.moveTo(cx + w * 0.28, y + h * 0.32); ctx.lineTo(cx + w * 0.18, y + h * 0.65);
+          ctx.stroke();
+
+          // Curved Aerodynamic Windshield with Interior Depth
+          const wsGrad = ctx.createLinearGradient(cx, y, cx, y + h * 0.35);
+          wsGrad.addColorStop(0, '#0F172A');
+          wsGrad.addColorStop(0.5, '#0284C7');
+          wsGrad.addColorStop(1, '#0C4A6E');
+          ctx.fillStyle = wsGrad;
+          ctx.beginPath();
+          ctx.moveTo(cx - w * 0.36, y + h * 0.32);
+          ctx.lineTo(cx - w * 0.28, y + h * 0.05);
+          ctx.lineTo(cx + w * 0.28, y + h * 0.05);
+          ctx.lineTo(cx + w * 0.36, y + h * 0.32);
+          ctx.closePath();
+          ctx.fill();
+          ctx.strokeStyle = '#1E293B';
+          ctx.stroke();
+
+          // Driver Silhouette Behind Windshield
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+          ctx.beginPath();
+          ctx.arc(cx - w * 0.14, y + h * 0.18, 11 * scale, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.ellipse(cx - w * 0.14, y + h * 0.36, 18 * scale, 10 * scale, 0, 0, Math.PI);
+          ctx.fill();
+
+          // Steering Wheel Rim
+          ctx.strokeStyle = 'rgba(51, 65, 85, 0.9)';
+          ctx.lineWidth = 3 * scale;
+          ctx.beginPath();
+          ctx.arc(cx - w * 0.14, y + h * 0.34, 12 * scale, Math.PI * 0.8, Math.PI * 1.8);
+          ctx.stroke();
+
+          // Rearview Mirror
+          ctx.fillStyle = '#0F172A';
+          ctx.fillRect(cx - 8 * scale, y + h * 0.06, 16 * scale, 5 * scale);
+
+          // Front Honeycomb Radiator Grille
+          const gw = w * 0.52, gh = h * 0.24, gx = cx - gw / 2, gy = y + h * 0.45;
+          ctx.fillStyle = '#090D16';
+          ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, 4 * scale); ctx.fill();
+          ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.2 * scale; ctx.stroke();
+
+          // Chrome Grille Mesh Slats
+          ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
+          ctx.lineWidth = 0.8 * scale;
+          for (let row = 1; row < 4; row++) {
+            const ry = gy + (gh / 4) * row;
+            ctx.beginPath(); ctx.moveTo(gx + 6 * scale, ry); ctx.lineTo(gx + gw - 6 * scale, ry); ctx.stroke();
+          }
+
+          // Central Chrome Logo Emblem
+          ctx.fillStyle = '#E2E8F0';
+          ctx.beginPath(); ctx.arc(cx, gy + gh * 0.42, 4.5 * scale, 0, Math.PI * 2); ctx.fill();
+
+          // Dual Projector LED Headlights & Volumetric Light Cones
+          const hw = w * 0.18, hh = h * 0.15;
+          const leftHX = x + w * 0.05, rightHX = x + w * 0.77, hy = y + h * 0.42;
+
+          [leftHX, rightHX].forEach((hlx, idx) => {
+            // Headlight Housing
+            ctx.fillStyle = '#020617';
+            ctx.beginPath(); ctx.roundRect(hlx, hy, hw, hh, 4 * scale); ctx.fill();
+            ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1 * scale; ctx.stroke();
+
+            // Projector Lens Core
+            ctx.fillStyle = '#FEF08A';
+            ctx.beginPath(); ctx.arc(hlx + hw * 0.5, hy + hh * 0.5, 5 * scale, 0, Math.PI * 2); ctx.fill();
+
+            // Volumetric Forward Light Fan on Asphalt
+            const dirX = idx === 0 ? -w * 0.25 : w * 0.25;
+            const beamGrad = ctx.createRadialGradient(hlx + hw * 0.5, hy + hh, 2, hlx + dirX, hy + 90 * scale, 85 * scale);
+            beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+            beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+            ctx.fillStyle = beamGrad;
+            ctx.beginPath();
+            ctx.moveTo(hlx + hw * 0.2, hy + hh);
+            ctx.lineTo(hlx + dirX - 35 * scale, hy + 95 * scale);
+            ctx.lineTo(hlx + dirX + 45 * scale, hy + 95 * scale);
+            ctx.lineTo(hlx + hw * 0.8, hy + hh);
+            ctx.closePath();
+            ctx.fill();
+          });
+
+          // Radial Tires & Alloy Wheel Rims
+          const tw = w * 0.15, th = h * 0.28;
+          [x + 4 * scale, x + w - tw - 4 * scale].forEach(tx => {
+            ctx.fillStyle = '#0B0F19';
+            ctx.fillRect(tx, y + h * 0.72, tw, th);
+            ctx.fillStyle = '#475569';
+            ctx.fillRect(tx + 2 * scale, y + h * 0.76, tw - 4 * scale, th - 6 * scale);
+          });
+
+          // Authentic Algerian Front License Plate
+          const pw = w * 0.48, ph = h * 0.19, px = cx - pw / 2, py = y + h * 0.74;
+          // Plate Dropshadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+          ctx.fillRect(px - 1, py - 1, pw + 2, ph + 2);
+          // Algerian Yellow Reflective Surface
+          ctx.fillStyle = '#FACC15';
+          ctx.fillRect(px, py, pw, ph);
+          ctx.strokeStyle = '#000000';
+          ctx.lineWidth = 1.2 * scale;
+          ctx.strokeRect(px, py, pw, ph);
+
+          // Mounting Bolts
+          ctx.fillStyle = '#334155';
+          ctx.beginPath();
+          ctx.arc(px + 4 * scale, py + ph / 2, 1.4 * scale, 0, Math.PI * 2);
+          ctx.arc(px + pw - 4 * scale, py + ph / 2, 1.4 * scale, 0, Math.PI * 2);
+          ctx.fill();
+
+          // Crisp Algerian Plate Lettering
+          ctx.fillStyle = '#000000';
+          ctx.font = `bold ${Math.max(8, Math.round(11 * scale))}px JetBrains Mono`;
+          ctx.textAlign = 'center';
+          ctx.fillText(plateText, cx, py + ph * 0.74);
+          ctx.textAlign = 'left';
+
+          // ALPR AI Precision Tracking Reticle
+          ctx.strokeStyle = '#10B981';
+          ctx.lineWidth = 1.5;
+          const brk = 8 * scale;
+          // 4 Corner Brackets
+          ctx.beginPath();
+          ctx.moveTo(px - 4, py - 4 + brk); ctx.lineTo(px - 4, py - 4); ctx.lineTo(px - 4 + brk, py - 4);
+          ctx.moveTo(px + pw + 4 - brk, py - 4); ctx.lineTo(px + pw + 4, py - 4); ctx.lineTo(px + pw + 4, py - 4 + brk);
+          ctx.moveTo(px - 4, py + ph + 4 - brk); ctx.lineTo(px - 4, py + ph + 4); ctx.lineTo(px - 4 + brk, py + ph + 4);
+          ctx.moveTo(px + pw + 4 - brk, py + ph + 4); ctx.lineTo(px + pw + 4, py + ph + 4); ctx.lineTo(px + pw + 4, py + ph + 4 - brk);
+          ctx.stroke();
+
+          // Animated Emerald Laser Scan Line
+          scanY = (scanY + 2.5) % (ph + 12);
+          const scanGrad = ctx.createLinearGradient(px, py + scanY, px + pw, py + scanY);
+          scanGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
+          scanGrad.addColorStop(0.5, 'rgba(16, 185, 129, 0.95)');
+          scanGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+          ctx.strokeStyle = scanGrad;
+          ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(px - 4, py + scanY - 6); ctx.lineTo(px + pw + 4, py + scanY - 6); ctx.stroke();
+
+          // Holographic Recognition Banner
+          ctx.fillStyle = 'rgba(6, 11, 24, 0.9)';
+          ctx.fillRect(px - 8, py - 18, pw + 16, 14);
+          ctx.strokeStyle = '#10B981';
+          ctx.strokeRect(px - 8, py - 18, pw + 16, 14);
+          ctx.fillStyle = '#10B981';
+          ctx.font = 'bold 8px JetBrains Mono';
+          ctx.fillText(`● YOLOv11n: 99.4% | OCR: ${plateText.replace(' ', '·')}`, px - 4, py - 8);
+        }
+
+        // Apply Common CCTV Security OSD & Grain
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`CAM-01 [ENTREE ALPR] | ${now} | 25 FPS`, 10, cvs.height - 10);
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-01', 'ENTRÉE ALPR VOIE 1', 25.0, now, true);
+
         requestAnimationFrame(render);
       }
       render();
 
       return {
         triggerVehicle: (plate) => {
-          active = true; carY = 320; plateText = plate;
-          setTimeout(() => { active = false; }, 6000);
+          active = true; carY = 210; plateText = plate;
+          setTimeout(() => { active = false; }, 25000);
         }
       };
     }
+
 
     function setupCam2() {
       const cvs = document.getElementById('cam2-canvas');
@@ -1110,93 +1454,269 @@
       let frameCount = 0;
       let scanPhase = 0;
       let rppgHistory = [];
-      for (let i = 0; i < 40; i++) rppgHistory.push(0);
+      for (let i = 0; i < 44; i++) rppgHistory.push(0);
 
-      // 68 Landmark base offsets relative to face center
+      // 68-Point Facial Landmark Offsets (Anatomically calibrated to face center)
       const baseLandmarks = [
-        // Jawline (0-14)
-        [-48, -10], [-46, 8], [-42, 25], [-35, 40], [-25, 52], [-14, 60], [-5, 65], [0, 67], [5, 65], [14, 60], [25, 52], [35, 40], [42, 25], [46, 8], [48, -10],
+        // Jawline & Chin (0-16)
+        [-46, -14], [-45, 6], [-42, 24], [-36, 40], [-26, 54], [-15, 64], [-5, 70], [0, 72], [5, 70], [15, 64], [26, 54], [36, 40], [42, 24], [45, 6], [46, -14],
         // Left Eyebrow (15-19)
-        [-36, -22], [-28, -27], [-18, -28], [-8, -25], [-2, -20],
+        [-36, -26], [-28, -32], [-18, -33], [-8, -30], [-2, -24],
         // Right Eyebrow (20-24)
-        [2, -20], [8, -25], [18, -28], [28, -27], [36, -22],
-        // Nose bridge & nostrils (25-33)
-        [0, -18], [0, -10], [0, -2], [0, 6], [-8, 12], [-4, 14], [0, 15], [4, 14], [8, 12],
-        // Left Eye (34-39)
-        [-26, -14], [-20, -17], [-12, -16], [-8, -13], [-14, -11], [-22, -12],
-        // Right Eye (40-45)
-        [8, -13], [12, -16], [20, -17], [26, -14], [22, -12], [14, -11],
+        [2, -24], [8, -30], [18, -33], [28, -32], [36, -26],
+        // Nose Bridge & Nostril Base (25-33)
+        [0, -22], [0, -12], [0, -3], [0, 8], [-9, 14], [-4, 16], [0, 17], [4, 16], [9, 14],
+        // Left Eye Contour (34-39)
+        [-26, -16], [-20, -20], [-12, -19], [-7, -15], [-13, -13], [-21, -14],
+        // Right Eye Contour (40-45)
+        [7, -15], [12, -19], [20, -20], [26, -16], [21, -14], [13, -13],
         // Outer Lips (46-57)
-        [-20, 28], [-12, 24], [-5, 23], [0, 24], [5, 23], [12, 24], [20, 28], [12, 36], [5, 38], [0, 39], [-5, 38], [-12, 36],
+        [-20, 32], [-12, 27], [-5, 26], [0, 27], [5, 26], [12, 27], [20, 32], [12, 42], [5, 45], [0, 46], [-5, 45], [-12, 42],
         // Inner Lips (58-65)
-        [-15, 28], [-5, 27], [0, 28], [5, 27], [15, 28], [5, 31], [0, 32], [-5, 31]
+        [-15, 32], [-5, 30], [0, 31], [5, 30], [15, 32], [5, 36], [0, 37], [-5, 36]
       ];
 
       function render() {
         frameCount++;
-        scanPhase += 0.05;
+        scanPhase += 0.045;
 
-        // 1. Cockpit & Cabin Environment
-        ctx.fillStyle = '#040711';
+        // 1. Vehicle Cabin Background & A-Pillar Architecture
+        ctx.fillStyle = '#030712';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // Windshield pillar (A-Pillar)
-        ctx.fillStyle = '#0B1222';
+        // Ambient exterior roadway illumination coming through passenger window
+        const extGrad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
+        extGrad.addColorStop(0, '#091122');
+        extGrad.addColorStop(0.5, '#040815');
+        extGrad.addColorStop(1, '#02040A');
+        ctx.fillStyle = extGrad;
+        ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+        // Driver Side A-Pillar (Structural Vehicle Beam)
+        ctx.fillStyle = '#0F172A';
         ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(70, 0); ctx.lineTo(110, cvs.height); ctx.lineTo(0, cvs.height);
+        ctx.moveTo(0, 0); ctx.lineTo(76, 0); ctx.lineTo(118, cvs.height); ctx.lineTo(0, cvs.height);
         ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
 
-        // Car Roof & Window Frame
+        // A-Pillar Fabric Trim Seam
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
+        ctx.beginPath(); ctx.moveTo(68, 0); ctx.lineTo(110, cvs.height); ctx.stroke();
+
+        // Driver Window Frame & Tinted Glass
         ctx.strokeStyle = '#1E293B';
-        ctx.lineWidth = 14;
-        ctx.strokeRect(60, 15, 380, 240);
+        ctx.lineWidth = 12;
+        ctx.strokeRect(65, 14, 385, 242);
 
-        // Driver Window Outer Glass Tint
-        const glassGrad = ctx.createLinearGradient(70, 20, 430, 250);
-        glassGrad.addColorStop(0, 'rgba(15, 23, 42, 0.4)');
-        glassGrad.addColorStop(1, 'rgba(2, 6, 23, 0.7)');
-        ctx.fillStyle = glassGrad;
-        ctx.fillRect(68, 22, 364, 226);
-
-        // Steering Wheel Rim (Silhouette in lower left)
-        ctx.strokeStyle = '#1E293B';
-        ctx.lineWidth = 8;
+        // Driver Seat Headrest Silhouette (Behind Driver)
+        ctx.fillStyle = '#0B132B';
         ctx.beginPath();
-        ctx.arc(105, 250, 48, Math.PI * 1.1, Math.PI * 1.9);
+        ctx.roundRect(200, 42, 80, 75, 18);
+        ctx.fill();
+        ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 2; ctx.stroke();
+
+        // Steering Wheel Rim (Lower Left)
+        ctx.strokeStyle = '#1E293B';
+        ctx.lineWidth = 9;
+        ctx.beginPath();
+        ctx.arc(115, 256, 52, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.stroke();
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(115, 256, 48, Math.PI * 1.05, Math.PI * 1.95);
         ctx.stroke();
 
-        // Dual-Lens Grid Overlay (Cross-hair reticle)
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.08)';
+        // Cross-hair Reticle Center Grid
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.07)';
         ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.moveTo(240, 25); ctx.lineTo(240, 245);
-        ctx.moveTo(70, 135); ctx.lineTo(430, 135);
+        ctx.moveTo(240, 20); ctx.lineTo(240, 250);
+        ctx.moveTo(70, 135); ctx.lineTo(435, 135);
         ctx.stroke();
 
         // 2. Active Driver Biometric Processing
         if (active) {
+          const breath = Math.sin(frameCount * 0.04) * 0.9;
           const faceCenterX = 240;
-          const faceCenterY = 118 + Math.sin(frameCount * 0.03) * 1.5;
+          const faceCenterY = 114 + breath;
 
           if (!spoofMode) {
-            // === AUTHENTIC DRIVER PASSENGER ===
+            // ========================================================
+            // A. AUTHENTIC LIVING DRIVER (PHOTOREALISTIC PORTRAIT)
+            // ========================================================
+            
+            // Shoulders & Navy Blazer / Polo Collar
+            ctx.fillStyle = '#0A1326';
+            ctx.beginPath();
+            ctx.ellipse(faceCenterX, faceCenterY + 115, 105, 50, 0, 0, Math.PI);
+            ctx.fill();
+            // Collar fold
             ctx.fillStyle = '#1E293B';
             ctx.beginPath();
-            ctx.arc(faceCenterX, faceCenterY - 5, 48, 0, Math.PI * 2);
+            ctx.moveTo(faceCenterX - 28, faceCenterY + 68);
+            ctx.lineTo(faceCenterX, faceCenterY + 98);
+            ctx.lineTo(faceCenterX + 28, faceCenterY + 68);
+            ctx.lineTo(faceCenterX + 16, faceCenterY + 64);
+            ctx.lineTo(faceCenterX, faceCenterY + 82);
+            ctx.lineTo(faceCenterX - 16, faceCenterY + 64);
+            ctx.closePath();
             ctx.fill();
+
+            // Neck with Anatomical Shading
+            const neckGrad = ctx.createLinearGradient(faceCenterX - 20, faceCenterY + 45, faceCenterX + 20, faceCenterY + 75);
+            neckGrad.addColorStop(0, '#9A6B48');
+            neckGrad.addColorStop(0.5, '#B5835C');
+            neckGrad.addColorStop(1, '#8A5D3B');
+            ctx.fillStyle = neckGrad;
             ctx.beginPath();
-            ctx.ellipse(faceCenterX, faceCenterY + 85, 95, 55, 0, 0, Math.PI);
+            ctx.moveTo(faceCenterX - 24, faceCenterY + 40);
+            ctx.lineTo(faceCenterX + 24, faceCenterY + 40);
+            ctx.lineTo(faceCenterX + 28, faceCenterY + 74);
+            ctx.lineTo(faceCenterX - 28, faceCenterY + 74);
+            ctx.closePath();
             ctx.fill();
 
-            // ArcFace 512-D Bounding Box with Corner Brackets
-            const boxX = faceCenterX - 65;
-            const boxY = faceCenterY - 60;
-            const boxW = 130;
-            const boxH = 145;
+            // Head & Facial Structure (Warm Olive/Tan Skin Tone)
+            const skinGrad = ctx.createRadialGradient(faceCenterX - 8, faceCenterY - 10, 8, faceCenterX, faceCenterY + 5, 58);
+            skinGrad.addColorStop(0, '#D4A373');
+            skinGrad.addColorStop(0.65, '#C68B59');
+            skinGrad.addColorStop(0.92, '#A66E43');
+            skinGrad.addColorStop(1, '#7A4D2B');
+            ctx.fillStyle = skinGrad;
+            ctx.beginPath();
+            ctx.ellipse(faceCenterX, faceCenterY, 47, 62, 0, 0, Math.PI * 2);
+            ctx.fill();
 
+            // Subtle Cheekbone & Jaw Shading
+            ctx.fillStyle = 'rgba(100, 50, 20, 0.15)';
+            ctx.beginPath();
+            ctx.ellipse(faceCenterX - 30, faceCenterY + 10, 12, 22, -0.2, 0, Math.PI * 2);
+            ctx.ellipse(faceCenterX + 30, faceCenterY + 10, 12, 22, 0.2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Ears
+            [-48, 48].forEach(ex => {
+              ctx.fillStyle = '#B5835C';
+              ctx.beginPath();
+              ctx.ellipse(faceCenterX + ex, faceCenterY - 2, 7, 14, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = '#8A5D3B'; ctx.lineWidth = 1; ctx.stroke();
+            });
+
+            // Styled Dark Hair
+            const hairGrad = ctx.createLinearGradient(faceCenterX, faceCenterY - 75, faceCenterX, faceCenterY - 20);
+            hairGrad.addColorStop(0, '#1E293B');
+            hairGrad.addColorStop(0.6, '#0F172A');
+            hairGrad.addColorStop(1, '#020617');
+            ctx.fillStyle = hairGrad;
+            ctx.beginPath();
+            ctx.moveTo(faceCenterX - 50, faceCenterY - 15);
+            ctx.quadraticCurveTo(faceCenterX - 52, faceCenterY - 68, faceCenterX, faceCenterY - 70);
+            ctx.quadraticCurveTo(faceCenterX + 52, faceCenterY - 68, faceCenterX + 50, faceCenterY - 15);
+            ctx.quadraticCurveTo(faceCenterX + 32, faceCenterY - 42, faceCenterX, faceCenterY - 44);
+            ctx.quadraticCurveTo(faceCenterX - 32, faceCenterY - 42, faceCenterX - 50, faceCenterY - 15);
+            ctx.closePath();
+            ctx.fill();
+
+            // Eyebrows
+            ctx.fillStyle = '#1E293B';
+            [-1, 1].forEach(side => {
+              ctx.beginPath();
+              ctx.moveTo(faceCenterX + side * 6, faceCenterY - 26);
+              ctx.quadraticCurveTo(faceCenterX + side * 22, faceCenterY - 33, faceCenterX + side * 37, faceCenterY - 25);
+              ctx.quadraticCurveTo(faceCenterX + side * 22, faceCenterY - 30, faceCenterX + side * 6, faceCenterY - 26);
+              ctx.fill();
+            });
+
+            // Realistic Eyes (Sclera + Hazel Iris + Specular Pinpoint)
+            [-17, 17].forEach(eyeX => {
+              const ex = faceCenterX + eyeX;
+              const ey = faceCenterY - 15;
+              // Sclera (White)
+              ctx.fillStyle = '#F8FAFC';
+              ctx.beginPath();
+              ctx.ellipse(ex, ey, 9.5, 5.5, 0, 0, Math.PI * 2);
+              ctx.fill();
+              ctx.strokeStyle = '#4A2810'; ctx.lineWidth = 0.8; ctx.stroke();
+
+              // Hazel/Brown Iris
+              const irisGrad = ctx.createRadialGradient(ex, ey, 1, ex, ey, 5.5);
+              irisGrad.addColorStop(0, '#3E2723');
+              irisGrad.addColorStop(0.6, '#5D4037');
+              irisGrad.addColorStop(1, '#2E1C14');
+              ctx.fillStyle = irisGrad;
+              ctx.beginPath();
+              ctx.arc(ex, ey, 5, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Dark Pupil
+              ctx.fillStyle = '#020617';
+              ctx.beginPath();
+              ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Specular Light Glint
+              ctx.fillStyle = '#FFFFFF';
+              ctx.beginPath();
+              ctx.arc(ex - 1.2, ey - 1.2, 1, 0, Math.PI * 2);
+              ctx.fill();
+
+              // Gaze Vector (Green Ray)
+              ctx.strokeStyle = 'rgba(16, 185, 129, 0.7)';
+              ctx.lineWidth = 1;
+              ctx.beginPath();
+              ctx.moveTo(ex, ey);
+              ctx.lineTo(ex + Math.sin(frameCount * 0.05) * 6, ey - 14);
+              ctx.stroke();
+            });
+
+            // Nose Bridge & Nostril Shading
+            ctx.fillStyle = 'rgba(120, 60, 25, 0.28)';
+            ctx.beginPath();
+            ctx.moveTo(faceCenterX - 3, faceCenterY - 20);
+            ctx.lineTo(faceCenterX - 6, faceCenterY + 12);
+            ctx.lineTo(faceCenterX + 6, faceCenterY + 12);
+            ctx.lineTo(faceCenterX + 3, faceCenterY - 20);
+            ctx.closePath();
+            ctx.fill();
+            // Nostril curves
+            ctx.strokeStyle = '#6D381A'; ctx.lineWidth = 1.2;
+            ctx.beginPath();
+            ctx.arc(faceCenterX - 7, faceCenterY + 13, 3, Math.PI * 0.4, Math.PI * 1.3);
+            ctx.arc(faceCenterX + 7, faceCenterY + 13, 3, Math.PI * 1.7, Math.PI * 2.6);
+            ctx.stroke();
+
+            // Lips (Natural Contour)
+            const lipGrad = ctx.createLinearGradient(faceCenterX - 18, faceCenterY + 30, faceCenterX + 18, faceCenterY + 42);
+            lipGrad.addColorStop(0, '#A86252');
+            lipGrad.addColorStop(0.5, '#BE7665');
+            lipGrad.addColorStop(1, '#944E40');
+            ctx.fillStyle = lipGrad;
+            ctx.beginPath();
+            ctx.moveTo(faceCenterX - 17, faceCenterY + 31);
+            ctx.quadraticCurveTo(faceCenterX, faceCenterY + 25, faceCenterX + 17, faceCenterY + 31);
+            ctx.quadraticCurveTo(faceCenterX, faceCenterY + 44, faceCenterX - 17, faceCenterY + 31);
+            ctx.closePath();
+            ctx.fill();
+            // Lip Center Seam
+            ctx.strokeStyle = '#5E2B20'; ctx.lineWidth = 1;
+            ctx.beginPath();
+            ctx.moveTo(faceCenterX - 16, faceCenterY + 31);
+            ctx.quadraticCurveTo(faceCenterX, faceCenterY + 34, faceCenterX + 16, faceCenterY + 31);
+            ctx.stroke();
+
+            // ========================================================
+            // B. ARCFACE 512-D COMPUTER VISION HUD OVERLAYS
+            // ========================================================
+            const boxX = faceCenterX - 66;
+            const boxY = faceCenterY - 68;
+            const boxW = 132;
+            const boxH = 154;
+
+            // ArcFace Corner Brackets (Cyan Glow)
             ctx.strokeStyle = '#06B6D4';
-            ctx.lineWidth = 1.5;
-            const bLen = 14;
+            ctx.lineWidth = 2;
+            const bLen = 16;
             ctx.beginPath();
             ctx.moveTo(boxX, boxY + bLen); ctx.lineTo(boxX, boxY); ctx.lineTo(boxX + bLen, boxY);
             ctx.moveTo(boxX + boxW - bLen, boxY); ctx.lineTo(boxX + boxW, boxY); ctx.lineTo(boxX + boxW, boxY + bLen);
@@ -1204,11 +1724,11 @@
             ctx.moveTo(boxX + boxW - bLen, boxY + boxH); ctx.lineTo(boxX + boxW, boxY + boxH); ctx.lineTo(boxX + boxW, boxY + boxH - bLen);
             ctx.stroke();
 
-            // Laser Scan Sweep Line
-            const sweepY = boxY + ((Math.sin(scanPhase * 1.5) + 1) / 2) * boxH;
+            // Biometric Vertical Laser Scan Line
+            const sweepY = boxY + ((Math.sin(scanPhase * 1.4) + 1) / 2) * boxH;
             const sweepGrad = ctx.createLinearGradient(boxX, sweepY, boxX + boxW, sweepY);
             sweepGrad.addColorStop(0, 'rgba(6, 182, 212, 0)');
-            sweepGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.85)');
+            sweepGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.9)');
             sweepGrad.addColorStop(1, 'rgba(6, 182, 212, 0)');
             ctx.strokeStyle = sweepGrad;
             ctx.lineWidth = 2;
@@ -1216,8 +1736,8 @@
             ctx.moveTo(boxX + 2, sweepY); ctx.lineTo(boxX + boxW - 2, sweepY);
             ctx.stroke();
 
-            // 68-Point Landmark Mesh
-            ctx.strokeStyle = 'rgba(6, 182, 212, 0.22)';
+            // 68-Point Landmark Mesh Connections
+            ctx.strokeStyle = 'rgba(6, 182, 212, 0.28)';
             ctx.lineWidth = 0.8;
             ctx.beginPath();
             for (let i = 0; i < baseLandmarks.length - 1; i++) {
@@ -1229,191 +1749,264 @@
             }
             ctx.stroke();
 
-            // Landmark Dots
+            // 68 Landmark Dots
             ctx.fillStyle = '#06B6D4';
             baseLandmarks.forEach((pt) => {
               const px = faceCenterX + pt[0];
               const py = faceCenterY + pt[1];
-              ctx.fillRect(px - 1, py - 1, 2, 2);
+              ctx.fillRect(px - 1, py - 1, 2.5, 2.5);
             });
 
-            // Pupils with Gaze Reticle
-            ctx.fillStyle = '#10B981';
-            ctx.beginPath();
-            ctx.arc(faceCenterX - 14, faceCenterY - 14, 2.5, 0, Math.PI * 2);
-            ctx.arc(faceCenterX + 14, faceCenterY - 14, 2.5, 0, Math.PI * 2);
-            ctx.fill();
+            // 3D Head Pose Axes (Nose Tip: Pitch, Yaw, Roll)
+            const nx = faceCenterX, ny = faceCenterY + 14;
+            // X-axis (Pitch - Red)
+            ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(nx + 18, ny); ctx.stroke();
+            // Y-axis (Yaw - Green)
+            ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(nx, ny - 18); ctx.stroke();
+            // Z-axis (Roll - Blue)
+            ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(nx - 12, ny + 12); ctx.stroke();
 
-            // MiniFASNet Real-time Pulse (rPPG Waveform update)
-            const pulse = Math.sin(frameCount * 0.22) * 8 * (Math.random() * 0.15 + 0.85);
+            // Floating Header Badge
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.9)';
+            ctx.fillRect(boxX - 4, boxY - 18, boxW + 8, 16);
+            ctx.strokeStyle = '#06B6D4'; ctx.lineWidth = 1;
+            ctx.strokeRect(boxX - 4, boxY - 18, boxW + 8, 16);
+            ctx.fillStyle = '#06B6D4';
+            ctx.font = 'bold 8px JetBrains Mono';
+            ctx.fillText('ARCFACE 512-D | FAISS MATCH 99.1%', boxX + 2, boxY - 6);
+
+            // ========================================================
+            // C. REAL-TIME rPPG CARDIOVASCULAR PULSE WAVEFORM (LOWER RIGHT)
+            // ========================================================
+            // Cardiac waveform formula: Systolic peak + dicrotic notch
+            const tPulse = (frameCount * 0.18) % (Math.PI * 2);
+            let pulseVal = Math.sin(tPulse) * 7;
+            if (tPulse > 1.8 && tPulse < 2.6) pulseVal -= 3; // Dicrotic notch
+            pulseVal += (Math.random() - 0.5) * 1.2;
             rppgHistory.shift();
-            rppgHistory.push(pulse);
+            rppgHistory.push(pulseVal);
 
-            // Draw rPPG Live Waveform Box (Lower Right)
-            ctx.fillStyle = 'rgba(6, 11, 25, 0.75)';
-            ctx.fillRect(295, 180, 125, 48);
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.88)';
+            ctx.fillRect(295, 178, 130, 52);
             ctx.strokeStyle = '#1E293B';
             ctx.lineWidth = 1;
-            ctx.strokeRect(295, 180, 125, 48);
+            ctx.strokeRect(295, 178, 130, 52);
 
             ctx.fillStyle = '#94A3B8';
-            ctx.font = '8px JetBrains Mono';
-            ctx.fillText('rPPG POULS TISSULAIRE', 300, 191);
+            ctx.font = '7.5px JetBrains Mono';
+            ctx.fillText('rPPG POULS TISSULAIRE', 300, 190);
             ctx.fillStyle = '#10B981';
-            ctx.fillText('72 BPM [RÉEL]', 370, 191);
+            ctx.font = 'bold 8px JetBrains Mono';
+            ctx.fillText('72 BPM [RÉEL]', 370, 190);
 
+            // Pulse Waveform Line
             ctx.strokeStyle = '#10B981';
-            ctx.lineWidth = 1.2;
+            ctx.lineWidth = 1.4;
             ctx.beginPath();
             rppgHistory.forEach((val, i) => {
-              const hx = 298 + i * 2.9;
-              const hy = 208 + val;
+              const hx = 299 + i * 2.8;
+              const hy = 210 + val;
               if (i === 0) ctx.moveTo(hx, hy);
               else ctx.lineTo(hx, hy);
             });
             ctx.stroke();
 
-            // Telemetry Floating Badges
-            ctx.fillStyle = 'rgba(6, 11, 25, 0.85)';
-            ctx.fillRect(faceCenterX - 65, boxY - 16, 130, 14);
-            ctx.fillStyle = '#06B6D4';
-            ctx.font = 'bold 8px JetBrains Mono';
-            ctx.fillText('ARCFACE 512-D | FAISS MATCH', faceCenterX - 60, boxY - 6);
-
-            // MiniFASNet FFT Frequency Bars (Lower Left)
-            ctx.fillStyle = 'rgba(6, 11, 25, 0.75)';
-            ctx.fillRect(80, 180, 125, 48);
+            // ========================================================
+            // D. FOURIER MOIRÉ FFT HISTOGRAM (LOWER LEFT)
+            // ========================================================
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.88)';
+            ctx.fillRect(75, 178, 130, 52);
             ctx.strokeStyle = '#1E293B';
-            ctx.strokeRect(80, 180, 125, 48);
+            ctx.strokeRect(75, 178, 130, 52);
             ctx.fillStyle = '#94A3B8';
-            ctx.fillText('SPECTRE FOURIER (MOIRÉ)', 85, 191);
+            ctx.font = '7.5px JetBrains Mono';
+            ctx.fillText('SPECTRE FOURIER (MOIRÉ)', 80, 190);
+            ctx.fillStyle = '#10B981';
+            ctx.font = 'bold 7.5px JetBrains Mono';
+            ctx.fillText('1.2% CONFORME', 152, 190);
+
+            // Organic tissue spectrum: High energy in low bins, zero in high bins
             for (let b = 0; b < 10; b++) {
-              const bh = Math.sin(frameCount * 0.15 + b) * 8 + 10;
-              ctx.fillStyle = b > 7 ? '#3B82F6' : '#10B981';
-              ctx.fillRect(85 + b * 11, 222 - bh, 8, bh);
+              const decay = Math.max(2, 22 - b * 2.2 + Math.sin(frameCount * 0.1 + b) * 2);
+              ctx.fillStyle = b < 5 ? '#10B981' : '#0284C7';
+              ctx.fillRect(80 + b * 12, 224 - decay, 9, decay);
             }
 
           } else {
-            // === FRAUD SPOOF ATTACK (TABLET / PHOTO REPLAY ATTACK) ===
-            const devX = 160, devY = 48, devW = 160, devH = 175;
+            // ========================================================
+            // E. FRAUD SPOOF ATTACK (IPAD/TABLET REPLAY ATTACK PRESENTED)
+            // ========================================================
+            const devX = 155, devY = 40, devW = 170, devH = 190;
 
-            // Device Outer Body with Warning Red Strobe
-            const glowAlpha = (Math.sin(frameCount * 0.25) + 1) / 2;
-            ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 + glowAlpha * 0.6})`;
-            ctx.lineWidth = 3;
-            ctx.strokeRect(devX - 4, devY - 4, devW + 8, devH + 8);
+            // Warning Strobe Outline
+            const strobe = (Math.sin(frameCount * 0.3) + 1) / 2;
+            ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 + strobe * 0.6})`;
+            ctx.lineWidth = 3.5;
+            ctx.strokeRect(devX - 6, devY - 6, devW + 12, devH + 12);
 
-            ctx.fillStyle = '#0F172A';
+            // Tablet Metallic Unibody Frame (Space Gray Aluminum)
+            ctx.fillStyle = '#1E293B';
             ctx.beginPath();
-            ctx.roundRect(devX, devY, devW, devH, 8);
+            ctx.roundRect(devX, devY, devW, devH, 12);
             ctx.fill();
-            ctx.strokeStyle = '#EF4444';
-            ctx.lineWidth = 2;
-            ctx.stroke();
+            ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.5; ctx.stroke();
 
-            // Tablet Screen Glass with High Specular Glare & Moiré Lines
+            // Tablet Front Camera & Sensor Dot
+            ctx.fillStyle = '#020617';
+            ctx.beginPath();
+            ctx.arc(devX + devW / 2, devY + 7, 2.5, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Tablet Glass Screen
             const screenGrad = ctx.createLinearGradient(devX, devY, devX + devW, devY + devH);
-            screenGrad.addColorStop(0, '#1E293B');
-            screenGrad.addColorStop(0.4, '#334155');
-            screenGrad.addColorStop(0.45, '#E2E8F0');
-            screenGrad.addColorStop(0.52, '#1E293B');
-            screenGrad.addColorStop(1, '#0F172A');
+            screenGrad.addColorStop(0, '#0F172A');
+            screenGrad.addColorStop(0.35, '#1E293B');
+            screenGrad.addColorStop(0.5, '#475569');
+            screenGrad.addColorStop(0.55, '#F1F5F9'); // Harsh Specular Reflection Stripe
+            screenGrad.addColorStop(0.65, '#1E293B');
+            screenGrad.addColorStop(1, '#020617');
             ctx.fillStyle = screenGrad;
-            ctx.fillRect(devX + 6, devY + 6, devW - 12, devH - 12);
+            ctx.fillRect(devX + 8, devY + 14, devW - 16, devH - 26);
 
-            // Fake 2D Printed Face on Tablet
-            ctx.fillStyle = '#475569';
+            // Flat 2D Printed Face on the Tablet Screen
+            ctx.fillStyle = '#64748B';
             ctx.beginPath();
-            ctx.arc(devX + devW / 2, devY + 70, 38, 0, Math.PI * 2);
+            ctx.arc(devX + devW / 2, devY + 72, 38, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.fillStyle = '#334155';
+            ctx.beginPath();
+            ctx.arc(devX + devW / 2 - 14, devY + 68, 5, 0, Math.PI * 2);
+            ctx.arc(devX + devW / 2 + 14, devY + 68, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // Digital Screen Pixel Grid
-            ctx.strokeStyle = 'rgba(239, 68, 68, 0.35)';
+            // RGB LCD Sub-Pixel Grid Scanlines (Moiré artifact)
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
             ctx.lineWidth = 1;
-            for (let y = devY + 10; y < devY + devH - 10; y += 5) {
+            for (let y = devY + 16; y < devY + devH - 14; y += 4) {
               ctx.beginPath();
-              ctx.moveTo(devX + 8, y);
-              ctx.lineTo(devX + devW - 8, y);
+              ctx.moveTo(devX + 9, y);
+              ctx.lineTo(devX + devW - 9, y);
               ctx.stroke();
             }
 
-            // Target Bounding Box locked with REJECT WARNING
-            ctx.fillStyle = 'rgba(239, 68, 68, 0.9)';
-            ctx.fillRect(devX + 6, devY + devH - 32, devW - 12, 24);
+            // Diagonal Rainbow Moiré Interference Patterns
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+            ctx.lineWidth = 1.2;
+            for (let d = -60; d < devW + 60; d += 16) {
+              ctx.beginPath();
+              ctx.moveTo(devX + d, devY + 16);
+              ctx.lineTo(devX + d + 45, devY + devH - 16);
+              ctx.stroke();
+            }
+
+            // Target Bounding Box Locked with Crimson Alert
+            ctx.strokeStyle = '#EF4444';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(devX + 8, devY + 14, devW - 16, devH - 26);
+
+            // Flashing Alarm Banner
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.95)';
+            ctx.fillRect(devX + 8, devY + devH - 42, devW - 16, 26);
             ctx.fillStyle = '#FFFFFF';
             ctx.font = 'bold 9px JetBrains Mono';
             ctx.textAlign = 'center';
-            ctx.fillText('REJET : VIVACITÉ 14.8%', devX + devW / 2, devY + devH - 17);
+            ctx.fillText('REJET : VIVACITÉ 14.8%', devX + devW / 2, devY + devH - 28);
+            ctx.font = '7.5px JetBrains Mono';
+            ctx.fillText('ATTAQUE REJEU ÉCRAN', devX + devW / 2, devY + devH - 18);
             ctx.textAlign = 'left';
 
-            // Flatline rPPG
-            ctx.fillStyle = 'rgba(20, 10, 15, 0.85)';
-            ctx.fillRect(295, 180, 125, 48);
+            // Flatlined rPPG Waveform
+            ctx.fillStyle = 'rgba(25, 10, 15, 0.9)';
+            ctx.fillRect(295, 178, 130, 52);
             ctx.strokeStyle = '#EF4444';
-            ctx.strokeRect(295, 180, 125, 48);
+            ctx.strokeRect(295, 178, 130, 52);
             ctx.fillStyle = '#EF4444';
-            ctx.font = '8px JetBrains Mono';
-            ctx.fillText('rPPG PULSE : ABSENT', 300, 191);
+            ctx.font = '7.5px JetBrains Mono';
+            ctx.fillText('POULS rPPG : PLAT', 300, 190);
+            ctx.fillText('0 BPM [INANIMÉ]', 370, 190);
+
+            // Dead Straight Flatline
             ctx.strokeStyle = '#EF4444';
-            ctx.lineWidth = 1.5;
+            ctx.lineWidth = 1.8;
             ctx.beginPath();
-            ctx.moveTo(298, 210); ctx.lineTo(415, 210);
+            ctx.moveTo(299, 212);
+            ctx.lineTo(420, 212);
             ctx.stroke();
 
-            // Moiré Spike Bar Chart
-            ctx.fillStyle = 'rgba(20, 10, 15, 0.85)';
-            ctx.fillRect(80, 180, 125, 48);
+            // Moiré High Frequency Spike Histogram
+            ctx.fillStyle = 'rgba(25, 10, 15, 0.9)';
+            ctx.fillRect(75, 178, 130, 52);
             ctx.strokeStyle = '#EF4444';
-            ctx.strokeRect(80, 180, 125, 48);
+            ctx.strokeRect(75, 178, 130, 52);
             ctx.fillStyle = '#EF4444';
-            ctx.fillText('ANOMALIE MOIRÉ 84.7%', 85, 191);
+            ctx.font = '7.5px JetBrains Mono';
+            ctx.fillText('SPECTRE FOURIER', 80, 190);
+            ctx.fillText('MOIRÉ 88.4% [ALERTE]', 138, 190);
+
+            // Massive high-frequency spikes in bins 6-9
             for (let b = 0; b < 10; b++) {
-              const bh = b > 5 ? 24 : 6;
+              const bh = b > 5 ? (22 + (b % 3) * 5) : (3 + (b % 2) * 2);
               ctx.fillStyle = '#EF4444';
-              ctx.fillRect(85 + b * 11, 222 - bh, 8, bh);
+              ctx.fillRect(80 + b * 12, 224 - bh, 9, bh);
             }
           }
         }
 
-        // 3. PIP Viewport (Top Right): Synchronized 850nm NIR Anti-Spoof Channel
-        const pipX = 350, pipY = 24, pipW = 105, pipH = 68;
-        ctx.fillStyle = '#030712';
+        // 3. PIP Viewport (Top Right): 850nm NIR Anti-Spoof Channel
+        const pipX = 345, pipY = 22, pipW = 115, pipH = 75;
+        ctx.fillStyle = '#020617';
         ctx.fillRect(pipX, pipY, pipW, pipH);
         ctx.strokeStyle = spoofMode && active ? '#EF4444' : '#06B6D4';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(pipX, pipY, pipW, pipH);
 
+        // Header Tab
+        ctx.fillStyle = spoofMode && active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(6, 182, 212, 0.2)';
+        ctx.fillRect(pipX, pipY, pipW, 14);
         ctx.fillStyle = spoofMode && active ? '#EF4444' : '#06B6D4';
-        ctx.font = 'bold 7px JetBrains Mono';
-        ctx.fillText('NIR 850nm SPECTRUM', pipX + 4, pipY + 9);
+        ctx.font = 'bold 7.5px JetBrains Mono';
+        ctx.fillText('CANAL NIR 850nm', pipX + 5, pipY + 10);
 
         if (active) {
           if (!spoofMode) {
-            ctx.fillStyle = '#64748B';
+            // Realistic Soft NIR Skin Diffusion (Grayscale Infrared Reflection)
+            const nirGrad = ctx.createRadialGradient(pipX + pipW / 2, pipY + 44, 4, pipX + pipW / 2, pipY + 44, 22);
+            nirGrad.addColorStop(0, '#CBD5E1');
+            nirGrad.addColorStop(0.7, '#64748B');
+            nirGrad.addColorStop(1, '#1E293B');
+            ctx.fillStyle = nirGrad;
             ctx.beginPath();
-            ctx.arc(pipX + pipW / 2, pipY + 38, 18, 0, Math.PI * 2);
+            ctx.arc(pipX + pipW / 2, pipY + 44, 20, 0, Math.PI * 2);
             ctx.fill();
+
+            // Bright Corneal NIR Retro-Reflection Points
+            ctx.fillStyle = '#FFFFFF';
+            ctx.fillRect(pipX + pipW / 2 - 8, pipY + 40, 2.5, 2.5);
+            ctx.fillRect(pipX + pipW / 2 + 6, pipY + 40, 2.5, 2.5);
+
             ctx.fillStyle = '#10B981';
-            ctx.font = '7px JetBrains Mono';
-            ctx.fillText('DIFFUSION: OK', pipX + 4, pipY + pipH - 4);
+            ctx.font = 'bold 7px JetBrains Mono';
+            ctx.fillText('DIFFUSION DERMIQUE OK', pipX + 5, pipY + pipH - 4);
           } else {
+            // Tablet Glass Intense Specular Flares
             ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(pipX + 22, pipY + 16, 60, 42);
+            ctx.fillRect(pipX + 22, pipY + 20, 70, 42);
             ctx.fillStyle = '#EF4444';
             ctx.font = 'bold 7px JetBrains Mono';
-            ctx.fillText('ÉCRAN VERRE DÉTECTÉ', pipX + 4, pipY + pipH - 4);
+            ctx.fillText('REFLET VERRE COMPACT', pipX + 5, pipY + pipH - 4);
           }
         } else {
           ctx.fillStyle = '#475569';
           ctx.font = '7px JetBrains Mono';
-          ctx.fillText('EN ATTENTE CONDUCTEUR', pipX + 4, pipY + 38);
+          ctx.fillText('ATTENTE CONDUCTEUR', pipX + 8, pipY + 45);
         }
 
-        // 4. Global HUD Footer Status
-        ctx.fillStyle = '#94A3B8';
-        ctx.font = '9px JetBrains Mono';
+        // Apply CCTV Effects & Security OSD
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`CAM-02 [BORNE DUAL-LENS RGB+NIR] | ${now} | 25.0 FPS`, 10, cvs.height - 8);
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-02', 'BORNE BIOMÉTRIQUE RGB+NIR', 25.0, now, true);
 
         requestAnimationFrame(render);
       }
@@ -1422,7 +2015,7 @@
       return {
         triggerVehicle: (isSpoof = false) => {
           active = true; spoofMode = isSpoof;
-          setTimeout(() => { active = false; }, 6000);
+          setTimeout(() => { active = false; }, 25000);
         }
       };
     }
@@ -1434,186 +2027,337 @@
 
       let armAngle = 0;
       let targetAngle = 0;
-      let carX = -120;
+      let carX = -140;
       let carRolling = false;
       let frameCount = 0;
+      let wheelRot = 0;
 
       function render() {
         frameCount++;
-        ctx.fillStyle = '#060A14';
+        wheelRot += 0.15;
+
+        // 1. Perspective Roadway & Asphalt Pavement
+        ctx.fillStyle = '#030712';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
-        // 1. Perspective Exit Roadway
-        const roadGrad = ctx.createLinearGradient(0, 80, 0, 240);
+        // Asphalt Lane Pavement Gradient
+        const roadGrad = ctx.createLinearGradient(0, 95, 0, 245);
         roadGrad.addColorStop(0, '#0F172A');
-        roadGrad.addColorStop(1, '#020617');
+        roadGrad.addColorStop(0.4, '#1E293B');
+        roadGrad.addColorStop(1, '#0B111E');
         ctx.fillStyle = roadGrad;
         ctx.beginPath();
-        ctx.moveTo(0, 110); ctx.lineTo(cvs.width, 110);
-        ctx.lineTo(cvs.width, 245); ctx.lineTo(0, 245);
+        ctx.moveTo(0, 105); ctx.lineTo(cvs.width, 105);
+        ctx.lineTo(cvs.width, 248); ctx.lineTo(0, 248);
         ctx.closePath(); ctx.fill();
 
-        // Asphalt White Dashed Lane Centerline
-        ctx.strokeStyle = '#475569';
+        // Asphalt Micro-Texture Speckles
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+        for (let i = 0; i < 40; i++) {
+          const sx = (i * 37 + frameCount * 0.1) % cvs.width;
+          const sy = 108 + (i * 19) % 135;
+          ctx.fillRect(sx, sy, 2, 1.5);
+        }
+
+        // White Roadway Centerline Dashes
+        ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
         ctx.lineWidth = 3;
-        ctx.setLineDash([16, 14]);
+        ctx.setLineDash([18, 16]);
         ctx.beginPath();
         ctx.moveTo(0, 175); ctx.lineTo(cvs.width, 175);
         ctx.stroke();
         ctx.setLineDash([]);
 
-        // Roadway Curb with Alternating Yellow/Black Safety Striping
-        for (let x = 0; x < cvs.width; x += 30) {
-          ctx.fillStyle = (Math.floor(x / 30) % 2 === 0) ? '#EAB308' : '#0F172A';
-          ctx.fillRect(x, 238, 30, 8);
-          ctx.fillRect(x, 102, 30, 8);
+        // White Stop Line in front of barrier
+        ctx.strokeStyle = '#FFFFFF';
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.moveTo(252, 106); ctx.lineTo(252, 246);
+        ctx.stroke();
+
+        // Safety Curb with Yellow & Black Beveled Segments
+        for (let x = 0; x < cvs.width; x += 32) {
+          const isYellow = Math.floor(x / 32) % 2 === 0;
+          ctx.fillStyle = isYellow ? '#F59E0B' : '#0F172A';
+          ctx.fillRect(x, 244, 32, 8);
+          ctx.fillRect(x, 97, 32, 8);
+          ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.8;
+          ctx.strokeRect(x, 244, 32, 8);
+          ctx.strokeRect(x, 97, 32, 8);
         }
 
-        // 2. Embedded Inductive Loops in Asphalt
-        const isLoopAOccupied = carRolling && carX >= 110 && carX <= 260;
+        // 2. Embedded Inductive Ground Loops in Roadway
+        const isLoopAOccupied = carRolling && carX >= 100 && carX <= 265;
+        ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : '#475569';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(135, 126, 88, 96);
+        ctx.fillStyle = isLoopAOccupied ? 'rgba(6, 182, 212, 0.22)' : 'rgba(30, 41, 59, 0.25)';
+        ctx.fillRect(135, 126, 88, 96);
+        // Loop Chamfered Corner Cuts
         ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : '#334155';
-        ctx.lineWidth = 1.8;
-        ctx.strokeRect(140, 130, 85, 90);
-        ctx.fillStyle = isLoopAOccupied ? 'rgba(6, 182, 212, 0.18)' : 'rgba(30, 41, 59, 0.3)';
-        ctx.fillRect(140, 130, 85, 90);
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(135, 136); ctx.lineTo(145, 126);
+        ctx.moveTo(213, 126); ctx.lineTo(223, 136);
+        ctx.moveTo(135, 212); ctx.lineTo(145, 222);
+        ctx.moveTo(213, 222); ctx.lineTo(223, 212);
+        ctx.stroke();
         ctx.fillStyle = isLoopAOccupied ? '#06B6D4' : '#64748B';
-        ctx.font = '8px JetBrains Mono';
-        ctx.fillText('BOUCLE A', 145, 142);
+        ctx.font = 'bold 8px JetBrains Mono';
+        ctx.fillText(isLoopAOccupied ? 'BOUCLE A : ACTIF (-3.4%)' : 'BOUCLE A (ATTENTE)', 140, 138);
 
-        const isLoopBOccupied = carRolling && carX >= 265 && carX <= 420;
-        ctx.strokeStyle = isLoopBOccupied ? '#10B981' : '#334155';
-        ctx.lineWidth = 1.8;
-        ctx.strokeRect(285, 130, 85, 90);
-        ctx.fillStyle = isLoopBOccupied ? 'rgba(16, 185, 129, 0.18)' : 'rgba(30, 41, 59, 0.3)';
-        ctx.fillRect(285, 130, 85, 90);
+        const isLoopBOccupied = carRolling && carX >= 270 && carX <= 430;
+        ctx.strokeStyle = isLoopBOccupied ? '#10B981' : '#475569';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(285, 126, 88, 96);
+        ctx.fillStyle = isLoopBOccupied ? 'rgba(16, 185, 129, 0.22)' : 'rgba(30, 41, 59, 0.25)';
+        ctx.fillRect(285, 126, 88, 96);
         ctx.fillStyle = isLoopBOccupied ? '#10B981' : '#64748B';
-        ctx.fillText('BOUCLE B', 290, 142);
+        ctx.font = 'bold 8px JetBrains Mono';
+        ctx.fillText(isLoopBOccupied ? 'BOUCLE B : PASSAGE OK' : 'BOUCLE B (DÉGAGEMENT)', 290, 138);
 
         // 3. Optical Safety Photocell Beam
-        const isBeamBroken = carRolling && carX >= 180 && carX <= 320;
-        ctx.fillStyle = '#EAB308';
-        ctx.fillRect(250, 102, 6, 14);
-        ctx.fillRect(250, 232, 6, 14);
-        ctx.strokeStyle = isBeamBroken ? '#EF4444' : '#06B6D4';
-        ctx.lineWidth = 1.5;
-        ctx.setLineDash([4, 4]);
+        const isBeamBroken = carRolling && carX >= 185 && carX <= 325;
+        // Sensor Posts
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(250, 95, 7, 14);
+        ctx.fillRect(250, 243, 7, 14);
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(251, 100, 5, 5);
+        ctx.fillRect(251, 246, 5, 5);
+
+        // Infrared Safety Beam
+        ctx.strokeStyle = isBeamBroken ? '#EF4444' : 'rgba(6, 182, 212, 0.55)';
+        ctx.lineWidth = isBeamBroken ? 2 : 1;
+        ctx.setLineDash(isBeamBroken ? [4, 4] : [2, 6]);
         ctx.beginPath();
-        ctx.moveTo(253, 116); ctx.lineTo(253, 232);
+        ctx.moveTo(253, 105); ctx.lineTo(253, 246);
         ctx.stroke();
         ctx.setLineDash([]);
+        if (isBeamBroken) {
+          ctx.fillStyle = '#EF4444';
+          ctx.font = 'bold 7.5px JetBrains Mono';
+          ctx.fillText('FAISCEAU COUPÉ : ANTI-ÉCRASEMENT', 160, 242);
+        }
 
-        // 4. Overhead Structural Steel Toll Gantry
-        ctx.fillStyle = '#1E293B';
-        ctx.fillRect(15, 20, 16, 100);
-        ctx.fillRect(450, 20, 16, 100);
-        ctx.fillStyle = '#0F172A';
-        ctx.fillRect(15, 20, 450, 22);
-        ctx.strokeStyle = '#334155';
-        ctx.lineWidth = 1.5;
-        ctx.strokeRect(15, 20, 450, 22);
+        // 4. Heavy Galvanized Structural Toll Gantry
+        // Steel Support Columns
+        [15, 450].forEach(colX => {
+          const colGrad = ctx.createLinearGradient(colX, 0, colX + 16, 0);
+          colGrad.addColorStop(0, '#334155');
+          colGrad.addColorStop(0.5, '#64748B');
+          colGrad.addColorStop(1, '#1E293B');
+          ctx.fillStyle = colGrad;
+          ctx.fillRect(colX, 15, 16, 95);
+          ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.strokeRect(colX, 15, 16, 95);
+          // Base Plate Bolts
+          ctx.fillStyle = '#94A3B8';
+          ctx.fillRect(colX - 3, 105, 22, 6);
+        });
 
-        // VMS LED Matrix Panel
+        // Horizontal Steel Girder Box
+        const girderGrad = ctx.createLinearGradient(15, 15, 15, 38);
+        girderGrad.addColorStop(0, '#1E293B');
+        girderGrad.addColorStop(0.5, '#334155');
+        girderGrad.addColorStop(1, '#0F172A');
+        ctx.fillStyle = girderGrad;
+        ctx.fillRect(15, 15, 451, 24);
+        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.strokeRect(15, 15, 451, 24);
+
+        // Steel Truss Internal Lattice Struts
+        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let t = 20; t < 460; t += 22) {
+          ctx.moveTo(t, 16); ctx.lineTo(t + 11, 38);
+          ctx.moveTo(t + 11, 38); ctx.lineTo(t + 22, 16);
+        }
+        ctx.stroke();
+
+        // Bilingual VMS Dual LED Matrix Panel (Variable Message Sign)
         ctx.fillStyle = '#020617';
-        ctx.fillRect(110, 24, 260, 26);
-        ctx.strokeStyle = '#475569';
-        ctx.strokeRect(110, 24, 260, 26);
+        ctx.fillRect(95, 19, 290, 28);
+        ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.2;
+        ctx.strokeRect(95, 19, 290, 28);
 
-        ctx.font = 'bold 9px JetBrains Mono';
-        if (targetAngle < -40) {
+        const isOpen = targetAngle < -40;
+        ctx.textAlign = 'center';
+        if (isOpen) {
           ctx.fillStyle = '#10B981';
-          ctx.fillText('VOIE 02 : SORTIE ACCORDÉE | BONNE ROUTE', 125, 41);
+          ctx.font = 'bold 8.5px JetBrains Mono';
+          ctx.fillText('● VOIE 02 : SORTIE ACCORDÉE | TICKET VALIDÉ', 240, 31);
+          ctx.fillStyle = '#34D399';
+          ctx.font = '7.5px JetBrains Mono';
+          ctx.fillText('PAIEMENT SATIM 100 DZD CONFIRMÉ | BONNE ROUTE', 240, 42);
         } else {
           ctx.fillStyle = '#F59E0B';
-          ctx.fillText('VOIE 02 : PÉAGE AUTOMATIQUE | 100 DZD', 130, 41);
+          ctx.font = 'bold 8.5px JetBrains Mono';
+          ctx.fillText('■ VOIE 02 : PÉAGE AUTOMATIQUE | 100 DZD', 240, 31);
+          ctx.fillStyle = '#FCD34D';
+          ctx.font = '7.5px JetBrains Mono';
+          ctx.fillText("MARQUEZ L'ARRÊT DEVANT LA BARRIÈRE", 240, 42);
         }
+        ctx.textAlign = 'left';
 
-        // Gantry-mounted ALPR Camera with pulsing IR ring
+        // Overhead Lane Control Signal Lights (Left = Arrow, Right = Cross)
+        // Red Cross
+        ctx.fillStyle = !isOpen ? '#EF4444' : '#450A0A';
+        ctx.beginPath(); ctx.arc(68, 30, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = !isOpen ? '#FCA5A5' : '#7F1D1D'; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 8px JetBrains Mono';
+        ctx.fillText('✕', 65, 33);
+
+        // Green Downward Arrow
+        ctx.fillStyle = isOpen ? '#10B981' : '#064E3B';
+        ctx.beginPath(); ctx.arc(412, 30, 7, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = isOpen ? '#6EE7B7' : '#065F46'; ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillText('↓', 409, 33);
+
+        // Gantry-mounted ALPR Camera with pulsing 850nm IR Ring
         ctx.fillStyle = '#0284C7';
-        ctx.fillRect(75, 42, 22, 14);
+        ctx.fillRect(40, 40, 22, 14);
         ctx.fillStyle = '#E2E8F0';
-        ctx.beginPath(); ctx.arc(75, 49, 4, 0, Math.PI * 2); ctx.fill();
-        if (carRolling && carX < 240) {
-          ctx.fillStyle = 'rgba(6, 182, 212, 0.4)';
-          ctx.beginPath(); ctx.arc(75, 49, 10, 0, Math.PI * 2); ctx.fill();
-        }
+        ctx.beginPath(); ctx.arc(40, 47, 4.5, 0, Math.PI * 2); ctx.fill();
+        // Pulsing IR Ring when car approaches
+        const irAlpha = (Math.sin(frameCount * 0.2) + 1) / 2;
+        ctx.strokeStyle = `rgba(6, 182, 212, ${0.3 + irAlpha * 0.7})`;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.arc(40, 47, 9, 0, Math.PI * 2); ctx.stroke();
 
-        // 5. Vehicle Moving Through Exit Lane
+        // 5. Photorealistic Moving Sedan (Exiting)
         if (carRolling) {
-          carX += 3.2;
-
+          carX += 3.4;
           const vy = 142;
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+
+          // Realistic Chassis Ground Shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
           ctx.beginPath();
-          ctx.ellipse(carX + 55, vy + 46, 60, 12, 0, 0, Math.PI * 2);
+          ctx.ellipse(carX + 58, vy + 46, 68, 11, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          // Vehicle Body
-          const carGrad = ctx.createLinearGradient(carX, vy, carX, vy + 40);
-          carGrad.addColorStop(0, '#334155');
-          carGrad.addColorStop(0.5, '#1E293B');
+          // Sedan Lower Body (Metallic Charcoal Gradient)
+          const carGrad = ctx.createLinearGradient(carX, vy, carX, vy + 44);
+          carGrad.addColorStop(0, '#475569');
+          carGrad.addColorStop(0.35, '#334155');
+          carGrad.addColorStop(0.7, '#1E293B');
           carGrad.addColorStop(1, '#0F172A');
           ctx.fillStyle = carGrad;
           ctx.beginPath();
-          ctx.roundRect(carX, vy + 14, 110, 30, 5);
+          ctx.roundRect(carX, vy + 12, 118, 32, 6);
           ctx.fill();
+          ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1; ctx.stroke();
 
-          // Cabin & Windows
-          ctx.fillStyle = '#0284C7';
+          // Aerodynamic Cabin Glasshouse (Windshield, Side Windows, Rear Glass)
+          const glassGrad = ctx.createLinearGradient(carX + 20, vy, carX + 90, vy + 14);
+          glassGrad.addColorStop(0, '#0369A1');
+          glassGrad.addColorStop(0.5, '#0284C7');
+          glassGrad.addColorStop(1, '#0F172A');
+          ctx.fillStyle = glassGrad;
           ctx.beginPath();
-          ctx.moveTo(carX + 22, vy + 14);
-          ctx.lineTo(carX + 42, vy);
-          ctx.lineTo(carX + 85, vy);
-          ctx.lineTo(carX + 98, vy + 14);
+          ctx.moveTo(carX + 22, vy + 12);
+          ctx.lineTo(carX + 44, vy - 2);
+          ctx.lineTo(carX + 88, vy - 2);
+          ctx.lineTo(carX + 104, vy + 12);
           ctx.closePath();
           ctx.fill();
+          ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
 
-          // Wheels & Rims
-          [carX + 26, carX + 86].forEach(wx => {
+          // Window B-Pillar Divider
+          ctx.fillStyle = '#0F172A';
+          ctx.fillRect(carX + 64, vy - 1, 4, 13);
+
+          // Driver Silhouette Inside Cabin
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+          ctx.beginPath(); ctx.arc(carX + 54, vy + 4, 6.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.ellipse(carX + 54, vy + 12, 9, 5, 0, 0, Math.PI); ctx.fill();
+
+          // Door Seams & Chrome Door Handles
+          ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(carX + 65, vy + 12); ctx.lineTo(carX + 65, vy + 38);
+          ctx.stroke();
+          ctx.fillStyle = '#CBD5E1';
+          ctx.fillRect(carX + 48, vy + 16, 7, 2);
+          ctx.fillRect(carX + 72, vy + 16, 7, 2);
+
+          // Rotating Alloy Wheels (Tire + 5 Split Spokes + Disc + Caliper)
+          [carX + 28, carX + 92].forEach(wx => {
+            const wy = vy + 42;
+            // Black Rubber Tire
             ctx.fillStyle = '#020617';
-            ctx.beginPath(); ctx.arc(wx, vy + 42, 11, 0, Math.PI * 2); ctx.fill();
-            ctx.fillStyle = '#94A3B8';
-            ctx.beginPath(); ctx.arc(wx, vy + 42, 5, 0, Math.PI * 2); ctx.fill();
+            ctx.beginPath(); ctx.arc(wx, wy, 12.5, 0, Math.PI * 2); ctx.fill();
+            ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
+
+            // Steel Brake Rotor
+            ctx.fillStyle = '#64748B';
+            ctx.beginPath(); ctx.arc(wx, wy, 8, 0, Math.PI * 2); ctx.fill();
+            // Red Brake Caliper
+            ctx.fillStyle = '#EF4444';
+            ctx.beginPath(); ctx.arc(wx - 4, wy - 3, 3.5, 0, Math.PI * 2); ctx.fill();
+
+            // Rotating Alloy Wheel Spokes
+            ctx.strokeStyle = '#E2E8F0'; ctx.lineWidth = 1.8;
+            for (let s = 0; s < 5; s++) {
+              const ang = wheelRot + (s * Math.PI * 2) / 5;
+              ctx.beginPath();
+              ctx.moveTo(wx, wy);
+              ctx.lineTo(wx + Math.cos(ang) * 8.5, wy + Math.sin(ang) * 8.5);
+              ctx.stroke();
+            }
+
+            // Center Hub Cap
+            ctx.fillStyle = '#38BDF8';
+            ctx.beginPath(); ctx.arc(wx, wy, 2.5, 0, Math.PI * 2); ctx.fill();
           });
 
-          // Headlights
+          // LED Headlights with Volumetric Beam Projection
           ctx.fillStyle = '#FEF08A';
-          ctx.fillRect(carX + 107, vy + 20, 3, 8);
-          const beamGrad = ctx.createLinearGradient(carX + 110, vy + 24, carX + 180, vy + 24);
-          beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
-          beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
-          ctx.fillStyle = beamGrad;
+          ctx.fillRect(carX + 115, vy + 18, 3.5, 8);
+          const fBeam = ctx.createLinearGradient(carX + 118, vy + 22, carX + 210, vy + 22);
+          fBeam.addColorStop(0, 'rgba(254, 240, 138, 0.6)');
+          fBeam.addColorStop(1, 'rgba(254, 240, 138, 0)');
+          ctx.fillStyle = fBeam;
           ctx.beginPath();
-          ctx.moveTo(carX + 110, vy + 18);
-          ctx.lineTo(carX + 180, vy + 8);
-          ctx.lineTo(carX + 180, vy + 44);
-          ctx.lineTo(carX + 110, vy + 32);
+          ctx.moveTo(carX + 118, vy + 16);
+          ctx.lineTo(carX + 210, vy + 4);
+          ctx.lineTo(carX + 210, vy + 48);
+          ctx.lineTo(carX + 118, vy + 32);
           ctx.closePath();
           ctx.fill();
 
-          // Taillights
+          // Rear LED Taillight Clusters
           ctx.fillStyle = '#EF4444';
-          ctx.fillRect(carX, vy + 20, 3, 8);
+          ctx.fillRect(carX, vy + 18, 3, 8);
+          const rGlow = ctx.createRadialGradient(carX, vy + 22, 1, carX, vy + 22, 14);
+          rGlow.addColorStop(0, 'rgba(239, 68, 68, 0.5)');
+          rGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+          ctx.fillStyle = rGlow;
+          ctx.beginPath(); ctx.arc(carX, vy + 22, 14, 0, Math.PI * 2); ctx.fill();
 
-          // Rear Algerian License Plate
+          // Authentic Algerian Rear License Plate
           ctx.fillStyle = '#FDE047';
-          ctx.fillRect(carX + 2, vy + 30, 26, 8);
+          ctx.fillRect(carX + 2, vy + 29, 28, 9);
+          ctx.strokeStyle = '#000000'; ctx.lineWidth = 0.8; ctx.strokeRect(carX + 2, vy + 29, 28, 9);
           ctx.fillStyle = '#000000';
-          ctx.font = 'bold 5px JetBrains Mono';
-          ctx.fillText('08192 120 09', carX + 3, vy + 36);
+          ctx.font = 'bold 5.5px JetBrains Mono';
+          ctx.fillText('08192 120 09', carX + 4, vy + 36);
 
-          // ALPR Targeting Reticle
-          if (carX < 230) {
-            ctx.strokeStyle = '#10B981';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(carX - 4, vy + 25, 38, 18);
-            ctx.fillStyle = 'rgba(6, 11, 25, 0.9)';
-            ctx.fillRect(carX - 10, vy + 3, 90, 14);
+          // Computer Vision ALPR Tracking Box
+          if (carX < 240) {
+            ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1.2;
+            ctx.strokeRect(carX - 2, vy + 24, 38, 18);
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.92)';
+            ctx.fillRect(carX - 10, vy + 2, 98, 15);
+            ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1;
+            ctx.strokeRect(carX - 10, vy + 2, 98, 15);
             ctx.fillStyle = '#10B981';
             ctx.font = 'bold 7px JetBrains Mono';
-            ctx.fillText('SATIM CIB PAYÉ [09]', carX - 6, vy + 13);
+            ctx.fillText('● SATIM CIB VALIDÉ [09 BLIDA]', carX - 6, vy + 12);
           }
 
-          if (carX > cvs.width + 50) {
+          if (carX > cvs.width + 70) {
             carRolling = false;
             targetAngle = 0;
             document.getElementById('cam3-arm-text').innerText = 'BAISSÉE';
@@ -1622,71 +2366,92 @@
         }
 
         // 6. Automatic Industrial Barrier Pillar & Articulated Boom Arm
-        const pillarX = 265, pillarY = 85, pillarW = 26, pillarH = 145;
+        const pillarX = 265, pillarY = 82, pillarW = 28, pillarH = 150;
+
+        // RAL 2004 Pure Orange Powder-Coated Steel Cabinet
+        const cabGrad = ctx.createLinearGradient(pillarX, 0, pillarX + pillarW, 0);
+        cabGrad.addColorStop(0, '#EA580C');
+        cabGrad.addColorStop(0.5, '#F97316');
+        cabGrad.addColorStop(1, '#C2410C');
+        ctx.fillStyle = cabGrad;
+        ctx.beginPath();
+        ctx.roundRect(pillarX, pillarY, pillarW, pillarH, 4);
+        ctx.fill();
+        ctx.strokeStyle = '#7C2D12'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        // Cabinet Access Door & Keyhole
         ctx.fillStyle = '#1E293B';
-        ctx.fillRect(pillarX, pillarY, pillarW, pillarH);
+        ctx.fillRect(pillarX + 3, pillarY + 22, pillarW - 6, 26);
         ctx.fillStyle = '#F59E0B';
-        ctx.fillRect(pillarX + 2, pillarY + 12, pillarW - 4, 18);
+        ctx.beginPath(); ctx.arc(pillarX + pillarW / 2, pillarY + 35, 2.5, 0, Math.PI * 2); ctx.fill();
 
+        // Top Flashing Warning Strobe Beacon
         const beaconActive = targetAngle < -40;
-        ctx.fillStyle = beaconActive ? '#10B981' : '#EF4444';
+        const strobeBlink = Math.floor(frameCount / 6) % 2 === 0;
+        const beaconColor = beaconActive ? '#10B981' : (Math.abs(armAngle - targetAngle) > 4 && strobeBlink ? '#F59E0B' : '#EF4444');
+        ctx.fillStyle = beaconColor;
         ctx.beginPath();
-        ctx.arc(pillarX + pillarW / 2, pillarY - 2, 7, Math.PI, Math.PI * 2);
+        ctx.arc(pillarX + pillarW / 2, pillarY - 3, 7.5, Math.PI, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = beaconActive ? 'rgba(16, 185, 129, 0.35)' : 'rgba(239, 68, 68, 0.25)';
+        ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1; ctx.stroke();
+        // Beacon Glow Halo
+        ctx.fillStyle = beaconActive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.35)';
         ctx.beginPath();
-        ctx.arc(pillarX + pillarW / 2, pillarY - 2, 14, 0, Math.PI * 2);
+        ctx.arc(pillarX + pillarW / 2, pillarY - 3, 16, 0, Math.PI * 2);
         ctx.fill();
 
-        armAngle += (targetAngle - armAngle) * 0.08;
+        // Smooth Mechanical Arm Physics Rotation
+        armAngle += (targetAngle - armAngle) * 0.075;
 
+        // Draw Articulated Boom Arm
         ctx.save();
         ctx.translate(pillarX + 10, pillarY + 28);
         ctx.rotate((armAngle * Math.PI) / 180);
 
-        const boomLength = 195;
-        const boomHeight = 11;
+        const boomLength = 200;
+        const boomHeight = 12;
 
+        // White Aluminum Arm Profile
         ctx.fillStyle = '#F8FAFC';
         ctx.fillRect(-boomLength, -boomHeight / 2, boomLength, boomHeight);
+        ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1; ctx.strokeRect(-boomLength, -boomHeight / 2, boomLength, boomHeight);
 
-        // Retro-reflective Red Hazard Stripes
+        // 45° Red Retro-Reflective Hazard Chevron Stripes
         ctx.fillStyle = '#EF4444';
-        for (let s = 10; s < boomLength - 10; s += 24) {
+        for (let s = 12; s < boomLength - 12; s += 24) {
           ctx.beginPath();
           ctx.moveTo(-s, -boomHeight / 2);
-          ctx.lineTo(-s - 10, boomHeight / 2);
-          ctx.lineTo(-s - 20, boomHeight / 2);
+          ctx.lineTo(-s - 12, boomHeight / 2);
+          ctx.lineTo(-s - 22, boomHeight / 2);
           ctx.lineTo(-s - 10, -boomHeight / 2);
           ctx.closePath();
           ctx.fill();
         }
 
-        // Active Embedded LED Neon Strip
-        const ledColor = beaconActive ? '#10B981' : (Math.abs(armAngle - targetAngle) > 5 ? '#F59E0B' : '#EF4444');
-        ctx.strokeStyle = ledColor;
+        // Active Upper LED Neon Light Strip
+        const neonCol = beaconActive ? '#10B981' : (Math.abs(armAngle - targetAngle) > 4 ? '#F59E0B' : '#EF4444');
+        ctx.strokeStyle = neonCol;
         ctx.lineWidth = 3;
         ctx.beginPath();
-        ctx.moveTo(-boomLength + 6, 0);
-        ctx.lineTo(-4, 0);
+        ctx.moveTo(-boomLength + 6, -boomHeight / 2 - 1);
+        ctx.lineTo(-4, -boomHeight / 2 - 1);
         ctx.stroke();
 
+        // Lower EPDM Rubber Safety Cushion
+        ctx.fillStyle = '#0F172A';
+        ctx.fillRect(-boomLength + 2, boomHeight / 2 - 1, boomLength - 4, 3);
+
+        // Heavy Mechanical Hub Collar & Flange Bolts
         ctx.fillStyle = '#334155';
-        ctx.beginPath();
-        ctx.arc(0, 0, 8, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = '#CBD5E1';
-        ctx.beginPath();
-        ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#E2E8F0';
+        ctx.beginPath(); ctx.arc(0, 0, 4, 0, Math.PI * 2); ctx.fill();
 
         ctx.restore();
 
-        // 7. HUD Footer Telemetry
-        ctx.fillStyle = '#94A3B8';
-        ctx.font = '9px JetBrains Mono';
+        // Apply CCTV Effects & Security OSD
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`CAM-03 [SORTIE VOIE 2 ALPR & PORTIQUE] | ${now} | 25.0 FPS`, 10, cvs.height - 8);
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-03', 'SORTIE VOIE 2 & BARRIÈRE', 25.0, now, true);
 
         requestAnimationFrame(render);
       }
@@ -1694,9 +2459,9 @@
 
       return {
         openBarrier: () => {
-          targetAngle = -80;
+          targetAngle = -85;
           carRolling = true;
-          carX = -80;
+          carX = -100;
           document.getElementById('cam3-arm-text').innerText = 'LEVÉE (OUVERT)';
           document.getElementById('cam3-arm-text').className = 'text-emeraldAccent font-semibold';
         }
@@ -1707,33 +2472,208 @@
       const cvs = document.getElementById('cam4-canvas');
       const ctx = cvs.getContext('2d');
       cvs.width = 480; cvs.height = 270;
+      let frameCount = 0;
+
+      // Realistic vehicle palette for occupied stalls
+      const vehicleColors = [
+        { body: '#1E293B', roof: '#0F172A', glass: '#0284C7' }, // Slate Gray
+        { body: '#0F172A', roof: '#020617', glass: '#0369A1' }, // Obsidian Black
+        { body: '#F1F5F9', roof: '#E2E8F0', glass: '#0284C7' }, // Glacier White
+        { body: '#1E3A8A', roof: '#172554', glass: '#38BDF8' }, // Sapphire Blue
+        { body: '#831843', roof: '#500724', glass: '#0284C7' }, // Burgundy Metallic
+        { body: '#334155', roof: '#1E293B', glass: '#0284C7' }, // Gunmetal
+        { body: '#047857', roof: '#064E3B', glass: '#38BDF8' }, // Emerald Dark
+      ];
+
       function render() {
-        ctx.fillStyle = '#050811';
+        frameCount++;
+        ctx.fillStyle = '#040711';
         ctx.fillRect(0, 0, cvs.width, cvs.height);
-        // Stalls overview
-        for (let i = 0; i < 7; i++) {
-          ctx.strokeStyle = '#334155';
-          ctx.strokeRect(30 + i * 60, 40, 50, 70);
-          ctx.strokeRect(30 + i * 60, 150, 50, 70);
+
+        // 1. Industrial Epoxy Parking Deck Floor
+        const floorGrad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
+        floorGrad.addColorStop(0, '#091122');
+        floorGrad.addColorStop(0.5, '#060B18');
+        floorGrad.addColorStop(1, '#030610');
+        ctx.fillStyle = floorGrad;
+        ctx.fillRect(0, 0, cvs.width, cvs.height);
+
+        // Epoxy Floor Joint Seams
+        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let y = 30; y < cvs.height; y += 45) {
+          ctx.moveTo(0, y); ctx.lineTo(cvs.width, y);
         }
-        ctx.fillStyle = '#94A3B8';
-        ctx.font = '10px JetBrains Mono';
+        ctx.stroke();
+
+        // 2. Central Driving Aisle with Directional White Arrows
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(10, 115, cvs.width - 20, 42);
+        ctx.strokeStyle = 'rgba(51, 65, 85, 0.6)';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(10, 115, cvs.width - 20, 42);
+
+        // White Lane Direction Arrows Painted on Floor
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.5)';
+        [100, 240, 380].forEach((ax, idx) => {
+          ctx.beginPath();
+          if (idx % 2 === 0) {
+            // Forward Arrow ->
+            ctx.moveTo(ax - 10, 133); ctx.lineTo(ax + 6, 133);
+            ctx.lineTo(ax + 6, 130); ctx.lineTo(ax + 14, 136);
+            ctx.lineTo(ax + 6, 142); ctx.lineTo(ax + 6, 139);
+            ctx.lineTo(ax - 10, 139);
+          } else {
+            // Backward Arrow <-
+            ctx.moveTo(ax + 10, 133); ctx.lineTo(ax - 6, 133);
+            ctx.lineTo(ax - 6, 130); ctx.lineTo(ax - 14, 136);
+            ctx.lineTo(ax - 6, 142); ctx.lineTo(ax - 6, 139);
+            ctx.lineTo(ax + 10, 139);
+          }
+          ctx.closePath();
+          ctx.fill();
+        });
+
+        // Green Pedestrian Safety Corridor (Right Side)
+        ctx.fillStyle = 'rgba(6, 78, 59, 0.35)';
+        ctx.fillRect(445, 20, 25, 230);
+        ctx.strokeStyle = '#059669'; ctx.lineWidth = 1;
+        ctx.strokeRect(445, 20, 25, 230);
+        ctx.fillStyle = '#10B981';
+        ctx.font = '7px JetBrains Mono';
+        ctx.fillText('PIÉTONS', 446, 138);
+
+        // 3. Render Parking Stalls (Rows A and B)
+        const rowAY = 26;
+        const rowBY = 162;
+        const stallW = 52;
+        const stallH = 82;
+        const startX = 22;
+
+        for (let i = 0; i < 7; i++) {
+          const sx = startX + i * 59;
+
+          // Upper Row A Stalls
+          renderSingleStall(ctx, sx, rowAY, stallW, stallH, `A0${i+1}`, i, true);
+          // Lower Row B Stalls
+          renderSingleStall(ctx, sx, rowBY, stallW, stallH, `B0${i+1}`, i + 7, false);
+        }
+
+        // Apply CCTV Effects & Security OSD
         const now = new Date().toLocaleTimeString('fr-DZ');
-        ctx.fillText(`CAM-04 [VUE AERIENNE STALLES] | ${now} | 25 FPS`, 10, cvs.height - 10);
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-04', 'VUE AÉRIENNE ZONE STALLES', 25.0, now, true);
+
         requestAnimationFrame(render);
       }
+
+      function renderSingleStall(ctx, x, y, w, h, slotId, index, isTopRow) {
+        const stallData = currentStalls.find(s => s.slot_number === slotId) || { status: 'vacant', plate: null };
+        const isOcc = stallData.status === 'occupied';
+        const isRes = stallData.status === 'reserved';
+
+        // Dual Stall Marking Lines (White)
+        ctx.strokeStyle = 'rgba(241, 245, 249, 0.65)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x, y, w, h);
+
+        // Yellow Concrete Wheel Stop Curb at the back of the bay
+        const curbY = isTopRow ? y + 4 : y + h - 8;
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(x + 5, curbY, w - 10, 4);
+        ctx.strokeStyle = '#0F172A'; ctx.lineWidth = 0.8;
+        ctx.strokeRect(x + 5, curbY, w - 10, 4);
+
+        // Overhead Ultrasonic Sensor LED Lamp
+        const ledX = x + w / 2;
+        const ledY = isTopRow ? y + h - 5 : y + 5;
+        const ledCol = isOcc ? '#EF4444' : (isRes ? '#A855F7' : '#10B981');
+        ctx.fillStyle = ledCol;
+        ctx.beginPath(); ctx.arc(ledX, ledY, 3.5, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = isOcc ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.35)';
+        ctx.beginPath(); ctx.arc(ledX, ledY, 7, 0, Math.PI * 2); ctx.fill();
+
+        // Slot Number Identifier
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = 'bold 7.5px JetBrains Mono';
+        ctx.fillText(slotId, x + 4, isTopRow ? y + 14 : y + h - 10);
+
+        // If Occupied: Draw High-Detail Top-Down Vehicle
+        if (isOcc) {
+          const colScheme = vehicleColors[index % vehicleColors.length];
+          const carW = w - 14;
+          const carH = h - 20;
+          const carX = x + 7;
+          const carY = y + 10;
+
+          // Vehicle Ground Shadow
+          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+          ctx.beginPath();
+          ctx.roundRect(carX - 2, carY - 2, carW + 4, carH + 4, 8);
+          ctx.fill();
+
+          // Vehicle Metallic Painted Body
+          const vGrad = ctx.createLinearGradient(carX, carY, carX + carW, carY);
+          vGrad.addColorStop(0, colScheme.body);
+          vGrad.addColorStop(0.5, '#475569');
+          vGrad.addColorStop(1, colScheme.body);
+          ctx.fillStyle = vGrad;
+          ctx.beginPath();
+          ctx.roundRect(carX, carY, carW, carH, 6);
+          ctx.fill();
+          ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1; ctx.stroke();
+
+          // Side Mirrors
+          ctx.fillStyle = colScheme.body;
+          ctx.fillRect(carX - 3, carY + (isTopRow ? 18 : carH - 24), 3, 7);
+          ctx.fillRect(carX + carW, carY + (isTopRow ? 18 : carH - 24), 3, 7);
+
+          // Front Windshield Glass
+          ctx.fillStyle = colScheme.glass;
+          const wY = isTopRow ? carY + 16 : carY + carH - 24;
+          ctx.beginPath();
+          ctx.roundRect(carX + 3, wY, carW - 6, 9, 3);
+          ctx.fill();
+
+          // Panoramic Sunroof
+          ctx.fillStyle = colScheme.roof;
+          ctx.beginPath();
+          ctx.roundRect(carX + 4, carY + 28, carW - 8, carH - 46, 3);
+          ctx.fill();
+
+          // Rear Window Glass
+          ctx.fillStyle = colScheme.glass;
+          const rY = isTopRow ? carY + carH - 16 : carY + 8;
+          ctx.beginPath();
+          ctx.roundRect(carX + 3, rY, carW - 6, 7, 2);
+          ctx.fill();
+
+          // Miniature Algerian License Plate on Bumper
+          const pY = isTopRow ? carY + carH - 3 : carY + 1;
+          ctx.fillStyle = '#FDE047';
+          ctx.fillRect(carX + carW / 2 - 10, pY, 20, 4);
+          ctx.strokeStyle = '#000000'; ctx.lineWidth = 0.5;
+          ctx.strokeRect(carX + carW / 2 - 10, pY, 20, 4);
+
+          // Computer Vision Bounding Box Overlay
+          ctx.strokeStyle = '#EF4444';
+          ctx.lineWidth = 1;
+          ctx.strokeRect(carX - 1, carY - 1, carW + 2, carH + 2);
+        } else {
+          // Vacant Slot Computer Vision Detection Box
+          ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
+          ctx.lineWidth = 0.8;
+          ctx.setLineDash([3, 3]);
+          ctx.strokeRect(x + 4, y + 8, w - 8, h - 16);
+          ctx.setLineDash([]);
+          ctx.fillStyle = '#10B981';
+          ctx.font = '7px JetBrains Mono';
+          ctx.fillText('LIBRE', x + w / 2 - 11, y + h / 2);
+        }
+      }
+
       render();
     }
-
-    const cam1 = setupCam1();
-    const cam2 = setupCam2();
-    const cam3 = setupCam3();
-    setupCam4();
-
-    // Clock
-    setInterval(() => {
-      document.getElementById('clock').innerText = new Date().toLocaleTimeString('fr-DZ');
-    }, 1000);
 
     // Initial Stalls
     let currentStalls = [
@@ -1752,6 +2692,19 @@
       { slot_number: 'D01', status: 'vacant', plate: null },
       { slot_number: 'D02', status: 'occupied', plate: '00912 116 16' },
     ];
+
+    const cam1 = setupCam1();
+    const cam2 = setupCam2();
+    const cam3 = setupCam3();
+    setupCam4();
+    window.cam1 = cam1;
+    window.cam2 = cam2;
+    window.cam3 = cam3;
+
+    // Clock
+    setInterval(() => {
+      document.getElementById('clock').innerText = new Date().toLocaleTimeString('fr-DZ');
+    }, 1000);
 
     function renderStalls(stalls) {
       currentStalls = stalls;

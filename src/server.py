@@ -691,3 +691,18 @@ def serve_index():
     if os.path.exists(index_file):
         return FileResponse(index_file)
     return {"message": "SmartPark Vision AI Server Online. Open /docs for API."}
+
+
+@app.get("/three_digital_twin.js")
+def serve_three_digital_twin():
+    f = os.path.join(STATIC_DIR, "three_digital_twin.js")
+    if os.path.exists(f):
+        return FileResponse(f, media_type="application/javascript")
+    raise HTTPException(status_code=404)
+
+
+@app.get("/favicon.ico")
+def serve_favicon():
+    from fastapi.responses import Response
+    return Response(status_code=204)
+
