@@ -20,3 +20,4 @@ recordings/
 graphify-out/
 
 .vercel
+*.bak*
