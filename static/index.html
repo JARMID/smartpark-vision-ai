@@ -2770,28 +2770,29 @@
       const container = document.getElementById('events-container');
       container.innerHTML = '';
       list.forEach(ev => {
+        const st = ev.status || ev.result;
         let borderClass = 'border-emerald-500/30 bg-emerald-950/20';
         let icon = 'check-circle';
         let iconColor = 'text-emeraldAccent';
         let badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-emeraldAccent/20 text-emeraldAccent font-semibold">ACCÈS ACCORDÉ</span>';
 
-        if (ev.status === 'denied_blacklist') {
+        if (st === 'denied_blacklist') {
           borderClass = 'border-crimsonAlarm/40 bg-red-950/40';
           icon = 'alert-triangle'; iconColor = 'text-crimsonAlarm';
           badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-crimsonAlarm/30 text-red-300 font-semibold">FICHE VOL</span>';
-        } else if (ev.status === 'denied_spoof') {
+        } else if (st === 'denied_spoof') {
           borderClass = 'border-purple-500/40 bg-purple-950/30';
           icon = 'shield-alert'; iconColor = 'text-purple-400';
           badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/30 text-purple-300 font-semibold">ATTAQUE PHOTO</span>';
-        } else if (ev.status === 'hold_guard_review') {
+        } else if (st === 'hold_guard_review') {
           borderClass = 'border-amberWarn/40 bg-amber-950/30';
           icon = 'help-circle'; iconColor = 'text-amberWarn';
           badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-amberWarn/30 text-amber-300 font-semibold">VÉRIF. GARDE</span>';
-        } else if (ev.status === 'cleared_exit') {
+        } else if (st === 'cleared_exit') {
           borderClass = 'border-teal-500/30 bg-teal-950/20';
           icon = 'log-out'; iconColor = 'text-teal-400';
           badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-teal-500/30 text-teal-300 font-semibold">SORTIE VALIDÉE</span>';
-        } else if (ev.status === 'denied_antipassback') {
+        } else if (st === 'denied_antipassback') {
           borderClass = 'border-rose-500/50 bg-rose-950/40';
           icon = 'shield-alert'; iconColor = 'text-rose-400';
           badge = '<span class="text-[10px] px-1.5 py-0.5 rounded bg-rose-500/30 text-rose-300 font-semibold animate-pulse">PLAQUE CLONÉE (APB)</span>';

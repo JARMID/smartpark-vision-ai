@@ -164,9 +164,9 @@ class SqliteBufferQueue:
         """Query local whitelist for instant offline barrier decision."""
         cursor = self.conn.execute(
             """
-            SELECT * FROM cached_whitelist WHERE plate_raw = ?
+            SELECT * FROM cached_whitelist WHERE plate_raw = ? OR plate_formatted = ?
             """,
-            (plate_raw,),
+            (plate_raw, plate_raw),
         )
         row = cursor.fetchone()
         return dict(row) if row else None

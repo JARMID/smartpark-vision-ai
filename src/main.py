@@ -70,10 +70,11 @@ class GateOrchestrator:
             embedding=face_embedding,
             is_blacklisted=is_blacklisted,
         )
+        digits = "".join(filter(str.isdigit, plate_raw))
         self.buffer_queue.update_cached_whitelist(
             [
                 {
-                    "plate_raw": plate_raw,
+                    "plate_raw": digits,
                     "plate_formatted": plate_formatted,
                     "person_id": person_id,
                     "is_blacklisted": 1 if is_blacklisted else 0,
