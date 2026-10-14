@@ -11,6 +11,7 @@ SmartPark Vision AI est une solution d'accès et de vidéosurveillance intellige
 2. **Décision barrière en moins de 250 millisecondes :** La comparaison vectorielle s'exécute en mémoire vive locale (RAM FAISS) en 0.74 milliseconde. Une coupure de connexion Internet ne bloque jamais l'entrée ou la sortie des véhicules.
 3. **Moteur ALPR algérien natif :** Reconnaissance optique calibrée pour les plaques minéralogiques algériennes, incluant les séries récentes à six chiffres (wilayas 16, 31, 09) et les cartes grises provisoires au code temporaire 00.
 4. **Paiement sans attente aux barrières :** Intégration de Chargily Pay V2 pour les cartes Edahabia et CIB en paiement préalable sur smartphone ou borne de hall, évitant tout embouteillage au niveau de la voie de sortie.
+5. **Jumeau numérique 3D et CAD 2D :** Visualisation spatiale WebGL temps réel de l'ensemble du parking avec contrôle orbital, levée mécanique des barrières, cônes de vision des caméras et plan architectural métrique.
 
 ---
 
