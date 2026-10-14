@@ -107,23 +107,23 @@
 
     setupLighting() {
       // Soft Ambient Light
-      const ambient = new THREE.AmbientLight(0x94A3B8, 0.4);
-      this.scene.add(ambient);
+      this.ambientLight = new THREE.AmbientLight(0x94A3B8, 0.4);
+      this.scene.add(this.ambientLight);
 
       // Main Sun / Directional Light with Soft Shadows
-      const sun = new THREE.DirectionalLight(0xE2E8F0, 0.85);
-      sun.position.set(25, 45, 20);
-      sun.castShadow = true;
-      sun.shadow.mapSize.width = 1024;
-      sun.shadow.mapSize.height = 1024;
-      sun.shadow.camera.near = 10;
-      sun.shadow.camera.far = 120;
-      sun.shadow.camera.left = -30;
-      sun.shadow.camera.right = 30;
-      sun.shadow.camera.top = 30;
-      sun.shadow.camera.bottom = -30;
-      sun.shadow.bias = -0.0005;
-      this.scene.add(sun);
+      this.sunLight = new THREE.DirectionalLight(0xE2E8F0, 0.85);
+      this.sunLight.position.set(25, 45, 20);
+      this.sunLight.castShadow = true;
+      this.sunLight.shadow.mapSize.width = 1024;
+      this.sunLight.shadow.mapSize.height = 1024;
+      this.sunLight.shadow.camera.near = 10;
+      this.sunLight.shadow.camera.far = 120;
+      this.sunLight.shadow.camera.left = -30;
+      this.sunLight.shadow.camera.right = 30;
+      this.sunLight.shadow.camera.top = 30;
+      this.sunLight.shadow.camera.bottom = -30;
+      this.sunLight.shadow.bias = -0.0005;
+      this.scene.add(this.sunLight);
 
       // Ceiling Industrial Tube Fixtures (PointLights)
       const lightPositions = [
@@ -439,6 +439,35 @@
       this.camera.position.set(...p.pos);
       this.controls.target.set(...p.target);
       this.controls.update();
+    }
+
+    setTheme(isDark) {
+      if (!this.scene) return;
+      if (isDark) {
+        this.scene.background.setHex(0x060913);
+        if (this.scene.fog) this.scene.fog.color.setHex(0x060913);
+        if (this.ambientLight) {
+          this.ambientLight.color.setHex(0x94A3B8);
+          this.ambientLight.intensity = 0.4;
+        }
+        if (this.sunLight) {
+          this.sunLight.color.setHex(0xE2E8F0);
+          this.sunLight.intensity = 0.85;
+        }
+        if (this.renderer) this.renderer.toneMappingExposure = 1.1;
+      } else {
+        this.scene.background.setHex(0xD8E2EC);
+        if (this.scene.fog) this.scene.fog.color.setHex(0xD8E2EC);
+        if (this.ambientLight) {
+          this.ambientLight.color.setHex(0xFFFFFF);
+          this.ambientLight.intensity = 0.85;
+        }
+        if (this.sunLight) {
+          this.sunLight.color.setHex(0xFFFBEB);
+          this.sunLight.intensity = 1.45;
+        }
+        if (this.renderer) this.renderer.toneMappingExposure = 1.25;
+      }
     }
 
     onResize() {

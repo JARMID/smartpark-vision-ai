@@ -12,10 +12,10 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
   <script src="./three_digital_twin.js"></script>
-  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <!-- Google Fonts: Inter, JetBrains Mono, & Cairo (Arabic) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 
   <script>
     tailwind.config = {
@@ -23,8 +23,9 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Inter', 'sans-serif'],
+            sans: ['Inter', 'Cairo', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
+            arabic: ['Cairo', 'sans-serif'],
           },
           colors: {
             obsidian: '#070A12',
@@ -41,13 +42,14 @@
     }
   </script>
   <style>
-    body { background-color: #070A12; color: #F8FAFC; }
+    body { background-color: #070A12; color: #F8FAFC; transition: background-color 0.3s ease, color 0.3s ease; }
     .glass-panel {
       background: rgba(15, 22, 38, 0.75);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
       box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
     .glass-panel-glow {
       background: rgba(15, 22, 38, 0.85);
@@ -78,6 +80,85 @@
     ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
     ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: #475569; }
+
+    /* ======================================================== */
+    /* LIGHT MODE PALETTE (ENTERPRISE DAYLIGHT DASHBOARD)       */
+    /* ======================================================== */
+    html.light body {
+      background-color: #F1F5F9;
+      color: #0F172A;
+    }
+    html.light .glass-panel {
+      background: rgba(255, 255, 255, 0.90);
+      border: 1px solid rgba(203, 213, 225, 0.9);
+      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05);
+    }
+    html.light .glass-panel-glow {
+      background: rgba(255, 255, 255, 0.96);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      box-shadow: 0 0 25px rgba(16, 185, 129, 0.12);
+    }
+    html.light header {
+      background: rgba(255, 255, 255, 0.92) !important;
+      border-color: #E2E8F0 !important;
+    }
+    html.light .text-white {
+      color: #0F172A !important;
+    }
+    html.light .text-gray-200 {
+      color: #1E293B !important;
+    }
+    html.light .text-gray-300 {
+      color: #334155 !important;
+    }
+    html.light .text-gray-400 {
+      color: #64748B !important;
+    }
+    html.light .border-surfaceBorder {
+      border-color: #E2E8F0 !important;
+    }
+    html.light .bg-surface\/90,
+    html.light .bg-surface {
+      background-color: #FFFFFF !important;
+    }
+    html.light .bg-black\/40,
+    html.light .bg-black\/50,
+    html.light .bg-black\/60,
+    html.light .bg-black\/70,
+    html.light .bg-black\/75,
+    html.light .bg-black\/85 {
+      background-color: rgba(241, 245, 249, 0.92) !important;
+      border-color: #CBD5E1 !important;
+      color: #0F172A !important;
+    }
+    html.light .bg-gray-900\/90 {
+      background-color: rgba(248, 250, 252, 0.96) !important;
+      border-color: #E2E8F0 !important;
+    }
+    html.light .bg-gray-800,
+    html.light .bg-gray-800\/80,
+    html.light .bg-gray-800\/90 {
+      background-color: #E2E8F0 !important;
+      color: #0F172A !important;
+      border-color: #CBD5E1 !important;
+    }
+    html.light .border-gray-800,
+    html.light .border-gray-700 {
+      border-color: #CBD5E1 !important;
+    }
+    html.light input {
+      background-color: #FFFFFF !important;
+      color: #0F172A !important;
+      border-color: #CBD5E1 !important;
+    }
+    html.light .bg-black {
+      background-color: #E2E8F0 !important;
+    }
+
+    /* Arabic RTL Font and Layout Adjustments */
+    html[lang="ar"] body {
+      font-family: 'Cairo', 'Inter', sans-serif;
+    }
   </style>
 </head>
 <body class="font-sans antialiased h-screen flex flex-col overflow-hidden">
@@ -90,10 +171,10 @@
       </div>
       <div>
         <div class="flex items-center space-x-2">
-          <span class="font-bold text-base tracking-tight text-white">SmartPark Vision AI</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emeraldAccent/10 text-emeraldAccent border border-emeraldAccent/30 font-semibold uppercase tracking-wider">Édition Souveraine DZ</span>
+          <span class="font-bold text-base tracking-tight text-white" data-i18n="app_title">SmartPark Vision AI</span>
+          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emeraldAccent/10 text-emeraldAccent border border-emeraldAccent/30 font-semibold uppercase tracking-wider" data-i18n="app_edition">Édition Souveraine DZ</span>
         </div>
-        <p class="text-[11px] text-gray-400">Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)</p>
+        <p class="text-[11px] text-gray-400" data-i18n="site_location">Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)</p>
       </div>
     </div>
 
@@ -101,7 +182,7 @@
     <div class="hidden lg:flex items-center space-x-3 px-3 py-1 rounded-xl bg-black/40 border border-gray-800">
       <div class="flex items-center space-x-2">
         <canvas id="thinking-orb-header" width="22" height="22" class="rounded-full"></canvas>
-        <span class="text-[11px] font-mono text-gray-300 font-semibold" id="ai-pipeline-label">Pipeline IA: En Veille</span>
+        <span class="text-[11px] font-mono text-gray-300 font-semibold" id="ai-pipeline-label" data-i18n="pipeline_idle">Pipeline IA: En Veille</span>
       </div>
       <div class="h-4 w-px bg-gray-800"></div>
       <div class="flex items-center space-x-1.5 text-[10px] font-mono text-gray-400">
@@ -119,9 +200,21 @@
 
     <!-- Telemetry Badges & Action Buttons -->
     <div class="flex items-center space-x-2 text-xs">
+      <!-- Trilingual Language Switcher -->
+      <div class="flex items-center space-x-1 p-0.5 rounded-lg bg-black/40 border border-gray-800 text-[11px] font-mono">
+        <button id="lang-btn-fr" onclick="switchLanguage('fr')" class="px-2 py-0.5 rounded bg-emeraldAccent/20 text-emerald-300 font-bold border border-emeraldAccent/30 transition">FR</button>
+        <button id="lang-btn-en" onclick="switchLanguage('en')" class="px-2 py-0.5 rounded text-gray-400 hover:text-white transition">EN</button>
+        <button id="lang-btn-ar" onclick="switchLanguage('ar')" class="px-2 py-0.5 rounded text-gray-400 hover:text-white transition font-arabic font-semibold">عربي</button>
+      </div>
+
+      <!-- Day / Night Mode Toggle -->
+      <button id="theme-btn" onclick="toggleTheme()" class="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Basculer Mode Jour / Nuit">
+        <i data-lucide="sun" id="theme-icon" class="w-4 h-4 text-amberWarn"></i>
+      </button>
+
       <div id="backend-status-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300">
         <span id="backend-dot" class="w-2 h-2 rounded-full bg-emeraldAccent pulsing-indicator"></span>
-        <span id="backend-text" class="font-mono text-[11px]">Serveur: En Ligne</span>
+        <span id="backend-text" class="font-mono text-[11px]" data-i18n="server_online">Serveur: En Ligne</span>
       </div>
       <div class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300">
         <span class="w-2 h-2 rounded-full bg-emeraldAccent"></span>
@@ -140,11 +233,11 @@
       </button>
       <button onclick="openGuideModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emeraldAccent/10 hover:bg-emeraldAccent/20 text-emerald-400 border border-emeraldAccent/30 font-medium transition">
         <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
-        <span class="hidden sm:inline">Guide</span>
+        <span class="hidden sm:inline" data-i18n="btn_guide">Guide</span>
       </button>
       <button onclick="openAnpdpModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium transition">
         <i data-lucide="scale" class="w-3.5 h-3.5"></i>
-        <span class="hidden sm:inline">Loi 25-11</span>
+        <span class="hidden sm:inline" data-i18n="btn_law">Loi 25-11</span>
       </button>
       <div id="clock" class="font-mono text-gray-300 font-semibold px-1 text-[11px]">18:00:00</div>
     </div>
@@ -152,38 +245,38 @@
 
   <!-- SCENARIO SIMULATION & VIEW SWITCHER BAR -->
   <section class="bg-gray-900/90 border-b border-surfaceBorder px-4 py-1.5 shrink-0 flex items-center justify-between gap-2 overflow-x-auto">
-    <!-- 6 Interactive Test Scenarios -->
+    <!-- 7 Interactive Test Scenarios -->
     <div class="flex items-center space-x-1.5 overflow-x-auto py-0.5 shrink-0">
       <span class="text-xs font-semibold text-gray-400 uppercase tracking-wider mr-1 flex items-center shrink-0">
-        <i data-lucide="play-circle" class="w-3.5 h-3.5 mr-1 text-emeraldAccent"></i> Scénarios:
+        <i data-lucide="play-circle" class="w-3.5 h-3.5 mr-1 text-emeraldAccent"></i> <span data-i18n="scenarios_label">Scénarios:</span>
       </span>
       <button onclick="triggerScenario('vip_entry')" class="px-2.5 py-1 rounded-lg bg-emeraldAccent/15 hover:bg-emeraldAccent/25 text-emerald-300 border border-emeraldAccent/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
-        <span>[1] VIP (104822 119 16)</span>
+        <span data-i18n="scenario_vip">[1] VIP (104822 119 16)</span>
       </button>
       <button onclick="triggerScenario('temporary_00')" class="px-2.5 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
-        <span>[2] Provisoire 00 (08412 00 16)</span>
+        <span data-i18n="scenario_temp">[2] Provisoire 00 (08412 00 16)</span>
       </button>
       <button onclick="triggerScenario('watchlist_alert')" class="px-2.5 py-1 rounded-lg bg-crimsonAlarm/15 hover:bg-crimsonAlarm/25 text-red-300 border border-crimsonAlarm/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-crimsonAlarm"></span>
-        <span>[3] Véhicule Volé</span>
+        <span data-i18n="scenario_stolen">[3] Véhicule Volé</span>
       </button>
       <button onclick="triggerScenario('spoof_attack')" class="px-2.5 py-1 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-        <span>[4] Fraude Photo</span>
+        <span data-i18n="scenario_spoof">[4] Fraude Photo</span>
       </button>
       <button onclick="triggerScenario('driver_mismatch')" class="px-2.5 py-1 rounded-lg bg-amberWarn/15 hover:bg-amberWarn/25 text-amber-300 border border-amberWarn/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-amberWarn"></span>
-        <span>[5] Chauffeur Inconnu</span>
+        <span data-i18n="scenario_mismatch">[5] Chauffeur Inconnu</span>
       </button>
       <button onclick="triggerScenario('visitor_payment_exit')" class="px-2.5 py-1 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
         <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-        <span>[6] Sortie Chargily Pay</span>
+        <span data-i18n="scenario_chargily">[6] Sortie Chargily Pay</span>
       </button>
       <button onclick="triggerScenario('duplicate_plate_fraud')" class="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0" title="Deuxième véhicule se présentant avec la même plaque qu'une voiture déjà garée">
         <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-        <span>[7] Plaque Clonée (Anti-Passback)</span>
+        <span data-i18n="scenario_cloned">[7] Plaque Clonée (Anti-Passback)</span>
       </button>
     </div>
 
@@ -191,15 +284,15 @@
     <div class="flex items-center space-x-1 p-0.5 bg-black/60 rounded-xl border border-gray-800 shrink-0">
       <button id="tab-btn-3d" onclick="switchView('3d')" class="px-3 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition bg-emeraldAccent/20 text-emerald-300 border border-emeraldAccent/40">
         <i data-lucide="box" class="w-3.5 h-3.5"></i>
-        <span>Vue 3D Interactive</span>
+        <span data-i18n="view_3d">Vue 3D Interactive</span>
       </button>
       <button id="tab-btn-2d" onclick="switchView('2d')" class="px-3 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition text-gray-400 hover:text-white">
         <i data-lucide="map" class="w-3.5 h-3.5"></i>
-        <span>Vue 2D Tactique CAD</span>
+        <span data-i18n="view_2d">Vue 2D Tactique CAD</span>
       </button>
       <button id="tab-btn-cctv" onclick="switchView('cctv')" class="px-3 py-1 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition text-gray-400 hover:text-white">
         <i data-lucide="video" class="w-3.5 h-3.5"></i>
-        <span>Matrice Caméras</span>
+        <span data-i18n="view_cctv">Matrice Caméras</span>
       </button>
     </div>
   </section>
@@ -220,18 +313,18 @@
           <!-- 3D Header Bar & Controls -->
           <div class="absolute top-3 left-3 z-20 flex items-center space-x-2 bg-black/70 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-800 text-xs text-gray-200">
             <span class="w-2 h-2 rounded-full bg-cyanStream pulsing-indicator"></span>
-            <span class="font-bold tracking-wide">Jumeau Numérique 3D (WebGL Three.js)</span>
+            <span class="font-bold tracking-wide" data-i18n="twin_3d_title">Jumeau Numérique 3D (WebGL Three.js)</span>
             <span class="text-gray-500">|</span>
-            <span class="text-gray-400 font-mono">14 Stalles | 2 Barrières | 5 Caméras</span>
+            <span class="text-gray-400 font-mono" data-i18n="twin_3d_stats">14 Stalles | 2 Barrières | 5 Caméras</span>
           </div>
 
           <!-- Quick Camera Presets Dock -->
           <div class="absolute top-3 right-3 z-20 flex items-center space-x-1 bg-black/70 backdrop-blur-md p-1 rounded-xl border border-gray-800 text-xs">
-            <button onclick="setCameraPreset('isometric')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition">Vue Isométrique</button>
-            <button onclick="setCameraPreset('entry')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition">Voie 1 Entrée</button>
-            <button onclick="setCameraPreset('kiosk')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition">Borne Visage</button>
-            <button onclick="setCameraPreset('exit')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition">Voie 2 Sortie</button>
-            <button onclick="setCameraPreset('top')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition">Vue Zénithale</button>
+            <button onclick="setCameraPreset('isometric')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition" data-i18n="preset_iso">Vue Isométrique</button>
+            <button onclick="setCameraPreset('entry')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition" data-i18n="preset_entry">Voie 1 Entrée</button>
+            <button onclick="setCameraPreset('kiosk')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition" data-i18n="preset_kiosk">Borne Visage</button>
+            <button onclick="setCameraPreset('exit')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition" data-i18n="preset_exit">Voie 2 Sortie</button>
+            <button onclick="setCameraPreset('top')" class="px-2.5 py-1 rounded-lg text-[11px] font-medium text-gray-300 hover:bg-gray-800 transition" data-i18n="preset_top">Vue Zénithale</button>
           </div>
 
           <!-- 3D Canvas Mount Point -->
@@ -242,11 +335,11 @@
           <!-- 3D Scene Controls Overlay & Status Pill -->
           <div class="absolute bottom-3 left-3 z-20 flex items-center space-x-2 bg-black/75 backdrop-blur-md px-3 py-1.5 rounded-xl border border-gray-800 text-xs text-gray-300">
             <i data-lucide="move-3d" class="w-4 h-4 text-emeraldAccent"></i>
-            <span>Contrôle : <strong>Clic gauche</strong> pour tourner, <strong>Molette</strong> pour zoomer, <strong>Clic droit</strong> pour translater</span>
+            <span data-i18n="controls_3d">Contrôle : <strong>Clic gauche</strong> pour tourner, <strong>Molette</strong> pour zoomer, <strong>Clic droit</strong> pour translater</span>
           </div>
 
           <div id="barrier-status-3d" class="absolute bottom-3 right-3 z-20 bg-black/85 backdrop-blur-md border border-gray-700 px-3 py-1.5 rounded-xl text-xs font-mono">
-            Barrière Voie 1 : <span class="text-red-400 font-bold" id="barrier-text-3d">FERMÉE</span>
+            <span data-i18n="barrier_voix1">Barrière Voie 1 :</span> <span class="text-red-400 font-bold" id="barrier-text-3d">FERMÉE</span>
           </div>
         </div>
 
@@ -257,9 +350,9 @@
           <div class="flex items-center justify-between pb-2 mb-2 border-b border-gray-800">
             <div class="flex items-center space-x-2">
               <i data-lucide="compass" class="w-4 h-4 text-emeraldAccent"></i>
-              <span class="text-xs font-bold uppercase tracking-wider text-gray-200">Plan Architectural 2D CAD & Dimensions Métriques</span>
+              <span class="text-xs font-bold uppercase tracking-wider text-gray-200" data-i18n="cad_title">Plan Architectural 2D CAD & Dimensions Métriques</span>
             </div>
-            <div class="text-[11px] font-mono text-gray-400">Échelle 1:100 | Stalles Standard 2.50m x 5.00m | Allée 6.00m</div>
+            <div class="text-[11px] font-mono text-gray-400" data-i18n="cad_scale">Échelle 1:100 | Stalles Standard 2.50m x 5.00m | Allée 6.00m</div>
           </div>
           <div class="flex-1 relative bg-black/60 rounded-xl border border-gray-800 overflow-hidden flex items-center justify-center p-2">
             <canvas id="cad-canvas" class="w-full h-full object-contain cursor-crosshair"></canvas>
@@ -279,11 +372,11 @@
           <div class="flex items-center justify-between mb-2 px-1">
             <div class="flex items-center space-x-2">
               <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
-                <i data-lucide="video" class="w-4 h-4 mr-1.5 text-cyanStream"></i> Flux Vidéo CCTV Temps Réel (NVDEC 25 FPS)
+                <i data-lucide="video" class="w-4 h-4 mr-1.5 text-cyanStream"></i> <span data-i18n="cctv_header">Flux Vidéo CCTV Temps Réel (NVDEC 25 FPS)</span>
               </span>
               <span class="text-[10px] bg-cyanStream/10 text-cyanStream border border-cyanStream/30 px-1.5 py-0.5 rounded font-mono">WebRTC Sub-300ms</span>
             </div>
-            <div class="text-[11px] text-gray-400 font-mono">Cliquez sur une caméra pour l'agrandir</div>
+            <div class="text-[11px] text-gray-400 font-mono" data-i18n="cctv_tip">Cliquez sur une caméra pour l'agrandir</div>
           </div>
 
           <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
@@ -291,16 +384,16 @@
             <div onclick="inspectCamera(1)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
               <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
                 <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
-                <span>CAM-01 : Voie 1 (Entrée ALPR)</span>
+                <span data-i18n="cam1_name">CAM-01 : Voie 1 (Entrée ALPR)</span>
               </div>
               <canvas id="cam1-canvas" class="w-full h-full object-cover"></canvas>
               <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-yellow-500/50 p-2 rounded-xl flex items-center justify-between hidden">
                 <div>
-                  <span class="text-[10px] text-gray-400 uppercase">Plaque Détectée</span>
+                  <span class="text-[10px] text-gray-400 uppercase" data-i18n="plate_detected">Plaque Détectée</span>
                   <div class="mt-0.5" id="cam1-plate-box"><span class="plate-badge">104822 119 16</span></div>
                 </div>
                 <div class="text-right">
-                  <span class="text-[10px] text-gray-400">Wilaya</span>
+                  <span class="text-[10px] text-gray-400" data-i18n="wilaya_label">Wilaya</span>
                   <div class="text-xs font-semibold text-emeraldAccent font-mono" id="cam1-wilaya">Alger (16)</div>
                 </div>
               </div>
@@ -310,7 +403,7 @@
             <div onclick="inspectCamera(2)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
               <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
                 <span class="w-1.5 h-1.5 rounded-full bg-cyanStream"></span>
-                <span>CAM-02 : Borne Biométrique (RGB + 850nm NIR)</span>
+                <span data-i18n="cam2_name">CAM-02 : Borne Biométrique (RGB + 850nm NIR)</span>
               </div>
               <canvas id="cam2-canvas" class="w-full h-full object-cover"></canvas>
               <div id="cam2-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-cyan-500/50 p-2 rounded-xl flex items-center justify-between hidden">
@@ -332,10 +425,10 @@
             <div onclick="inspectCamera(3)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
               <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
                 <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-                <span>CAM-03 : Voie 2 (Sortie ALPR & Barrière)</span>
+                <span data-i18n="cam3_name">CAM-03 : Voie 2 (Sortie ALPR & Barrière)</span>
               </div>
               <div class="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur border border-gray-700 px-2 py-0.5 rounded-lg text-[11px] font-mono text-gray-300">
-                Lisse : <span class="text-red-400 font-semibold" id="cam3-arm-text">BAISSÉE</span>
+                <span data-i18n="arm_label">Lisse :</span> <span class="text-red-400 font-semibold" id="cam3-arm-text">BAISSÉE</span>
               </div>
               <canvas id="cam3-canvas" class="w-full h-full object-cover"></canvas>
             </div>
@@ -344,7 +437,7 @@
             <div onclick="inspectCamera(4)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
               <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
                 <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                <span>CAM-04 : Zone A & B (Vue Aérienne)</span>
+                <span data-i18n="cam4_name">CAM-04 : Zone A & B (Vue Aérienne)</span>
               </div>
               <canvas id="cam4-canvas" class="w-full h-full object-cover"></canvas>
             </div>
@@ -358,16 +451,16 @@
         <div class="flex items-center justify-between mb-2">
           <div class="flex items-center space-x-3">
             <span class="text-xs font-bold uppercase tracking-wider text-gray-300 flex items-center">
-              <i data-lucide="layout-grid" class="w-4 h-4 mr-1.5 text-emeraldAccent"></i> Plan d'Occupation des Stalles (Cliquez pour modifier)
+              <i data-lucide="layout-grid" class="w-4 h-4 mr-1.5 text-emeraldAccent"></i> <span data-i18n="stalls_title">Plan d'Occupation des Stalles (Cliquez pour modifier)</span>
             </span>
             <span class="text-xs font-mono text-emeraldAccent bg-emeraldAccent/10 px-2.5 py-0.5 rounded-lg border border-emeraldAccent/30" id="occupancy-pill">
               10 / 14 Places Occupées (71.4%)
             </span>
           </div>
           <div class="flex items-center space-x-3 text-[11px] text-gray-400">
-            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-emeraldAccent mr-1"></span> Libre</span>
-            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-crimsonAlarm mr-1"></span> Occupée</span>
-            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-purple-500 mr-1"></span> Réservée VIP</span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-emeraldAccent mr-1"></span> <span data-i18n="legend_free">Libre</span></span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-crimsonAlarm mr-1"></span> <span data-i18n="legend_occupied">Occupée</span></span>
+            <span class="flex items-center"><span class="w-2.5 h-2.5 rounded bg-purple-500 mr-1"></span> <span data-i18n="legend_vip">Réservée VIP</span></span>
           </div>
         </div>
 
@@ -384,24 +477,24 @@
       <div class="flex items-center justify-between pb-2 mb-2 border-b border-surfaceBorder">
         <div class="flex items-center space-x-2">
           <i data-lucide="activity" class="w-4 h-4 text-cyanStream"></i>
-          <span class="text-xs font-bold uppercase tracking-wider text-gray-200">Journal d'Événements</span>
+          <span class="text-xs font-bold uppercase tracking-wider text-gray-200" data-i18n="events_title">Journal d'Événements</span>
         </div>
-        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emeraldAccent/10 text-emeraldAccent font-mono border border-emeraldAccent/30" id="event-mode-badge">Direct Live</span>
+        <span class="text-[10px] px-2 py-0.5 rounded-full bg-emeraldAccent/10 text-emeraldAccent font-mono border border-emeraldAccent/30" id="event-mode-badge" data-i18n="live_badge">Direct Live</span>
       </div>
 
       <!-- Search & Category Filters -->
       <div class="space-y-1.5 mb-2">
         <div class="relative">
           <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 top-2 text-gray-400"></i>
-          <input type="text" id="event-search" oninput="filterEvents()" placeholder="Filtrer par plaque ou wilaya..." class="w-full bg-black/50 border border-gray-800 rounded-lg pl-8 pr-3 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyanStream">
+          <input type="text" id="event-search" oninput="filterEvents()" placeholder="Filtrer par plaque ou wilaya..." data-i18n-placeholder="search_placeholder" class="w-full bg-black/50 border border-gray-800 rounded-lg pl-8 pr-3 py-1 text-xs text-gray-200 placeholder-gray-500 focus:outline-none focus:border-cyanStream">
         </div>
         <div class="flex items-center space-x-1 overflow-x-auto text-[10px] font-medium pb-1">
-          <button onclick="setEventFilter('all')" id="filter-all" class="px-2 py-0.5 rounded bg-gray-800 text-white font-semibold">Tous</button>
-          <button onclick="setEventFilter('vip')" id="filter-vip" class="px-2 py-0.5 rounded text-gray-400 hover:text-white">VIP</button>
-          <button onclick="setEventFilter('temp')" id="filter-temp" class="px-2 py-0.5 rounded text-gray-400 hover:text-white">00 Prov.</button>
-          <button onclick="setEventFilter('alert')" id="filter-alert" class="px-2 py-0.5 rounded text-gray-400 hover:text-white">Alertes</button>
-          <button onclick="setEventFilter('spoof')" id="filter-spoof" class="px-2 py-0.5 rounded text-gray-400 hover:text-white">Fraudes</button>
-          <button onclick="setEventFilter('exit')" id="filter-exit" class="px-2 py-0.5 rounded text-gray-400 hover:text-white">Sorties</button>
+          <button onclick="setEventFilter('all')" id="filter-all" class="px-2 py-0.5 rounded bg-gray-800 text-white font-semibold" data-i18n="filter_all">Tous</button>
+          <button onclick="setEventFilter('vip')" id="filter-vip" class="px-2 py-0.5 rounded text-gray-400 hover:text-white" data-i18n="filter_vip">VIP</button>
+          <button onclick="setEventFilter('temp')" id="filter-temp" class="px-2 py-0.5 rounded text-gray-400 hover:text-white" data-i18n="filter_temp">00 Prov.</button>
+          <button onclick="setEventFilter('alert')" id="filter-alert" class="px-2 py-0.5 rounded text-gray-400 hover:text-white" data-i18n="filter_alert">Alertes</button>
+          <button onclick="setEventFilter('spoof')" id="filter-spoof" class="px-2 py-0.5 rounded text-gray-400 hover:text-white" data-i18n="filter_spoof">Fraudes</button>
+          <button onclick="setEventFilter('exit')" id="filter-exit" class="px-2 py-0.5 rounded text-gray-400 hover:text-white" data-i18n="filter_exit">Sorties</button>
         </div>
       </div>
 
@@ -413,27 +506,27 @@
       <!-- Operator Quick Action Dock -->
       <div class="mt-2.5 pt-2 border-t border-surfaceBorder space-y-2">
         <div class="flex items-center justify-between text-xs text-gray-400">
-          <span>Commandes Rapides :</span>
-          <span class="font-mono text-[10px] text-gray-500">[Espace] Barrière | [1-6] Scénarios</span>
+          <span data-i18n="quick_commands">Commandes Rapides :</span>
+          <span class="font-mono text-[10px] text-gray-500" data-i18n="quick_shortcuts">[Espace] Barrière | [1-6] Scénarios</span>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <button onclick="manualBarrierOverride(1)" class="px-2 py-2 rounded-xl bg-gray-800/90 hover:bg-gray-700 text-white text-xs font-semibold border border-gray-700 flex items-center justify-center space-x-1.5 transition shadow">
             <i data-lucide="unlock" class="w-3.5 h-3.5 text-emeraldAccent"></i>
-            <span>Ouvrir Voie 1 [Espace]</span>
+            <span data-i18n="btn_open_lane1">Ouvrir Voie 1 [Espace]</span>
           </button>
           <button onclick="openTicketModal()" class="px-2 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs font-semibold border border-blue-500/40 flex items-center justify-center space-x-1.5 transition">
             <i data-lucide="qr-code" class="w-3.5 h-3.5 text-blue-400"></i>
-            <span>Ticket Visiteur</span>
+            <span data-i18n="btn_ticket">Ticket Visiteur</span>
           </button>
         </div>
         <div class="grid grid-cols-2 gap-2">
           <button onclick="openChargilyModal()" class="px-2 py-2 rounded-xl bg-teal-600/20 hover:bg-teal-600/30 text-teal-300 text-xs font-semibold border border-teal-500/40 flex items-center justify-center space-x-1.5 transition">
             <i data-lucide="credit-card" class="w-3.5 h-3.5 text-teal-400"></i>
-            <span>Paiement CIB</span>
+            <span data-i18n="btn_cib">Paiement CIB</span>
           </button>
           <button onclick="emergencyLockdown()" class="px-2 py-2 rounded-xl bg-red-950/60 hover:bg-red-900/80 text-red-200 text-xs font-semibold border border-red-800 flex items-center justify-center space-x-1.5 transition">
             <i data-lucide="alert-octagon" class="w-3.5 h-3.5 text-crimsonAlarm"></i>
-            <span>Verrouillage Total</span>
+            <span data-i18n="btn_lockdown">Verrouillage Total</span>
           </button>
         </div>
       </div>
@@ -797,6 +890,298 @@
 
   <!-- JAVASCRIPT ENGINE (3D WebGL, 2D CAD, Cameras, WebSocket, Simulations) -->
   <script>
+    // =======================================================
+    // TRILINGUAL LOCALIZATION & DAY/NIGHT THEME ENGINE
+    // =======================================================
+    const I18N = {
+      fr: {
+        app_title: "SmartPark Vision AI",
+        app_edition: "Édition Souveraine DZ",
+        site_location: "Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)",
+        pipeline_idle: "Pipeline IA: En Veille",
+        pipeline_active: "Pipeline IA: Détection Active",
+        server_online: "Serveur: En Ligne",
+        btn_guide: "Guide",
+        btn_law: "Loi 25-11",
+        scenarios_label: "Scénarios:",
+        scenario_vip: "[1] VIP (104822 119 16)",
+        scenario_temp: "[2] Provisoire 00 (08412 00 16)",
+        scenario_stolen: "[3] Véhicule Volé",
+        scenario_spoof: "[4] Fraude Photo",
+        scenario_mismatch: "[5] Chauffeur Inconnu",
+        scenario_chargily: "[6] Sortie Chargily Pay",
+        scenario_cloned: "[7] Plaque Clonée (Anti-Passback)",
+        view_3d: "Vue 3D Interactive",
+        view_2d: "Vue 2D Tactique CAD",
+        view_cctv: "Matrice Caméras",
+        twin_3d_title: "Jumeau Numérique 3D (WebGL Three.js)",
+        twin_3d_stats: "14 Stalles | 2 Barrières | 5 Caméras",
+        preset_iso: "Vue Isométrique",
+        preset_entry: "Voie 1 Entrée",
+        preset_kiosk: "Borne Visage",
+        preset_exit: "Voie 2 Sortie",
+        preset_top: "Vue Zénithale",
+        controls_3d: "Contrôle : Clic gauche pour tourner, Molette pour zoomer, Clic droit pour translater",
+        barrier_voix1: "Barrière Voie 1 :",
+        cad_title: "Plan Architectural 2D CAD & Dimensions Métriques",
+        cad_scale: "Échelle 1:100 | Stalles Standard 2.50m x 5.00m | Allée 6.00m",
+        cctv_header: "Flux Vidéo CCTV Temps Réel (NVDEC 25 FPS)",
+        cctv_tip: "Cliquez sur une caméra pour l'agrandir",
+        cam1_name: "CAM-01 : Voie 1 (Entrée ALPR)",
+        cam2_name: "CAM-02 : Borne Biométrique (RGB + 850nm NIR)",
+        cam3_name: "CAM-03 : Voie 2 (Sortie ALPR & Barrière)",
+        cam4_name: "CAM-04 : Zone A & B (Vue Aérienne)",
+        plate_detected: "Plaque Détectée",
+        wilaya_label: "Wilaya",
+        arm_label: "Lisse :",
+        stalls_title: "Plan d'Occupation des Stalles (Cliquez pour modifier)",
+        legend_free: "Libre",
+        legend_occupied: "Occupée",
+        legend_vip: "Réservée VIP",
+        events_title: "Journal d'Événements",
+        live_badge: "Direct Live",
+        search_placeholder: "Filtrer par plaque ou wilaya...",
+        filter_all: "Tous",
+        filter_vip: "VIP",
+        filter_temp: "00 Prov.",
+        filter_alert: "Alertes",
+        filter_spoof: "Fraudes",
+        filter_exit: "Sorties",
+        quick_commands: "Commandes Rapides :",
+        quick_shortcuts: "[Espace] Barrière | [1-7] Scénarios",
+        btn_open_lane1: "Ouvrir Voie 1 [Espace]",
+        btn_ticket: "Ticket Visiteur",
+        btn_cib: "Paiement CIB",
+        btn_lockdown: "Verrouillage Total",
+        status_cleared_vip: "ACCÈS ACCORDÉ",
+        status_denied_blacklist: "FICHE VOL",
+        status_denied_spoof: "ATTAQUE PHOTO",
+        status_hold_guard: "VÉRIF. GARDE",
+        status_cleared_exit: "SORTIE VALIDÉE",
+        status_denied_apb: "PLAQUE CLONÉE (APB)",
+        stall_available: "LIBRE",
+        stall_occupied: "OCCUPÉ",
+        stall_reserved: "RÉSERVÉ",
+        portal_sign: "PARKING ALGER-CENTRE | ENTRÉE",
+        gantry_sign_open: "● VOIE 02 : SORTIE ACCORDÉE | BONNE ROUTE",
+        gantry_sign_closed: "■ VOIE 02 : PÉAGE AUTOMATIQUE | 100 DZD"
+      },
+      en: {
+        app_title: "SmartPark Vision AI",
+        app_edition: "Sovereign DZ Edition",
+        site_location: "Pilot Site: Algiers Central Parking (El-Biar) | Wilaya: 16 (Algiers)",
+        pipeline_idle: "AI Pipeline: Standby",
+        pipeline_active: "AI Pipeline: Active Detection",
+        server_online: "Server: Online",
+        btn_guide: "Guide",
+        btn_law: "Law 25-11",
+        scenarios_label: "Scenarios:",
+        scenario_vip: "[1] VIP (104822 119 16)",
+        scenario_temp: "[2] Temporary 00 (08412 00 16)",
+        scenario_stolen: "[3] Stolen Vehicle",
+        scenario_spoof: "[4] Photo Spoof Attack",
+        scenario_mismatch: "[5] Unknown Driver",
+        scenario_chargily: "[6] Chargily Pay Exit",
+        scenario_cloned: "[7] Cloned Plate (Anti-Passback)",
+        view_3d: "3D Interactive Twin",
+        view_2d: "2D Tactical CAD View",
+        view_cctv: "Camera Matrix CCTV",
+        twin_3d_title: "3D Digital Twin (WebGL Three.js)",
+        twin_3d_stats: "14 Stalls | 2 Barriers | 5 Cameras",
+        preset_iso: "Isometric View",
+        preset_entry: "Lane 1 Entry",
+        preset_kiosk: "Biometric Kiosk",
+        preset_exit: "Lane 2 Exit",
+        preset_top: "Top-Down View",
+        controls_3d: "Controls: Left click to rotate, Wheel to zoom, Right click to pan",
+        barrier_voix1: "Lane 1 Barrier:",
+        cad_title: "2D Architectural CAD Blueprint & Metric Dimensions",
+        cad_scale: "Scale 1:100 | Standard Stalls 2.50m x 5.00m | Aisle 6.00m",
+        cctv_header: "Real-Time CCTV Video Streams (NVDEC 25 FPS)",
+        cctv_tip: "Click on any camera to expand",
+        cam1_name: "CAM-01: Lane 1 (ALPR Entry)",
+        cam2_name: "CAM-02: Biometric Kiosk (RGB + 850nm NIR)",
+        cam3_name: "CAM-03: Lane 2 (ALPR Exit & Barrier)",
+        cam4_name: "CAM-04: Zones A & B (Overhead View)",
+        plate_detected: "Detected Plate",
+        wilaya_label: "Wilaya",
+        arm_label: "Barrier Arm:",
+        stalls_title: "Stall Occupancy Map (Click to toggle)",
+        legend_free: "Available",
+        legend_occupied: "Occupied",
+        legend_vip: "VIP Reserved",
+        events_title: "Event Audit Stream",
+        live_badge: "Live Feed",
+        search_placeholder: "Filter by plate or wilaya...",
+        filter_all: "All",
+        filter_vip: "VIP",
+        filter_temp: "00 Temp",
+        filter_alert: "Alerts",
+        filter_spoof: "Spoofs",
+        filter_exit: "Exits",
+        quick_commands: "Quick Commands:",
+        quick_shortcuts: "[Space] Barrier | [1-7] Scenarios",
+        btn_open_lane1: "Open Lane 1 [Space]",
+        btn_ticket: "Visitor Ticket",
+        btn_cib: "CIB Payment",
+        btn_lockdown: "Total Lockdown",
+        status_cleared_vip: "ACCESS GRANTED",
+        status_denied_blacklist: "STOLEN VEHICLE",
+        status_denied_spoof: "PHOTO ATTACK",
+        status_hold_guard: "GUARD REVIEW",
+        status_cleared_exit: "EXIT CLEARED",
+        status_denied_apb: "CLONED PLATE (APB)",
+        stall_available: "FREE",
+        stall_occupied: "OCCUPIED",
+        stall_reserved: "RESERVED",
+        portal_sign: "ALGIERS CENTRAL PARKING | ENTRANCE",
+        gantry_sign_open: "● LANE 02 : EXIT GRANTED | SAFE TRAVELS",
+        gantry_sign_closed: "■ LANE 02 : AUTOMATED TOLL | 100 DZD"
+      },
+      ar: {
+        app_title: "سمارت بارك فيجن AI",
+        app_edition: "النسخة السيادية الجزائرية",
+        site_location: "الموقع النموذجي: موقف الجزائر الوسطى (الأبيار) | ولاية: 16 (الجزائر)",
+        pipeline_idle: "مسار الذكاء الاصطناعي: في وضع الاستعداد",
+        pipeline_active: "مسار الذكاء الاصطناعي: رصد حي ونشط",
+        server_online: "الخادم: متصل",
+        btn_guide: "الدليل",
+        btn_law: "القانون 25-11",
+        scenarios_label: "السيناريوهات:",
+        scenario_vip: "[1] دخول VIP (104822 119 16)",
+        scenario_temp: "[2] ترقيم مؤقت 00 (08412 00 16)",
+        scenario_stolen: "[3] تنبيه مركبة مسروقة",
+        scenario_spoof: "[4] احتيال بصري بالصورة",
+        scenario_mismatch: "[5] سائق غير مصرح",
+        scenario_chargily: "[6] خروج دفع شارجيلي",
+        scenario_cloned: "[7] لوحة مستنسخة (منع التمرير)",
+        view_3d: "التوأم الرقمي ثلاثي الأبعاد",
+        view_2d: "مخطط CAD ثنائي الأبعاد",
+        view_cctv: "مصفوفة كاميرات المراقبة",
+        twin_3d_title: "التوأم الرقمي ثلاثي الأبعاد (WebGL Three.js)",
+        twin_3d_stats: "14 موقفا | حاجزين آليين | 5 كاميرات",
+        preset_iso: "منظور متساوي القياس",
+        preset_entry: "المسلك 1 دخول",
+        preset_kiosk: "كشك التحقق الحيوي",
+        preset_exit: "المسلك 2 خروج",
+        preset_top: "منظور علوي شامل",
+        controls_3d: "التحكم: انقر واسحب للتدوير، عجلة الفأرة للتقريب، الزر الأيمن للإزاحة",
+        barrier_voix1: "حاجز المسلك 1:",
+        cad_title: "المخطط المعماري 2D والأبعاد الهندسية",
+        cad_scale: "المقياس 1:100 | أبعاد الموقف 2.50م × 5.00م | الممر 6.00م",
+        cctv_header: "بث كاميرات المراقبة المباشر (NVDEC 25 إطار/ثانية)",
+        cctv_tip: "انقر على أي كاميرا لتكبير العرض",
+        cam1_name: "كاميرا 1: المسلك 1 (قراءة اللوحات)",
+        cam2_name: "كاميرا 2: كشك التحقق الحيوي (RGB + NIR)",
+        cam3_name: "كاميرا 3: المسلك 2 (الخروج والحاجز)",
+        cam4_name: "كاميرا 4: المنطقة أ و ب (رؤية علوية)",
+        plate_detected: "اللوحة المرصودة",
+        wilaya_label: "الولاية",
+        arm_label: "ذراع الحاجز:",
+        stalls_title: "مخطط إشغال المواقف (انقر للتبديل)",
+        legend_free: "شاغرة",
+        legend_occupied: "مشغولة",
+        legend_vip: "محجوزة VIP",
+        events_title: "سجل الأحداث والرقابة الحية",
+        live_badge: "بث مباشر",
+        search_placeholder: "تصفية حسب اللوحة أو الولاية...",
+        filter_all: "الكل",
+        filter_vip: "VIP",
+        filter_temp: "00 مؤقت",
+        filter_alert: "تنبيهات",
+        filter_spoof: "احتيال",
+        filter_exit: "خروج",
+        quick_commands: "أوامر سريعة:",
+        quick_shortcuts: "[مسافة] فتح الحاجز | [1-7] تشغيل السيناريوهات",
+        btn_open_lane1: "فتح المسلك 1 [مسافة]",
+        btn_ticket: "تذكرة زائر",
+        btn_cib: "دفع CIB / الذهبية",
+        btn_lockdown: "إغلاق طوارئ شامل",
+        status_cleared_vip: "تم السماح بالدخول",
+        status_denied_blacklist: "مركبة مسروقة",
+        status_denied_spoof: "هجوم احتيال بصري",
+        status_hold_guard: "بانتظار الحارس",
+        status_cleared_exit: "تم تأكيد الخروج",
+        status_denied_apb: "لوحة مستنسخة (APB)",
+        stall_available: "شاغرة",
+        stall_occupied: "مشغولة",
+        stall_reserved: "محجوزة",
+        portal_sign: "موقف الجزائر الوسطى | المدخل",
+        gantry_sign_open: "● المسلك 02 : تم تأكيد الخروج | رافقتكم السلامة",
+        gantry_sign_closed: "■ المسلك 02 : رسوم الخروج التلقائية | 100 دج"
+      }
+    };
+
+    let currentLang = localStorage.getItem('smartpark_lang') || 'fr';
+    let currentTheme = localStorage.getItem('smartpark_theme') || 'dark';
+
+    function switchLanguage(lang) {
+      if (!I18N[lang]) return;
+      currentLang = lang;
+      localStorage.setItem('smartpark_lang', lang);
+
+      document.documentElement.lang = lang;
+      document.documentElement.dir = (lang === 'ar' ? 'rtl' : 'ltr');
+
+      ['fr', 'en', 'ar'].forEach(l => {
+        const btn = document.getElementById(`lang-btn-${l}`);
+        if (btn) {
+          if (l === lang) {
+            btn.className = 'px-2 py-0.5 rounded bg-emeraldAccent/20 text-emerald-300 font-bold border border-emeraldAccent/30 transition' + (l === 'ar' ? ' font-arabic' : '');
+          } else {
+            btn.className = 'px-2 py-0.5 rounded text-gray-400 hover:text-white transition' + (l === 'ar' ? ' font-arabic' : '');
+          }
+        }
+      });
+
+      document.querySelectorAll('[data-i18n]').forEach(el => {
+        const key = el.getAttribute('data-i18n');
+        if (I18N[lang] && I18N[lang][key]) {
+          el.textContent = I18N[lang][key];
+        }
+      });
+
+      document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        const key = el.getAttribute('data-i18n-placeholder');
+        if (I18N[lang] && I18N[lang][key]) {
+          el.placeholder = I18N[lang][key];
+        }
+      });
+
+      if (typeof renderStalls === 'function' && currentStalls) renderStalls(currentStalls);
+      if (typeof renderEvents === 'function' && eventsList) renderEvents(eventsList);
+    }
+
+    function toggleTheme() {
+      const isLight = document.documentElement.classList.contains('light');
+      applyTheme(isLight ? 'dark' : 'light');
+    }
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      localStorage.setItem('smartpark_theme', theme);
+      const icon = document.getElementById('theme-icon');
+
+      if (theme === 'light') {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        if (icon) {
+          icon.setAttribute('data-lucide', 'moon');
+          icon.className = 'w-4 h-4 text-cyanStream';
+        }
+        if (twin && twin.setTheme) twin.setTheme(false);
+      } else {
+        document.documentElement.classList.remove('light');
+        document.documentElement.classList.add('dark');
+        if (icon) {
+          icon.setAttribute('data-lucide', 'sun');
+          icon.className = 'w-4 h-4 text-amberWarn';
+        }
+        if (twin && twin.setTheme) twin.setTheme(true);
+      }
+      lucide.createIcons();
+    }
+
     // Audio Synthesis (Web Audio API)
     let audioMuted = false;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -1041,32 +1426,39 @@
     // SHARED HIGH-DEFINITION CCTV SECURITY OVERLAY
     // =======================================================
     function drawCCTVEffects(ctx, w, h, camCode, camTitle, fps = 25.0, nowStr = '', isRec = true) {
+      const isLight = document.documentElement.classList.contains('light');
+
       // 1. Horizontal CRT / CCTV Micro-Scanlines
-      ctx.fillStyle = 'rgba(0, 0, 0, 0.16)';
+      ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.04)' : 'rgba(0, 0, 0, 0.16)';
       for (let y = 0; y < h; y += 3) {
         ctx.fillRect(0, y, w, 1);
       }
 
       // 2. Optical Security Lens Barrel Vignette
-      const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.42, w / 2, h / 2, w * 0.72);
-      vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
-      vig.addColorStop(1, 'rgba(2, 6, 18, 0.65)');
+      const vig = ctx.createRadialGradient(w / 2, h / 2, h * 0.44, w / 2, h / 2, w * 0.72);
+      if (isLight) {
+        vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vig.addColorStop(1, 'rgba(15, 23, 42, 0.18)');
+      } else {
+        vig.addColorStop(0, 'rgba(0, 0, 0, 0)');
+        vig.addColorStop(1, 'rgba(2, 6, 18, 0.65)');
+      }
       ctx.fillStyle = vig;
       ctx.fillRect(0, 0, w, h);
 
       // 3. Dynamic Low-Light Sensor Grain / Noise
-      ctx.fillStyle = 'rgba(255, 255, 255, 0.035)';
+      ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.02)' : 'rgba(255, 255, 255, 0.035)';
       const seed = (Date.now() % 1000) * 0.01;
-      for (let i = 0; i < 90; i++) {
+      for (let i = 0; i < 70; i++) {
         const rx = Math.abs((Math.sin(seed + i * 1.7) * 43758.5453) % w);
         const ry = Math.abs((Math.cos(seed + i * 2.3) * 43758.5453) % h);
         ctx.fillRect(rx, ry, 1, 1);
       }
 
       // 4. CCTV Top Header Bar
-      ctx.fillStyle = 'rgba(4, 8, 20, 0.88)';
+      ctx.fillStyle = isLight ? 'rgba(248, 250, 252, 0.92)' : 'rgba(4, 8, 20, 0.88)';
       ctx.fillRect(0, 0, w, 22);
-      ctx.strokeStyle = 'rgba(30, 41, 59, 0.8)';
+      ctx.strokeStyle = isLight ? 'rgba(203, 213, 225, 0.8)' : 'rgba(30, 41, 59, 0.8)';
       ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(0, 22); ctx.lineTo(w, 22); ctx.stroke();
 
@@ -1075,44 +1467,45 @@
       if (isRec && blink) {
         ctx.fillStyle = '#EF4444';
         ctx.beginPath(); ctx.arc(12, 11, 3.5, 0, Math.PI * 2); ctx.fill();
-        ctx.fillStyle = '#FCA5A5';
+        ctx.fillStyle = isLight ? '#DC2626' : '#FCA5A5';
         ctx.font = 'bold 8px JetBrains Mono';
         ctx.fillText('REC', 20, 14);
       } else {
-        ctx.fillStyle = '#94A3B8';
+        ctx.fillStyle = isLight ? '#64748B' : '#94A3B8';
         ctx.font = 'bold 8px JetBrains Mono';
         ctx.fillText('STBY', 14, 14);
       }
 
-      ctx.fillStyle = '#F1F5F9';
+      ctx.fillStyle = isLight ? '#0F172A' : '#F1F5F9';
       ctx.font = 'bold 9px JetBrains Mono';
       ctx.fillText(`${camCode} [${camTitle}]`, 48, 14);
 
-      // Real-Time ISO Timecode with Milliseconds
-      ctx.fillStyle = '#38BDF8';
+      // Real-Time Timecode
+      ctx.fillStyle = isLight ? '#0284C7' : '#38BDF8';
       ctx.textAlign = 'right';
       const timeText = nowStr || new Date().toISOString().replace('T', ' ').substring(0, 19);
       ctx.fillText(`${timeText} UTC+1`, w - 10, 14);
       ctx.textAlign = 'left';
 
       // 5. CCTV Bottom Telemetry Footer
-      ctx.fillStyle = 'rgba(4, 8, 20, 0.88)';
+      ctx.fillStyle = isLight ? 'rgba(248, 250, 252, 0.92)' : 'rgba(4, 8, 20, 0.88)';
       ctx.fillRect(0, h - 20, w, 20);
-      ctx.strokeStyle = 'rgba(30, 41, 59, 0.8)';
+      ctx.strokeStyle = isLight ? 'rgba(203, 213, 225, 0.8)' : 'rgba(30, 41, 59, 0.8)';
       ctx.beginPath(); ctx.moveTo(0, h - 20); ctx.lineTo(w, h - 20); ctx.stroke();
 
-      ctx.fillStyle = '#94A3B8';
+      ctx.fillStyle = isLight ? '#475569' : '#94A3B8';
       ctx.font = '8px JetBrains Mono';
-      ctx.fillText(`1080p50 H.265 | NVDEC 4.8 Mb/s | EXPO: 1/1000s | LOI 18-07 SUR SITE`, 10, h - 7);
+      const lawText = currentLang === 'ar' ? 'القانون 25-11 لحماية البيانات | NVDEC 4.8 Mb/s' : (currentLang === 'en' ? 'LAW 25-11 PRIVACY COMPLIANT | NVDEC 4.8 Mb/s' : 'LOI 25-11 PROTECTION DES DONNEES | NVDEC 4.8 Mb/s');
+      ctx.fillText(`1080p50 H.265 | ${lawText}`, 10, h - 7);
 
       ctx.textAlign = 'right';
-      ctx.fillStyle = '#10B981';
-      ctx.fillText(`${fps.toFixed(1)} FPS | BUFFER: 12ms | VENDOR: AXIS/HIK-DZ`, w - 10, h - 7);
+      ctx.fillStyle = isLight ? '#059669' : '#10B981';
+      ctx.fillText(`${fps.toFixed(1)} FPS | AXIS-DZ SECURE`, w - 10, h - 7);
       ctx.textAlign = 'left';
     }
 
     // =======================================================
-    // CAM 1 : VOIE 1 ENTRÉE PRINCIPALE (ALPR PERSPECTIVE)
+    // CAM 1 : VOIE 1 ENTREE PRINCIPALE (ALPR PERSPECTIVE)
     // =======================================================
     function setupCam1() {
       const cvs = document.getElementById('cam1-canvas');
@@ -1123,13 +1516,31 @@
 
       function render() {
         frameCount++;
-        ctx.fillStyle = '#060A14';
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
+        const isLight = document.documentElement.classList.contains('light');
 
-        // 1. Night Checkpoint Roadway
+        // Sky & Background Horizon
+        if (isLight) {
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, 80);
+          skyGrad.addColorStop(0, '#BAE6FD');
+          skyGrad.addColorStop(1, '#E0F2FE');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+        } else {
+          ctx.fillStyle = '#060A14';
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+        }
+
+        // 1. Perspective Roadway Pavement
         const roadGrad = ctx.createLinearGradient(0, 40, 0, cvs.height);
-        roadGrad.addColorStop(0, '#0F172A');
-        roadGrad.addColorStop(1, '#020617');
+        if (isLight) {
+          roadGrad.addColorStop(0, '#64748B');
+          roadGrad.addColorStop(0.3, '#475569');
+          roadGrad.addColorStop(1, '#334155');
+        } else {
+          roadGrad.addColorStop(0, '#0F172A');
+          roadGrad.addColorStop(0.4, '#0A101D');
+          roadGrad.addColorStop(1, '#020617');
+        }
         ctx.fillStyle = roadGrad;
         ctx.beginPath();
         ctx.moveTo(170, 45); ctx.lineTo(310, 45);
@@ -1137,7 +1548,7 @@
         ctx.closePath(); ctx.fill();
 
         // White Roadway Shoulder Lines
-        ctx.strokeStyle = 'rgba(241, 245, 249, 0.6)';
+        ctx.strokeStyle = isLight ? '#FFFFFF' : 'rgba(241, 245, 249, 0.6)';
         ctx.lineWidth = 2.5;
         ctx.beginPath();
         ctx.moveTo(175, 45); ctx.lineTo(38, cvs.height - 20);
@@ -1152,7 +1563,7 @@
         ctx.moveTo(242, 45); ctx.lineTo(248, cvs.height - 20);
         ctx.stroke();
 
-        // 2. Concrete Safety Curb (Beveled Yellow & Black Blocks)
+        // 2. Concrete Safety Curb (Beveled Yellow & Black Blocks on Left)
         for (let i = 0; i < 9; i++) {
           const t1 = i / 9, t2 = (i + 1) / 9;
           const y1 = 45 + t1 * (cvs.height - 65);
@@ -1160,57 +1571,88 @@
           const x1 = 175 - t1 * 137;
           const x2 = 175 - t2 * 137;
 
-          ctx.fillStyle = (i % 2 === 0) ? '#F59E0B' : '#0F172A';
+          ctx.fillStyle = (i % 2 === 0) ? '#F59E0B' : (isLight ? '#334155' : '#0F172A');
           ctx.beginPath();
           ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
           ctx.lineTo(x2 - 14, y2 + 4); ctx.lineTo(x1 - 14, y1 + 4);
           ctx.closePath(); ctx.fill();
-          ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.8; ctx.stroke();
+          ctx.strokeStyle = isLight ? '#64748B' : '#1E293B'; ctx.lineWidth = 0.8; ctx.stroke();
         }
 
         // 3. Security Guard Booth on Left
-        ctx.fillStyle = '#1E293B';
-        ctx.fillRect(8, 55, 55, 115);
-        ctx.strokeStyle = '#475569';
-        ctx.strokeRect(8, 55, 55, 115);
+        const boothX = 8, boothY = 55, boothW = 55, boothH = 115;
+        ctx.fillStyle = isLight ? '#E2E8F0' : '#1E293B';
+        ctx.fillRect(boothX, boothY, boothW, boothH);
+        ctx.strokeStyle = isLight ? '#94A3B8' : '#475569';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(boothX, boothY, boothW, boothH);
 
-        // Booth Window with Warm Golden Glow
-        const windowGrad = ctx.createLinearGradient(12, 65, 58, 120);
-        windowGrad.addColorStop(0, 'rgba(251, 191, 36, 0.5)');
-        windowGrad.addColorStop(1, 'rgba(217, 119, 6, 0.2)');
-        ctx.fillStyle = windowGrad;
-        ctx.fillRect(12, 65, 47, 55);
-        ctx.strokeStyle = '#D97706';
-        ctx.strokeRect(12, 65, 47, 55);
+        // Booth Overhang Roof Fascia
+        ctx.fillStyle = isLight ? '#334155' : '#0F172A';
+        ctx.fillRect(boothX - 2, boothY - 5, boothW + 4, 7);
+
+        // Booth Window
+        const winX = boothX + 4, winY = boothY + 10, winW = boothW - 8, winH = 55;
+        if (isLight) {
+          const winGrad = ctx.createLinearGradient(winX, winY, winX + winW, winY + winH);
+          winGrad.addColorStop(0, '#93C5FD');
+          winGrad.addColorStop(0.5, '#BFDBFE');
+          winGrad.addColorStop(1, '#60A5FA');
+          ctx.fillStyle = winGrad;
+          ctx.fillRect(winX, winY, winW, winH);
+          ctx.strokeStyle = '#3B82F6';
+          ctx.strokeRect(winX, winY, winW, winH);
+        } else {
+          const winGrad = ctx.createLinearGradient(winX, winY, winX + winW, winY + winH);
+          winGrad.addColorStop(0, 'rgba(251, 191, 36, 0.55)');
+          winGrad.addColorStop(1, 'rgba(217, 119, 6, 0.25)');
+          ctx.fillStyle = winGrad;
+          ctx.fillRect(winX, winY, winW, winH);
+          ctx.strokeStyle = '#D97706';
+          ctx.strokeRect(winX, winY, winW, winH);
+        }
 
         // Security Guard Silhouette Inside Window
-        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillStyle = isLight ? 'rgba(30, 41, 59, 0.85)' : 'rgba(15, 23, 42, 0.9)';
         ctx.beginPath();
-        ctx.arc(36, 85, 10, 0, Math.PI * 2);
+        ctx.arc(winX + winW / 2, winY + 20, 10, 0, Math.PI * 2);
         ctx.fill();
         ctx.beginPath();
-        ctx.ellipse(36, 112, 16, 12, 0, 0, Math.PI);
+        ctx.ellipse(winX + winW / 2, winY + 46, 16, 12, 0, 0, Math.PI);
         ctx.fill();
 
-        // Overhead Security Floodlight Spot
-        const floodGrad = ctx.createRadialGradient(35, 55, 5, 180, 150, 160);
-        floodGrad.addColorStop(0, 'rgba(254, 240, 138, 0.25)');
-        floodGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
-        ctx.fillStyle = floodGrad;
-        ctx.beginPath();
-        ctx.moveTo(35, 55); ctx.lineTo(80, 240); ctx.lineTo(340, 240);
-        ctx.closePath(); ctx.fill();
+        // Night Overhead Floodlight Spot
+        if (!isLight) {
+          const floodGrad = ctx.createRadialGradient(boothX + 30, boothY, 5, 180, 150, 160);
+          floodGrad.addColorStop(0, 'rgba(254, 240, 138, 0.22)');
+          floodGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+          ctx.fillStyle = floodGrad;
+          ctx.beginPath();
+          ctx.moveTo(boothX + 30, boothY); ctx.lineTo(80, 240); ctx.lineTo(340, 240);
+          ctx.closePath(); ctx.fill();
+        }
 
-        // 4. Ground Inductive Presence Loop (Embedded in Asphalt)
+        // 4. Ground Inductive Presence Loop
         ctx.strokeStyle = active ? '#10B981' : '#EAB308';
         ctx.lineWidth = 2;
         ctx.strokeRect(155, 160, 170, 52);
         ctx.fillStyle = active ? 'rgba(16, 185, 129, 0.14)' : 'rgba(234, 179, 8, 0.08)';
         ctx.fillRect(155, 160, 170, 52);
 
-        ctx.fillStyle = active ? '#10B981' : '#FBBF24';
+        // Loop Corner Cuts
+        ctx.strokeStyle = active ? '#10B981' : '#CA8A04';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(155, 168); ctx.lineTo(163, 160);
+        ctx.moveTo(317, 160); ctx.lineTo(325, 168);
+        ctx.moveTo(155, 204); ctx.lineTo(163, 212);
+        ctx.moveTo(317, 212); ctx.lineTo(325, 204);
+        ctx.stroke();
+
+        ctx.fillStyle = active ? '#10B981' : (isLight ? '#B45309' : '#FBBF24');
         ctx.font = 'bold 7px JetBrains Mono';
-        ctx.fillText(active ? '● BOUCLE INDUCTIVE : VÉHICULE EN POSITION' : 'BOUCLE INDUCTIVE EN ATTENTE', 160, 172);
+        const loopLabel = currentLang === 'ar' ? (active ? 'مستشعر الحث المغناطيسي: مركبة متوقفة' : 'مستشعر الحث المغناطيسي: في الانتظار') : (currentLang === 'en' ? (active ? 'INDUCTIVE LOOP: VEHICLE IN POSITION' : 'INDUCTIVE LOOP: STANDBY') : (active ? 'BOUCLE INDUCTIVE : VEHICULE EN POSITION' : 'BOUCLE INDUCTIVE EN ATTENTE'));
+        ctx.fillText(loopLabel, 160, 172);
 
         // 5. Entry Barrier Pedestal & Articulated Boom Arm
         const bPedX = 100, bPedY = 165;
@@ -1245,7 +1687,49 @@
         ctx.beginPath(); ctx.moveTo(2, -5); ctx.lineTo(173, -5); ctx.stroke();
         ctx.restore();
 
-        // 6. Photorealistic Approaching Sedan (When Active)
+        // 6. Overhead Security Portal Structure & Localized Signage
+        const portalY = 24, portalH = 22;
+        // Steel Canopy Box
+        ctx.fillStyle = isLight ? '#1E293B' : '#0B1329';
+        ctx.fillRect(40, portalY, 400, portalH);
+        ctx.strokeStyle = isLight ? '#475569' : '#1E3A8A';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(40, portalY, 400, portalH);
+
+        // Steel Truss Support Struts
+        ctx.strokeStyle = isLight ? '#94A3B8' : '#334155';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (let x = 45; x < 435; x += 22) {
+          ctx.moveTo(x, portalY); ctx.lineTo(x + 11, portalY + portalH);
+          ctx.moveTo(x + 11, portalY + portalH); ctx.lineTo(x + 22, portalY);
+        }
+        ctx.stroke();
+
+        // Signage Backplate
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(90, portalY + 3, 300, portalH - 6);
+        ctx.strokeStyle = armRaised ? '#10B981' : '#0284C7';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(90, portalY + 3, 300, portalH - 6);
+
+        // Signage Text (Trilingual from I18N dictionary)
+        const signText = (I18N[currentLang] && I18N[currentLang].portal_sign) || "PARKING ALGER-CENTRE | ENTREE";
+        ctx.fillStyle = armRaised ? '#10B981' : '#F59E0B';
+        ctx.font = 'bold 8.5px JetBrains Mono';
+        ctx.textAlign = 'center';
+        ctx.fillText(signText, 240, portalY + 14);
+        ctx.textAlign = 'left';
+
+        // Overhead Lane Indicator Lamp (Left = Arrow, Right = Cross)
+        const laneSignalOpen = armRaised;
+        ctx.fillStyle = laneSignalOpen ? '#10B981' : '#EF4444';
+        ctx.beginPath(); ctx.arc(410, portalY + portalH / 2, 6, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#FFFFFF';
+        ctx.font = 'bold 7px JetBrains Mono';
+        ctx.fillText(laneSignalOpen ? '↓' : '✕', 408, portalY + portalH / 2 + 2.5);
+
+        // 7. Approaching Sedan (When Active)
         if (active) {
           if (carY > 150) carY -= 2.0;
           const scale = 0.88;
@@ -1255,39 +1739,52 @@
           const x = cx - w / 2;
           const y = carY;
 
-          // Realistic Chassis Ground Shadow
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+          // Chassis Ground Shadow
+          ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.45)' : 'rgba(0, 0, 0, 0.75)';
           ctx.beginPath();
           ctx.ellipse(cx, y + h + 2, w * 0.52, 10 * scale, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          // Main Sedan Body (Curved Aerodynamic Hood & Bumper)
+          // Main Sedan Body
           const bodyGrad = ctx.createLinearGradient(cx, y, cx, y + h);
-          bodyGrad.addColorStop(0, '#1E293B');
-          bodyGrad.addColorStop(0.35, '#334155');
-          bodyGrad.addColorStop(0.7, '#1E293B');
-          bodyGrad.addColorStop(1, '#0F172A');
+          if (isLight) {
+            bodyGrad.addColorStop(0, '#334155');
+            bodyGrad.addColorStop(0.35, '#475569');
+            bodyGrad.addColorStop(0.7, '#334155');
+            bodyGrad.addColorStop(1, '#1E293B');
+          } else {
+            bodyGrad.addColorStop(0, '#1E293B');
+            bodyGrad.addColorStop(0.35, '#334155');
+            bodyGrad.addColorStop(0.7, '#1E293B');
+            bodyGrad.addColorStop(1, '#0F172A');
+          }
           ctx.fillStyle = bodyGrad;
           ctx.beginPath();
           ctx.roundRect(x, y + h * 0.32, w, h * 0.68, 8 * scale);
           ctx.fill();
-          ctx.strokeStyle = '#475569';
+          ctx.strokeStyle = isLight ? '#64748B' : '#475569';
           ctx.lineWidth = 1;
           ctx.stroke();
 
           // Sculpted Hood Creases & Specular Highlights
-          ctx.strokeStyle = 'rgba(255, 255, 255, 0.18)';
+          ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.4)' : 'rgba(255, 255, 255, 0.18)';
           ctx.lineWidth = 1.2 * scale;
           ctx.beginPath();
           ctx.moveTo(cx - w * 0.28, y + h * 0.32); ctx.lineTo(cx - w * 0.18, y + h * 0.65);
           ctx.moveTo(cx + w * 0.28, y + h * 0.32); ctx.lineTo(cx + w * 0.18, y + h * 0.65);
           ctx.stroke();
 
-          // Curved Aerodynamic Windshield with Interior Depth
+          // Curved Aerodynamic Windshield
           const wsGrad = ctx.createLinearGradient(cx, y, cx, y + h * 0.35);
-          wsGrad.addColorStop(0, '#0F172A');
-          wsGrad.addColorStop(0.5, '#0284C7');
-          wsGrad.addColorStop(1, '#0C4A6E');
+          if (isLight) {
+            wsGrad.addColorStop(0, '#38BDF8');
+            wsGrad.addColorStop(0.5, '#7DD3FC');
+            wsGrad.addColorStop(1, '#0284C7');
+          } else {
+            wsGrad.addColorStop(0, '#0F172A');
+            wsGrad.addColorStop(0.5, '#0284C7');
+            wsGrad.addColorStop(1, '#0C4A6E');
+          }
           ctx.fillStyle = wsGrad;
           ctx.beginPath();
           ctx.moveTo(cx - w * 0.36, y + h * 0.32);
@@ -1319,13 +1816,13 @@
           ctx.fillStyle = '#0F172A';
           ctx.fillRect(cx - 8 * scale, y + h * 0.06, 16 * scale, 5 * scale);
 
-          // Front Honeycomb Radiator Grille
+          // Front Grille
           const gw = w * 0.52, gh = h * 0.24, gx = cx - gw / 2, gy = y + h * 0.45;
           ctx.fillStyle = '#090D16';
           ctx.beginPath(); ctx.roundRect(gx, gy, gw, gh, 4 * scale); ctx.fill();
           ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.2 * scale; ctx.stroke();
 
-          // Chrome Grille Mesh Slats
+          // Chrome Grille Slats
           ctx.strokeStyle = 'rgba(148, 163, 184, 0.35)';
           ctx.lineWidth = 0.8 * scale;
           for (let row = 1; row < 4; row++) {
@@ -1333,40 +1830,41 @@
             ctx.beginPath(); ctx.moveTo(gx + 6 * scale, ry); ctx.lineTo(gx + gw - 6 * scale, ry); ctx.stroke();
           }
 
-          // Central Chrome Logo Emblem
+          // Central Chrome Logo
           ctx.fillStyle = '#E2E8F0';
           ctx.beginPath(); ctx.arc(cx, gy + gh * 0.42, 4.5 * scale, 0, Math.PI * 2); ctx.fill();
 
-          // Dual Projector LED Headlights & Volumetric Light Cones
+          // Dual Projector Headlights
           const hw = w * 0.18, hh = h * 0.15;
           const leftHX = x + w * 0.05, rightHX = x + w * 0.77, hy = y + h * 0.42;
 
           [leftHX, rightHX].forEach((hlx, idx) => {
-            // Headlight Housing
             ctx.fillStyle = '#020617';
             ctx.beginPath(); ctx.roundRect(hlx, hy, hw, hh, 4 * scale); ctx.fill();
             ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1 * scale; ctx.stroke();
 
-            // Projector Lens Core
+            // Projector Core
             ctx.fillStyle = '#FEF08A';
             ctx.beginPath(); ctx.arc(hlx + hw * 0.5, hy + hh * 0.5, 5 * scale, 0, Math.PI * 2); ctx.fill();
 
-            // Volumetric Forward Light Fan on Asphalt
-            const dirX = idx === 0 ? -w * 0.25 : w * 0.25;
-            const beamGrad = ctx.createRadialGradient(hlx + hw * 0.5, hy + hh, 2, hlx + dirX, hy + 90 * scale, 85 * scale);
-            beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
-            beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
-            ctx.fillStyle = beamGrad;
-            ctx.beginPath();
-            ctx.moveTo(hlx + hw * 0.2, hy + hh);
-            ctx.lineTo(hlx + dirX - 35 * scale, hy + 95 * scale);
-            ctx.lineTo(hlx + dirX + 45 * scale, hy + 95 * scale);
-            ctx.lineTo(hlx + hw * 0.8, hy + hh);
-            ctx.closePath();
-            ctx.fill();
+            // Volumetric Forward Light Fan (Night Only)
+            if (!isLight) {
+              const dirX = idx === 0 ? -w * 0.25 : w * 0.25;
+              const beamGrad = ctx.createRadialGradient(hlx + hw * 0.5, hy + hh, 2, hlx + dirX, hy + 90 * scale, 85 * scale);
+              beamGrad.addColorStop(0, 'rgba(254, 240, 138, 0.45)');
+              beamGrad.addColorStop(1, 'rgba(254, 240, 138, 0)');
+              ctx.fillStyle = beamGrad;
+              ctx.beginPath();
+              ctx.moveTo(hlx + hw * 0.2, hy + hh);
+              ctx.lineTo(hlx + dirX - 35 * scale, hy + 95 * scale);
+              ctx.lineTo(hlx + dirX + 45 * scale, hy + 95 * scale);
+              ctx.lineTo(hlx + hw * 0.8, hy + hh);
+              ctx.closePath();
+              ctx.fill();
+            }
           });
 
-          // Radial Tires & Alloy Wheel Rims
+          // Radial Tires & Wheels
           const tw = w * 0.15, th = h * 0.28;
           [x + 4 * scale, x + w - tw - 4 * scale].forEach(tx => {
             ctx.fillStyle = '#0B0F19';
@@ -1377,10 +1875,8 @@
 
           // Authentic Algerian Front License Plate
           const pw = w * 0.48, ph = h * 0.19, px = cx - pw / 2, py = y + h * 0.74;
-          // Plate Dropshadow
           ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
           ctx.fillRect(px - 1, py - 1, pw + 2, ph + 2);
-          // Algerian Yellow Reflective Surface
           ctx.fillStyle = '#FACC15';
           ctx.fillRect(px, py, pw, ph);
           ctx.strokeStyle = '#000000';
@@ -1394,18 +1890,17 @@
           ctx.arc(px + pw - 4 * scale, py + ph / 2, 1.4 * scale, 0, Math.PI * 2);
           ctx.fill();
 
-          // Crisp Algerian Plate Lettering
+          // Plate Lettering
           ctx.fillStyle = '#000000';
           ctx.font = `bold ${Math.max(8, Math.round(11 * scale))}px JetBrains Mono`;
           ctx.textAlign = 'center';
           ctx.fillText(plateText, cx, py + ph * 0.74);
           ctx.textAlign = 'left';
 
-          // ALPR AI Precision Tracking Reticle
+          // ALPR AI Tracking Reticle
           ctx.strokeStyle = '#10B981';
           ctx.lineWidth = 1.5;
           const brk = 8 * scale;
-          // 4 Corner Brackets
           ctx.beginPath();
           ctx.moveTo(px - 4, py - 4 + brk); ctx.lineTo(px - 4, py - 4); ctx.lineTo(px - 4 + brk, py - 4);
           ctx.moveTo(px + pw + 4 - brk, py - 4); ctx.lineTo(px + pw + 4, py - 4); ctx.lineTo(px + pw + 4, py - 4 + brk);
@@ -1413,7 +1908,7 @@
           ctx.moveTo(px + pw + 4 - brk, py + ph + 4); ctx.lineTo(px + pw + 4, py + ph + 4); ctx.lineTo(px + pw + 4, py + ph + 4 - brk);
           ctx.stroke();
 
-          // Animated Emerald Laser Scan Line
+          // Emerald Laser Scan Line
           scanY = (scanY + 2.5) % (ph + 12);
           const scanGrad = ctx.createLinearGradient(px, py + scanY, px + pw, py + scanY);
           scanGrad.addColorStop(0, 'rgba(16, 185, 129, 0)');
@@ -1424,7 +1919,7 @@
           ctx.beginPath(); ctx.moveTo(px - 4, py + scanY - 6); ctx.lineTo(px + pw + 4, py + scanY - 6); ctx.stroke();
 
           // Holographic Recognition Banner
-          ctx.fillStyle = 'rgba(6, 11, 24, 0.9)';
+          ctx.fillStyle = 'rgba(6, 11, 24, 0.92)';
           ctx.fillRect(px - 8, py - 18, pw + 16, 14);
           ctx.strokeStyle = '#10B981';
           ctx.strokeRect(px - 8, py - 18, pw + 16, 14);
@@ -1434,8 +1929,9 @@
         }
 
         // Apply Common CCTV Security OSD & Grain
-        const now = new Date().toLocaleTimeString('fr-DZ');
-        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-01', 'ENTRÉE ALPR VOIE 1', 25.0, now, true);
+        const now = new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-DZ' : (currentLang === 'en' ? 'en-US' : 'fr-DZ'));
+        const camTitle = (I18N[currentLang] && I18N[currentLang].cam1_name) || 'CAM-01 : ENTREE ALPR';
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-01', camTitle, 25.0, now, true);
 
         requestAnimationFrame(render);
       }
@@ -1483,79 +1979,241 @@
       function render() {
         frameCount++;
         scanPhase += 0.045;
+        const isLight = document.documentElement.classList.contains('light');
 
-        // 1. Vehicle Cabin Background & A-Pillar Architecture
-        ctx.fillStyle = '#030712';
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
+        // ========================================================
+        // 1. EXTERIOR BACKGROUND SEEN FROM KIOSK (MATCHING CAM 1)
+        // ========================================================
+        if (isLight) {
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, 120);
+          skyGrad.addColorStop(0, '#BAE6FD');
+          skyGrad.addColorStop(1, '#E0F2FE');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+        } else {
+          ctx.fillStyle = '#050914';
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+        }
 
-        // Ambient exterior roadway illumination coming through passenger window
-        const extGrad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
-        extGrad.addColorStop(0, '#091122');
-        extGrad.addColorStop(0.5, '#040815');
-        extGrad.addColorStop(1, '#02040A');
-        ctx.fillStyle = extGrad;
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
+        // Roadway Pavement in Background (Voie 1)
+        const bgRoadGrad = ctx.createLinearGradient(0, 60, 0, cvs.height);
+        if (isLight) {
+          bgRoadGrad.addColorStop(0, '#64748B');
+          bgRoadGrad.addColorStop(1, '#475569');
+        } else {
+          bgRoadGrad.addColorStop(0, '#0F172A');
+          bgRoadGrad.addColorStop(1, '#020617');
+        }
+        ctx.fillStyle = bgRoadGrad;
+        ctx.fillRect(0, 50, cvs.width, cvs.height - 50);
 
-        // Driver Side A-Pillar (Structural Vehicle Beam)
-        ctx.fillStyle = '#0F172A';
+        // Architectural Consistency: Overhead Portal Truss Canopy (From CAM 1)
+        const pY = 0, pH = 26;
+        ctx.fillStyle = isLight ? '#1E293B' : '#0B1329';
+        ctx.fillRect(0, pY, cvs.width, pH);
+        ctx.strokeStyle = isLight ? '#475569' : '#1E3A8A';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(0, pY, cvs.width, pH);
+
+        // Steel Truss Internal Lattice (Matching CAM 1)
+        ctx.strokeStyle = isLight ? '#94A3B8' : '#334155';
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.moveTo(0, 0); ctx.lineTo(76, 0); ctx.lineTo(118, cvs.height); ctx.lineTo(0, cvs.height);
-        ctx.closePath(); ctx.fill();
-        ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
+        for (let tx = 0; tx < cvs.width; tx += 24) {
+          ctx.moveTo(tx, pY); ctx.lineTo(tx + 12, pY + pH);
+          ctx.moveTo(tx + 12, pY + pH); ctx.lineTo(tx + 24, pY);
+        }
+        ctx.stroke();
 
-        // A-Pillar Fabric Trim Seam
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 1;
-        ctx.beginPath(); ctx.moveTo(68, 0); ctx.lineTo(110, cvs.height); ctx.stroke();
+        // Portal Signage Backplate (Visible Overhead)
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(50, pY + 4, 320, pH - 8);
+        ctx.strokeStyle = '#0284C7'; ctx.lineWidth = 1;
+        ctx.strokeRect(50, pY + 4, 320, pH - 8);
+        ctx.fillStyle = '#F59E0B';
+        ctx.font = 'bold 8px JetBrains Mono';
+        ctx.textAlign = 'center';
+        const portalText = (I18N[currentLang] && I18N[currentLang].portal_sign) || "PARKING ALGER-CENTRE | ENTREE";
+        ctx.fillText(portalText, 210, pY + 16);
+        ctx.textAlign = 'left';
 
-        // Driver Window Frame & Tinted Glass
-        ctx.strokeStyle = '#1E293B';
-        ctx.lineWidth = 12;
-        ctx.strokeRect(65, 14, 385, 242);
+        // Architectural Consistency: Security Guard Booth on Left Curb (From CAM 1)
+        const gBoothX = 12, gBoothY = 28, gBoothW = 95, gBoothH = 150;
+        ctx.fillStyle = isLight ? '#E2E8F0' : '#1E293B';
+        ctx.fillRect(gBoothX, gBoothY, gBoothW, gBoothH);
+        ctx.strokeStyle = isLight ? '#94A3B8' : '#475569';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(gBoothX, gBoothY, gBoothW, gBoothH);
 
-        // Driver Seat Headrest Silhouette (Behind Driver)
-        ctx.fillStyle = '#0B132B';
+        // Booth Overhang Fascia
+        ctx.fillStyle = isLight ? '#334155' : '#0F172A';
+        ctx.fillRect(gBoothX - 3, gBoothY - 3, gBoothW + 6, 8);
+
+        // Booth Large Glass Window (Matching CAM 1 position)
+        const gWinX = gBoothX + 8, gWinY = gBoothY + 14, gWinW = gBoothW - 16, gWinH = 65;
+        if (isLight) {
+          const gWinGrad = ctx.createLinearGradient(gWinX, gWinY, gWinX + gWinW, gWinY + gWinH);
+          gWinGrad.addColorStop(0, '#93C5FD');
+          gWinGrad.addColorStop(0.5, '#BFDBFE');
+          gWinGrad.addColorStop(1, '#60A5FA');
+          ctx.fillStyle = gWinGrad;
+          ctx.fillRect(gWinX, gWinY, gWinW, gWinH);
+          ctx.strokeStyle = '#3B82F6';
+          ctx.strokeRect(gWinX, gWinY, gWinW, gWinH);
+        } else {
+          const gWinGrad = ctx.createLinearGradient(gWinX, gWinY, gWinX + gWinW, gWinY + gWinH);
+          gWinGrad.addColorStop(0, 'rgba(251, 191, 36, 0.6)');
+          gWinGrad.addColorStop(1, 'rgba(217, 119, 6, 0.25)');
+          ctx.fillStyle = gWinGrad;
+          ctx.fillRect(gWinX, gWinY, gWinW, gWinH);
+          ctx.strokeStyle = '#D97706';
+          ctx.strokeRect(gWinX, gWinY, gWinW, gWinH);
+        }
+
+        // Security Guard Silhouette in Booth Window
+        ctx.fillStyle = isLight ? 'rgba(30, 41, 59, 0.85)' : 'rgba(15, 23, 42, 0.9)';
         ctx.beginPath();
-        ctx.roundRect(200, 42, 80, 75, 18);
+        ctx.arc(gWinX + gWinW * 0.45, gWinY + 22, 11, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 2; ctx.stroke();
-
-        // Steering Wheel Rim (Lower Left)
-        ctx.strokeStyle = '#1E293B';
-        ctx.lineWidth = 9;
         ctx.beginPath();
-        ctx.arc(115, 256, 52, Math.PI * 1.05, Math.PI * 1.95);
-        ctx.stroke();
-        ctx.strokeStyle = '#334155'; ctx.lineWidth = 2;
+        ctx.ellipse(gWinX + gWinW * 0.45, gWinY + 52, 18, 14, 0, 0, Math.PI);
+        ctx.fill();
+
+        // Architectural Consistency: Concrete Safety Curb with Beveled Yellow/Black Blocks (From CAM 1)
+        const curbBaseY = 175;
+        for (let c = 0; c < 7; c++) {
+          const cx1 = gBoothX + c * 20;
+          ctx.fillStyle = (c % 2 === 0) ? '#F59E0B' : (isLight ? '#334155' : '#0F172A');
+          ctx.fillRect(cx1, curbBaseY, 20, 10);
+          ctx.strokeStyle = isLight ? '#64748B' : '#1E293B';
+          ctx.lineWidth = 0.8;
+          ctx.strokeRect(cx1, curbBaseY, 20, 10);
+        }
+
+        // Architectural Consistency: Yellow Entry Barrier Pedestal (From CAM 1)
+        const pedX = 112, pedY = 135, pedW = 20, pedH = 50;
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(pedX, pedY, pedW, pedH);
+        ctx.strokeStyle = '#B45309'; ctx.lineWidth = 1;
+        ctx.strokeRect(pedX, pedY, pedW, pedH);
+        // Pilot LED on Cabinet
+        ctx.fillStyle = active ? '#10B981' : '#EF4444';
+        ctx.beginPath(); ctx.arc(pedX + 10, pedY + 12, 3, 0, Math.PI * 2); ctx.fill();
+
+        // ========================================================
+        // 2. VEHICLE DOOR & CABIN (LOOKING THROUGH OPEN DRIVER WINDOW)
+        // ========================================================
+        // Vehicle Metallic Navy Body Door Skin (Lower & Left Boundary)
+        const carBodyGrad = ctx.createLinearGradient(0, 170, 0, cvs.height);
+        if (isLight) {
+          carBodyGrad.addColorStop(0, '#334155');
+          carBodyGrad.addColorStop(0.5, '#475569');
+          carBodyGrad.addColorStop(1, '#1E293B');
+        } else {
+          carBodyGrad.addColorStop(0, '#1E293B');
+          carBodyGrad.addColorStop(0.5, '#0F172A');
+          carBodyGrad.addColorStop(1, '#020617');
+        }
+        ctx.fillStyle = carBodyGrad;
+
+        // Vehicle Exterior Door Outer Shell
         ctx.beginPath();
-        ctx.arc(115, 256, 48, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.moveTo(0, 185);
+        ctx.lineTo(395, 185);
+        ctx.lineTo(410, cvs.height);
+        ctx.lineTo(0, cvs.height);
+        ctx.closePath();
+        ctx.fill();
+        ctx.strokeStyle = isLight ? '#64748B' : '#334155';
+        ctx.lineWidth = 2;
         ctx.stroke();
 
-        // Cross-hair Reticle Center Grid
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.07)';
-        ctx.lineWidth = 1;
+        // Rubber Window Weatherstrip / Chrome Beltline Trim
+        ctx.fillStyle = isLight ? '#CBD5E1' : '#475569';
+        ctx.fillRect(0, 182, 396, 3.5);
+
+        // Driver A-Pillar (Structural Slanted Beam on Far Left)
+        ctx.fillStyle = isLight ? '#1E293B' : '#0F172A';
         ctx.beginPath();
-        ctx.moveTo(240, 20); ctx.lineTo(240, 250);
-        ctx.moveTo(70, 135); ctx.lineTo(435, 135);
+        ctx.moveTo(0, 0); ctx.lineTo(55, 0); ctx.lineTo(85, 185); ctx.lineTo(0, 185);
+        ctx.closePath(); ctx.fill();
+        ctx.strokeStyle = isLight ? '#475569' : '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        // Vehicle Roof Edge (Top)
+        ctx.fillStyle = isLight ? '#1E293B' : '#0F172A';
+        ctx.fillRect(0, 26, 390, 16);
+
+        // Driver Side Mirror Housing (Extending Left)
+        ctx.fillStyle = isLight ? '#334155' : '#1E293B';
+        ctx.beginPath();
+        ctx.ellipse(75, 178, 16, 9, -0.2, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = isLight ? '#64748B' : '#0F172A'; ctx.lineWidth = 1; ctx.stroke();
+
+        // Interior Driver Seat Headrest
+        ctx.fillStyle = isLight ? '#1E293B' : '#0B132B';
+        ctx.beginPath();
+        ctx.roundRect(190, 48, 80, 75, 18);
+        ctx.fill();
+        ctx.strokeStyle = isLight ? '#334155' : '#1E293B'; ctx.lineWidth = 2; ctx.stroke();
+
+        // Steering Wheel Rim (Visible Lower Left inside cabin)
+        ctx.strokeStyle = isLight ? '#334155' : '#1E293B';
+        ctx.lineWidth = 8;
+        ctx.beginPath();
+        ctx.arc(118, 225, 46, Math.PI * 1.05, Math.PI * 1.95);
         ctx.stroke();
 
-        // 2. Active Driver Biometric Processing
+        // ========================================================
+        // 3. BIOMETRIC KIOSK SCANNER FRAME (FOREGROUND RIGHT)
+        // ========================================================
+        const kX = 415, kW = 65;
+        // Brushed Metallic Steel Bezel
+        const kGrad = ctx.createLinearGradient(kX, 0, cvs.width, 0);
+        kGrad.addColorStop(0, '#1E293B');
+        kGrad.addColorStop(0.3, '#334155');
+        kGrad.addColorStop(0.7, '#475569');
+        kGrad.addColorStop(1, '#0F172A');
+        ctx.fillStyle = kGrad;
+        ctx.fillRect(kX, 0, kW, cvs.height);
+        ctx.strokeStyle = '#0284C7'; ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(kX, 0); ctx.lineTo(kX, cvs.height); ctx.stroke();
+
+        // Kiosk Optical Lens Aperture Ring
+        ctx.fillStyle = '#020617';
+        ctx.beginPath(); ctx.arc(kX + 22, 115, 16, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = active ? '#06B6D4' : '#64748B'; ctx.lineWidth = 2; ctx.stroke();
+        // Camera Glass Core Glint
+        ctx.fillStyle = active ? '#38BDF8' : '#334155';
+        ctx.beginPath(); ctx.arc(kX + 22, 115, 7, 0, Math.PI * 2); ctx.fill();
+        // Dual 850nm NIR Illuminator LEDs
+        [100, 130].forEach(ledY => {
+          ctx.fillStyle = active ? '#06B6D4' : '#475569';
+          ctx.beginPath(); ctx.arc(kX + 22, ledY, 3, 0, Math.PI * 2); ctx.fill();
+        });
+
+        // Contactless RFID Target Symbol
+        ctx.fillStyle = '#64748B';
+        ctx.font = 'bold 7px JetBrains Mono';
+        ctx.fillText('RFID/CIB', kX + 6, 210);
+
+        // ========================================================
+        // 4. DRIVER BIOMETRIC PROCESSING (ACTIVE DRIVER AT WINDOW)
+        // ========================================================
         if (active) {
           const breath = Math.sin(frameCount * 0.04) * 0.9;
-          const faceCenterX = 240;
-          const faceCenterY = 114 + breath;
+          const faceCenterX = 230;
+          const faceCenterY = 112 + breath;
 
           if (!spoofMode) {
-            // ========================================================
-            // A. AUTHENTIC LIVING DRIVER (PHOTOREALISTIC PORTRAIT)
-            // ========================================================
-            
-            // Shoulders & Navy Blazer / Polo Collar
-            ctx.fillStyle = '#0A1326';
+            // AUTHENTIC LIVING DRIVER PORTRAIT
+            // Shoulders & Navy Polo Collar
+            ctx.fillStyle = isLight ? '#1E293B' : '#0A1326';
             ctx.beginPath();
             ctx.ellipse(faceCenterX, faceCenterY + 115, 105, 50, 0, 0, Math.PI);
             ctx.fill();
-            // Collar fold
-            ctx.fillStyle = '#1E293B';
+            // Collar
+            ctx.fillStyle = isLight ? '#334155' : '#1E293B';
             ctx.beginPath();
             ctx.moveTo(faceCenterX - 28, faceCenterY + 68);
             ctx.lineTo(faceCenterX, faceCenterY + 98);
@@ -1563,8 +2221,7 @@
             ctx.lineTo(faceCenterX + 16, faceCenterY + 64);
             ctx.lineTo(faceCenterX, faceCenterY + 82);
             ctx.lineTo(faceCenterX - 16, faceCenterY + 64);
-            ctx.closePath();
-            ctx.fill();
+            ctx.closePath(); ctx.fill();
 
             // Neck with Anatomical Shading
             const neckGrad = ctx.createLinearGradient(faceCenterX - 20, faceCenterY + 45, faceCenterX + 20, faceCenterY + 75);
@@ -1577,8 +2234,7 @@
             ctx.lineTo(faceCenterX + 24, faceCenterY + 40);
             ctx.lineTo(faceCenterX + 28, faceCenterY + 74);
             ctx.lineTo(faceCenterX - 28, faceCenterY + 74);
-            ctx.closePath();
-            ctx.fill();
+            ctx.closePath(); ctx.fill();
 
             // Head & Facial Structure (Warm Olive/Tan Skin Tone)
             const skinGrad = ctx.createRadialGradient(faceCenterX - 8, faceCenterY - 10, 8, faceCenterX, faceCenterY + 5, 58);
@@ -1591,7 +2247,7 @@
             ctx.ellipse(faceCenterX, faceCenterY, 47, 62, 0, 0, Math.PI * 2);
             ctx.fill();
 
-            // Subtle Cheekbone & Jaw Shading
+            // Cheekbone & Jaw Shading
             ctx.fillStyle = 'rgba(100, 50, 20, 0.15)';
             ctx.beginPath();
             ctx.ellipse(faceCenterX - 30, faceCenterY + 10, 12, 22, -0.2, 0, Math.PI * 2);
@@ -1619,8 +2275,7 @@
             ctx.quadraticCurveTo(faceCenterX + 52, faceCenterY - 68, faceCenterX + 50, faceCenterY - 15);
             ctx.quadraticCurveTo(faceCenterX + 32, faceCenterY - 42, faceCenterX, faceCenterY - 44);
             ctx.quadraticCurveTo(faceCenterX - 32, faceCenterY - 42, faceCenterX - 50, faceCenterY - 15);
-            ctx.closePath();
-            ctx.fill();
+            ctx.closePath(); ctx.fill();
 
             // Eyebrows
             ctx.fillStyle = '#1E293B';
@@ -1632,57 +2287,50 @@
               ctx.fill();
             });
 
-            // Realistic Eyes (Sclera + Hazel Iris + Specular Pinpoint)
+            // Realistic Eyes (Sclera + Iris + Glint)
             [-17, 17].forEach(eyeX => {
               const ex = faceCenterX + eyeX;
               const ey = faceCenterY - 15;
-              // Sclera (White)
               ctx.fillStyle = '#F8FAFC';
               ctx.beginPath();
               ctx.ellipse(ex, ey, 9.5, 5.5, 0, 0, Math.PI * 2);
               ctx.fill();
               ctx.strokeStyle = '#4A2810'; ctx.lineWidth = 0.8; ctx.stroke();
 
-              // Hazel/Brown Iris
+              // Iris
               const irisGrad = ctx.createRadialGradient(ex, ey, 1, ex, ey, 5.5);
               irisGrad.addColorStop(0, '#3E2723');
               irisGrad.addColorStop(0.6, '#5D4037');
               irisGrad.addColorStop(1, '#2E1C14');
               ctx.fillStyle = irisGrad;
-              ctx.beginPath();
-              ctx.arc(ex, ey, 5, 0, Math.PI * 2);
-              ctx.fill();
+              ctx.beginPath(); ctx.arc(ex, ey, 5, 0, Math.PI * 2); ctx.fill();
 
               // Dark Pupil
               ctx.fillStyle = '#020617';
-              ctx.beginPath();
-              ctx.arc(ex, ey, 2.5, 0, Math.PI * 2);
-              ctx.fill();
+              ctx.beginPath(); ctx.arc(ex, ey, 2.5, 0, Math.PI * 2); ctx.fill();
 
               // Specular Light Glint
               ctx.fillStyle = '#FFFFFF';
-              ctx.beginPath();
-              ctx.arc(ex - 1.2, ey - 1.2, 1, 0, Math.PI * 2);
-              ctx.fill();
+              ctx.beginPath(); ctx.arc(ex - 1.2, ey - 1.2, 1, 0, Math.PI * 2); ctx.fill();
 
-              // Gaze Vector (Green Ray)
+              // Gaze Vector (Green Ray towards Kiosk on Right)
               ctx.strokeStyle = 'rgba(16, 185, 129, 0.7)';
               ctx.lineWidth = 1;
               ctx.beginPath();
               ctx.moveTo(ex, ey);
-              ctx.lineTo(ex + Math.sin(frameCount * 0.05) * 6, ey - 14);
+              ctx.lineTo(ex + 18, ey - 6);
               ctx.stroke();
             });
 
-            // Nose Bridge & Nostril Shading
+            // Nose Bridge
             ctx.fillStyle = 'rgba(120, 60, 25, 0.28)';
             ctx.beginPath();
             ctx.moveTo(faceCenterX - 3, faceCenterY - 20);
             ctx.lineTo(faceCenterX - 6, faceCenterY + 12);
             ctx.lineTo(faceCenterX + 6, faceCenterY + 12);
             ctx.lineTo(faceCenterX + 3, faceCenterY - 20);
-            ctx.closePath();
-            ctx.fill();
+            ctx.closePath(); ctx.fill();
+
             // Nostril curves
             ctx.strokeStyle = '#6D381A'; ctx.lineWidth = 1.2;
             ctx.beginPath();
@@ -1690,7 +2338,7 @@
             ctx.arc(faceCenterX + 7, faceCenterY + 13, 3, Math.PI * 1.7, Math.PI * 2.6);
             ctx.stroke();
 
-            // Lips (Natural Contour)
+            // Natural Lips
             const lipGrad = ctx.createLinearGradient(faceCenterX - 18, faceCenterY + 30, faceCenterX + 18, faceCenterY + 42);
             lipGrad.addColorStop(0, '#A86252');
             lipGrad.addColorStop(0.5, '#BE7665');
@@ -1700,24 +2348,17 @@
             ctx.moveTo(faceCenterX - 17, faceCenterY + 31);
             ctx.quadraticCurveTo(faceCenterX, faceCenterY + 25, faceCenterX + 17, faceCenterY + 31);
             ctx.quadraticCurveTo(faceCenterX, faceCenterY + 44, faceCenterX - 17, faceCenterY + 31);
-            ctx.closePath();
-            ctx.fill();
-            // Lip Center Seam
-            ctx.strokeStyle = '#5E2B20'; ctx.lineWidth = 1;
-            ctx.beginPath();
-            ctx.moveTo(faceCenterX - 16, faceCenterY + 31);
-            ctx.quadraticCurveTo(faceCenterX, faceCenterY + 34, faceCenterX + 16, faceCenterY + 31);
-            ctx.stroke();
+            ctx.closePath(); ctx.fill();
 
             // ========================================================
-            // B. ARCFACE 512-D COMPUTER VISION HUD OVERLAYS
+            // B. ARCFACE 512-D HUD OVERLAYS
             // ========================================================
-            const boxX = faceCenterX - 66;
+            const boxX = faceCenterX - 64;
             const boxY = faceCenterY - 68;
-            const boxW = 132;
+            const boxW = 128;
             const boxH = 154;
 
-            // ArcFace Corner Brackets (Cyan Glow)
+            // ArcFace Corner Brackets
             ctx.strokeStyle = '#06B6D4';
             ctx.lineWidth = 2;
             const bLen = 16;
@@ -1763,18 +2404,15 @@
 
             // 3D Head Pose Axes (Nose Tip: Pitch, Yaw, Roll)
             const nx = faceCenterX, ny = faceCenterY + 14;
-            // X-axis (Pitch - Red)
             ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 1.8;
             ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(nx + 18, ny); ctx.stroke();
-            // Y-axis (Yaw - Green)
             ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1.8;
             ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(nx, ny - 18); ctx.stroke();
-            // Z-axis (Roll - Blue)
             ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1.8;
             ctx.beginPath(); ctx.moveTo(nx, ny); ctx.lineTo(nx - 12, ny + 12); ctx.stroke();
 
             // Floating Header Badge
-            ctx.fillStyle = 'rgba(6, 11, 25, 0.9)';
+            ctx.fillStyle = 'rgba(6, 11, 25, 0.92)';
             ctx.fillRect(boxX - 4, boxY - 18, boxW + 8, 16);
             ctx.strokeStyle = '#06B6D4'; ctx.lineWidth = 1;
             ctx.strokeRect(boxX - 4, boxY - 18, boxW + 8, 16);
@@ -1783,35 +2421,32 @@
             ctx.fillText('ARCFACE 512-D | FAISS MATCH 99.1%', boxX + 2, boxY - 6);
 
             // ========================================================
-            // C. REAL-TIME rPPG CARDIOVASCULAR PULSE WAVEFORM (LOWER RIGHT)
+            // C. rPPG CARDIOVASCULAR BLOOD PULSE WAVEFORM (LOWER RIGHT)
             // ========================================================
-            // Cardiac waveform formula: Systolic peak + dicrotic notch
             const tPulse = (frameCount * 0.18) % (Math.PI * 2);
             let pulseVal = Math.sin(tPulse) * 7;
-            if (tPulse > 1.8 && tPulse < 2.6) pulseVal -= 3; // Dicrotic notch
+            if (tPulse > 1.8 && tPulse < 2.6) pulseVal -= 3;
             pulseVal += (Math.random() - 0.5) * 1.2;
             rppgHistory.shift();
             rppgHistory.push(pulseVal);
 
             ctx.fillStyle = 'rgba(6, 11, 25, 0.88)';
-            ctx.fillRect(295, 178, 130, 52);
-            ctx.strokeStyle = '#1E293B';
-            ctx.lineWidth = 1;
-            ctx.strokeRect(295, 178, 130, 52);
+            ctx.fillRect(285, 178, 125, 52);
+            ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1;
+            ctx.strokeRect(285, 178, 125, 52);
 
             ctx.fillStyle = '#94A3B8';
             ctx.font = '7.5px JetBrains Mono';
-            ctx.fillText('rPPG POULS TISSULAIRE', 300, 190);
+            ctx.fillText('rPPG POULS TISSULAIRE', 290, 190);
             ctx.fillStyle = '#10B981';
             ctx.font = 'bold 8px JetBrains Mono';
-            ctx.fillText('72 BPM [RÉEL]', 370, 190);
+            ctx.fillText('72 BPM [REEL]', 358, 190);
 
-            // Pulse Waveform Line
             ctx.strokeStyle = '#10B981';
             ctx.lineWidth = 1.4;
             ctx.beginPath();
             rppgHistory.forEach((val, i) => {
-              const hx = 299 + i * 2.8;
+              const hx = 289 + i * 2.7;
               const hy = 210 + val;
               if (i === 0) ctx.moveTo(hx, hy);
               else ctx.lineTo(hx, hy);
@@ -1819,96 +2454,75 @@
             ctx.stroke();
 
             // ========================================================
-            // D. FOURIER MOIRÉ FFT HISTOGRAM (LOWER LEFT)
+            // D. FOURIER MOIRE FFT HISTOGRAM (LOWER LEFT)
             // ========================================================
             ctx.fillStyle = 'rgba(6, 11, 25, 0.88)';
-            ctx.fillRect(75, 178, 130, 52);
-            ctx.strokeStyle = '#1E293B';
-            ctx.strokeRect(75, 178, 130, 52);
+            ctx.fillRect(65, 178, 125, 52);
+            ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1;
+            ctx.strokeRect(65, 178, 125, 52);
             ctx.fillStyle = '#94A3B8';
             ctx.font = '7.5px JetBrains Mono';
-            ctx.fillText('SPECTRE FOURIER (MOIRÉ)', 80, 190);
+            ctx.fillText('SPECTRE FOURIER', 70, 190);
             ctx.fillStyle = '#10B981';
             ctx.font = 'bold 7.5px JetBrains Mono';
-            ctx.fillText('1.2% CONFORME', 152, 190);
+            ctx.fillText('1.2% CONFORME', 135, 190);
 
-            // Organic tissue spectrum: High energy in low bins, zero in high bins
             for (let b = 0; b < 10; b++) {
               const decay = Math.max(2, 22 - b * 2.2 + Math.sin(frameCount * 0.1 + b) * 2);
               ctx.fillStyle = b < 5 ? '#10B981' : '#0284C7';
-              ctx.fillRect(80 + b * 12, 224 - decay, 9, decay);
+              ctx.fillRect(70 + b * 11.5, 224 - decay, 8.5, decay);
             }
 
           } else {
-            // ========================================================
-            // E. FRAUD SPOOF ATTACK (IPAD/TABLET REPLAY ATTACK PRESENTED)
-            // ========================================================
-            const devX = 155, devY = 40, devW = 170, devH = 190;
+            // FRAUD SPOOF ATTACK (IPAD/TABLET REPLAY ATTACK PRESENTED)
+            const devX = 145, devY = 40, devW = 170, devH = 190;
 
-            // Warning Strobe Outline
             const strobe = (Math.sin(frameCount * 0.3) + 1) / 2;
             ctx.strokeStyle = `rgba(239, 68, 68, ${0.4 + strobe * 0.6})`;
             ctx.lineWidth = 3.5;
             ctx.strokeRect(devX - 6, devY - 6, devW + 12, devH + 12);
 
-            // Tablet Metallic Unibody Frame (Space Gray Aluminum)
+            // Tablet Frame
             ctx.fillStyle = '#1E293B';
-            ctx.beginPath();
-            ctx.roundRect(devX, devY, devW, devH, 12);
-            ctx.fill();
+            ctx.beginPath(); ctx.roundRect(devX, devY, devW, devH, 12); ctx.fill();
             ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.5; ctx.stroke();
-
-            // Tablet Front Camera & Sensor Dot
-            ctx.fillStyle = '#020617';
-            ctx.beginPath();
-            ctx.arc(devX + devW / 2, devY + 7, 2.5, 0, Math.PI * 2);
-            ctx.fill();
 
             // Tablet Glass Screen
             const screenGrad = ctx.createLinearGradient(devX, devY, devX + devW, devY + devH);
             screenGrad.addColorStop(0, '#0F172A');
             screenGrad.addColorStop(0.35, '#1E293B');
             screenGrad.addColorStop(0.5, '#475569');
-            screenGrad.addColorStop(0.55, '#F1F5F9'); // Harsh Specular Reflection Stripe
+            screenGrad.addColorStop(0.55, '#F1F5F9');
             screenGrad.addColorStop(0.65, '#1E293B');
             screenGrad.addColorStop(1, '#020617');
             ctx.fillStyle = screenGrad;
             ctx.fillRect(devX + 8, devY + 14, devW - 16, devH - 26);
 
-            // Flat 2D Printed Face on the Tablet Screen
+            // 2D Printed Face on Tablet
             ctx.fillStyle = '#64748B';
-            ctx.beginPath();
-            ctx.arc(devX + devW / 2, devY + 72, 38, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(devX + devW / 2, devY + 72, 38, 0, Math.PI * 2); ctx.fill();
             ctx.fillStyle = '#334155';
             ctx.beginPath();
             ctx.arc(devX + devW / 2 - 14, devY + 68, 5, 0, Math.PI * 2);
             ctx.arc(devX + devW / 2 + 14, devY + 68, 5, 0, Math.PI * 2);
             ctx.fill();
 
-            // RGB LCD Sub-Pixel Grid Scanlines (Moiré artifact)
+            // LCD Scanlines
             ctx.strokeStyle = 'rgba(239, 68, 68, 0.4)';
             ctx.lineWidth = 1;
             for (let y = devY + 16; y < devY + devH - 14; y += 4) {
-              ctx.beginPath();
-              ctx.moveTo(devX + 9, y);
-              ctx.lineTo(devX + devW - 9, y);
-              ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(devX + 9, y); ctx.lineTo(devX + devW - 9, y); ctx.stroke();
             }
 
-            // Diagonal Rainbow Moiré Interference Patterns
+            // Rainbow Moire Lines
             ctx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
             ctx.lineWidth = 1.2;
             for (let d = -60; d < devW + 60; d += 16) {
-              ctx.beginPath();
-              ctx.moveTo(devX + d, devY + 16);
-              ctx.lineTo(devX + d + 45, devY + devH - 16);
-              ctx.stroke();
+              ctx.beginPath(); ctx.moveTo(devX + d, devY + 16); ctx.lineTo(devX + d + 45, devY + devH - 16); ctx.stroke();
             }
 
-            // Target Bounding Box Locked with Crimson Alert
-            ctx.strokeStyle = '#EF4444';
-            ctx.lineWidth = 2;
+            // Target Bounding Box
+            ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 2;
             ctx.strokeRect(devX + 8, devY + 14, devW - 16, devH - 26);
 
             // Flashing Alarm Banner
@@ -1922,95 +2536,95 @@
             ctx.fillText('ATTAQUE REJEU ÉCRAN', devX + devW / 2, devY + devH - 18);
             ctx.textAlign = 'left';
 
-            // Flatlined rPPG Waveform
+            // Flatline rPPG
             ctx.fillStyle = 'rgba(25, 10, 15, 0.9)';
-            ctx.fillRect(295, 178, 130, 52);
-            ctx.strokeStyle = '#EF4444';
-            ctx.strokeRect(295, 178, 130, 52);
+            ctx.fillRect(285, 178, 125, 52);
+            ctx.strokeStyle = '#EF4444'; ctx.strokeRect(285, 178, 125, 52);
             ctx.fillStyle = '#EF4444';
             ctx.font = '7.5px JetBrains Mono';
-            ctx.fillText('POULS rPPG : PLAT', 300, 190);
-            ctx.fillText('0 BPM [INANIMÉ]', 370, 190);
+            ctx.fillText('POULS rPPG : PLAT', 290, 190);
+            ctx.fillText('0 BPM', 380, 190);
+            ctx.strokeStyle = '#EF4444'; ctx.lineWidth = 1.8;
+            ctx.beginPath(); ctx.moveTo(289, 212); ctx.lineTo(405, 212); ctx.stroke();
 
-            // Dead Straight Flatline
-            ctx.strokeStyle = '#EF4444';
-            ctx.lineWidth = 1.8;
-            ctx.beginPath();
-            ctx.moveTo(299, 212);
-            ctx.lineTo(420, 212);
-            ctx.stroke();
-
-            // Moiré High Frequency Spike Histogram
+            // Moire Spikes
             ctx.fillStyle = 'rgba(25, 10, 15, 0.9)';
-            ctx.fillRect(75, 178, 130, 52);
-            ctx.strokeStyle = '#EF4444';
-            ctx.strokeRect(75, 178, 130, 52);
+            ctx.fillRect(65, 178, 125, 52);
+            ctx.strokeStyle = '#EF4444'; ctx.strokeRect(65, 178, 125, 52);
             ctx.fillStyle = '#EF4444';
             ctx.font = '7.5px JetBrains Mono';
-            ctx.fillText('SPECTRE FOURIER', 80, 190);
-            ctx.fillText('MOIRÉ 88.4% [ALERTE]', 138, 190);
-
-            // Massive high-frequency spikes in bins 6-9
+            ctx.fillText('SPECTRE FOURIER', 70, 190);
+            ctx.fillText('MOIRÉ 88.4%', 135, 190);
             for (let b = 0; b < 10; b++) {
               const bh = b > 5 ? (22 + (b % 3) * 5) : (3 + (b % 2) * 2);
               ctx.fillStyle = '#EF4444';
-              ctx.fillRect(80 + b * 12, 224 - bh, 9, bh);
+              ctx.fillRect(70 + b * 11.5, 224 - bh, 8.5, bh);
             }
           }
+        } else {
+          // Idle Standby Prompt
+          ctx.fillStyle = 'rgba(15, 23, 42, 0.75)';
+          ctx.fillRect(115, 105, 210, 36);
+          ctx.strokeStyle = '#0284C7'; ctx.lineWidth = 1;
+          ctx.strokeRect(115, 105, 210, 36);
+          ctx.fillStyle = isLight ? '#0284C7' : '#38BDF8';
+          ctx.font = 'bold 8px JetBrains Mono';
+          ctx.textAlign = 'center';
+          const idleText = currentLang === 'ar' ? 'كشك التحقق الحيوي: في وضع الاستعداد' : (currentLang === 'en' ? 'BIOMETRIC KIOSK: STANDBY' : 'BORNE BIOMETRIQUE : ATTENTE CONDUCTEUR');
+          ctx.fillText(idleText, 220, 126);
+          ctx.textAlign = 'left';
         }
 
-        // 3. PIP Viewport (Top Right): 850nm NIR Anti-Spoof Channel
-        const pipX = 345, pipY = 22, pipW = 115, pipH = 75;
+        // ========================================================
+        // 5. PIP VIEWPORT (TOP RIGHT): 850nm NIR CHANNEL
+        // ========================================================
+        const pipX = 310, pipY = 24, pipW = 98, pipH = 68;
         ctx.fillStyle = '#020617';
         ctx.fillRect(pipX, pipY, pipW, pipH);
         ctx.strokeStyle = spoofMode && active ? '#EF4444' : '#06B6D4';
         ctx.lineWidth = 1.5;
         ctx.strokeRect(pipX, pipY, pipW, pipH);
 
-        // Header Tab
         ctx.fillStyle = spoofMode && active ? 'rgba(239, 68, 68, 0.2)' : 'rgba(6, 182, 212, 0.2)';
-        ctx.fillRect(pipX, pipY, pipW, 14);
+        ctx.fillRect(pipX, pipY, pipW, 13);
         ctx.fillStyle = spoofMode && active ? '#EF4444' : '#06B6D4';
-        ctx.font = 'bold 7.5px JetBrains Mono';
-        ctx.fillText('CANAL NIR 850nm', pipX + 5, pipY + 10);
+        ctx.font = 'bold 7px JetBrains Mono';
+        ctx.fillText('CANAL NIR 850nm', pipX + 4, pipY + 9);
 
         if (active) {
           if (!spoofMode) {
-            // Realistic Soft NIR Skin Diffusion (Grayscale Infrared Reflection)
-            const nirGrad = ctx.createRadialGradient(pipX + pipW / 2, pipY + 44, 4, pipX + pipW / 2, pipY + 44, 22);
+            const nirGrad = ctx.createRadialGradient(pipX + pipW / 2, pipY + 40, 4, pipX + pipW / 2, pipY + 40, 20);
             nirGrad.addColorStop(0, '#CBD5E1');
             nirGrad.addColorStop(0.7, '#64748B');
             nirGrad.addColorStop(1, '#1E293B');
             ctx.fillStyle = nirGrad;
-            ctx.beginPath();
-            ctx.arc(pipX + pipW / 2, pipY + 44, 20, 0, Math.PI * 2);
-            ctx.fill();
+            ctx.beginPath(); ctx.arc(pipX + pipW / 2, pipY + 40, 18, 0, Math.PI * 2); ctx.fill();
 
-            // Bright Corneal NIR Retro-Reflection Points
+            // Bright Corneal Glints
             ctx.fillStyle = '#FFFFFF';
-            ctx.fillRect(pipX + pipW / 2 - 8, pipY + 40, 2.5, 2.5);
-            ctx.fillRect(pipX + pipW / 2 + 6, pipY + 40, 2.5, 2.5);
+            ctx.fillRect(pipX + pipW / 2 - 7, pipY + 36, 2, 2);
+            ctx.fillRect(pipX + pipW / 2 + 5, pipY + 36, 2, 2);
 
             ctx.fillStyle = '#10B981';
-            ctx.font = 'bold 7px JetBrains Mono';
-            ctx.fillText('DIFFUSION DERMIQUE OK', pipX + 5, pipY + pipH - 4);
+            ctx.font = 'bold 6.5px JetBrains Mono';
+            ctx.fillText('DIFFUSION DERMIQUE OK', pipX + 4, pipY + pipH - 4);
           } else {
-            // Tablet Glass Intense Specular Flares
             ctx.fillStyle = '#F8FAFC';
-            ctx.fillRect(pipX + 22, pipY + 20, 70, 42);
+            ctx.fillRect(pipX + 16, pipY + 18, 66, 38);
             ctx.fillStyle = '#EF4444';
-            ctx.font = 'bold 7px JetBrains Mono';
-            ctx.fillText('REFLET VERRE COMPACT', pipX + 5, pipY + pipH - 4);
+            ctx.font = 'bold 6.5px JetBrains Mono';
+            ctx.fillText('REFLET VERRE COMPACT', pipX + 4, pipY + pipH - 4);
           }
         } else {
           ctx.fillStyle = '#475569';
-          ctx.font = '7px JetBrains Mono';
-          ctx.fillText('ATTENTE CONDUCTEUR', pipX + 8, pipY + 45);
+          ctx.font = '6.5px JetBrains Mono';
+          ctx.fillText('EN VEILLE', pipX + 6, pipY + 42);
         }
 
         // Apply CCTV Effects & Security OSD
-        const now = new Date().toLocaleTimeString('fr-DZ');
-        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-02', 'BORNE BIOMÉTRIQUE RGB+NIR', 25.0, now, true);
+        const now = new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-DZ' : (currentLang === 'en' ? 'en-US' : 'fr-DZ'));
+        const camTitle = (I18N[currentLang] && I18N[currentLang].cam2_name) || 'CAM-02 : BORNE BIOMETRIQUE';
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-02', camTitle, 25.0, now, true);
 
         requestAnimationFrame(render);
       }
@@ -2039,24 +2653,39 @@
       function render() {
         frameCount++;
         wheelRot += 0.15;
+        const isLight = document.documentElement.classList.contains('light');
+
+        // Sky & Horizon Background
+        if (isLight) {
+          const skyGrad = ctx.createLinearGradient(0, 0, 0, 105);
+          skyGrad.addColorStop(0, '#BAE6FD');
+          skyGrad.addColorStop(1, '#E0F2FE');
+          ctx.fillStyle = skyGrad;
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+        } else {
+          ctx.fillStyle = '#030712';
+          ctx.fillRect(0, 0, cvs.width, cvs.height);
+        }
 
         // 1. Perspective Roadway & Asphalt Pavement
-        ctx.fillStyle = '#030712';
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
-
-        // Asphalt Lane Pavement Gradient
         const roadGrad = ctx.createLinearGradient(0, 95, 0, 245);
-        roadGrad.addColorStop(0, '#0F172A');
-        roadGrad.addColorStop(0.4, '#1E293B');
-        roadGrad.addColorStop(1, '#0B111E');
+        if (isLight) {
+          roadGrad.addColorStop(0, '#64748B');
+          roadGrad.addColorStop(0.4, '#475569');
+          roadGrad.addColorStop(1, '#334155');
+        } else {
+          roadGrad.addColorStop(0, '#0F172A');
+          roadGrad.addColorStop(0.4, '#1E293B');
+          roadGrad.addColorStop(1, '#0B111E');
+        }
         ctx.fillStyle = roadGrad;
         ctx.beginPath();
         ctx.moveTo(0, 105); ctx.lineTo(cvs.width, 105);
         ctx.lineTo(cvs.width, 248); ctx.lineTo(0, 248);
         ctx.closePath(); ctx.fill();
 
-        // Asphalt Micro-Texture Speckles
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.03)';
+        // Asphalt Micro-Texture
+        ctx.fillStyle = isLight ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.03)';
         for (let i = 0; i < 40; i++) {
           const sx = (i * 37 + frameCount * 0.1) % cvs.width;
           const sy = 108 + (i * 19) % 135;
@@ -2064,7 +2693,7 @@
         }
 
         // White Roadway Centerline Dashes
-        ctx.strokeStyle = 'rgba(226, 232, 240, 0.8)';
+        ctx.strokeStyle = isLight ? '#FFFFFF' : 'rgba(226, 232, 240, 0.8)';
         ctx.lineWidth = 3;
         ctx.setLineDash([18, 16]);
         ctx.beginPath();
@@ -2082,23 +2711,24 @@
         // Safety Curb with Yellow & Black Beveled Segments
         for (let x = 0; x < cvs.width; x += 32) {
           const isYellow = Math.floor(x / 32) % 2 === 0;
-          ctx.fillStyle = isYellow ? '#F59E0B' : '#0F172A';
+          ctx.fillStyle = isYellow ? '#F59E0B' : (isLight ? '#334155' : '#0F172A');
           ctx.fillRect(x, 244, 32, 8);
           ctx.fillRect(x, 97, 32, 8);
-          ctx.strokeStyle = '#334155'; ctx.lineWidth = 0.8;
+          ctx.strokeStyle = isLight ? '#64748B' : '#334155'; ctx.lineWidth = 0.8;
           ctx.strokeRect(x, 244, 32, 8);
           ctx.strokeRect(x, 97, 32, 8);
         }
 
         // 2. Embedded Inductive Ground Loops in Roadway
         const isLoopAOccupied = carRolling && carX >= 100 && carX <= 265;
-        ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : '#475569';
+        ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : (isLight ? '#64748B' : '#475569');
         ctx.lineWidth = 2;
         ctx.strokeRect(135, 126, 88, 96);
-        ctx.fillStyle = isLoopAOccupied ? 'rgba(6, 182, 212, 0.22)' : 'rgba(30, 41, 59, 0.25)';
+        ctx.fillStyle = isLoopAOccupied ? 'rgba(6, 182, 212, 0.22)' : (isLight ? 'rgba(255, 255, 255, 0.15)' : 'rgba(30, 41, 59, 0.25)');
         ctx.fillRect(135, 126, 88, 96);
+
         // Loop Chamfered Corner Cuts
-        ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : '#334155';
+        ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : (isLight ? '#94A3B8' : '#334155');
         ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(135, 136); ctx.lineTo(145, 126);
@@ -2106,23 +2736,25 @@
         ctx.moveTo(135, 212); ctx.lineTo(145, 222);
         ctx.moveTo(213, 222); ctx.lineTo(223, 212);
         ctx.stroke();
-        ctx.fillStyle = isLoopAOccupied ? '#06B6D4' : '#64748B';
+
+        ctx.fillStyle = isLoopAOccupied ? '#06B6D4' : (isLight ? '#1E293B' : '#64748B');
         ctx.font = 'bold 8px JetBrains Mono';
-        ctx.fillText(isLoopAOccupied ? 'BOUCLE A : ACTIF (-3.4%)' : 'BOUCLE A (ATTENTE)', 140, 138);
+        const loopALabel = currentLang === 'ar' ? (isLoopAOccupied ? 'المستشعر أ: رصد المركبة' : 'المستشعر أ (انتظار)') : (currentLang === 'en' ? (isLoopAOccupied ? 'LOOP A: ACTIVE' : 'LOOP A (STANDBY)') : (isLoopAOccupied ? 'BOUCLE A : ACTIF (-3.4%)' : 'BOUCLE A (ATTENTE)'));
+        ctx.fillText(loopALabel, 140, 138);
 
         const isLoopBOccupied = carRolling && carX >= 270 && carX <= 430;
-        ctx.strokeStyle = isLoopBOccupied ? '#10B981' : '#475569';
+        ctx.strokeStyle = isLoopBOccupied ? '#10B981' : (isLight ? '#64748B' : '#475569');
         ctx.lineWidth = 2;
         ctx.strokeRect(285, 126, 88, 96);
-        ctx.fillStyle = isLoopBOccupied ? 'rgba(16, 185, 129, 0.22)' : 'rgba(30, 41, 59, 0.25)';
+        ctx.fillStyle = isLoopBOccupied ? 'rgba(16, 185, 129, 0.22)' : (isLight ? 'rgba(255, 255, 255, 0.15)' : 'rgba(30, 41, 59, 0.25)');
         ctx.fillRect(285, 126, 88, 96);
-        ctx.fillStyle = isLoopBOccupied ? '#10B981' : '#64748B';
+        ctx.fillStyle = isLoopBOccupied ? '#10B981' : (isLight ? '#1E293B' : '#64748B');
         ctx.font = 'bold 8px JetBrains Mono';
-        ctx.fillText(isLoopBOccupied ? 'BOUCLE B : PASSAGE OK' : 'BOUCLE B (DÉGAGEMENT)', 290, 138);
+        const loopBLabel = currentLang === 'ar' ? (isLoopBOccupied ? 'المستشعر ب: إخلاء المسلك' : 'المستشعر ب (مغادرة)') : (currentLang === 'en' ? (isLoopBOccupied ? 'LOOP B: CLEARED' : 'LOOP B (DEPARTURE)') : (isLoopBOccupied ? 'BOUCLE B : PASSAGE OK' : 'BOUCLE B (DEGAGEMENT)'));
+        ctx.fillText(loopBLabel, 290, 138);
 
         // 3. Optical Safety Photocell Beam
         const isBeamBroken = carRolling && carX >= 185 && carX <= 325;
-        // Sensor Posts
         ctx.fillStyle = '#F59E0B';
         ctx.fillRect(250, 95, 7, 14);
         ctx.fillRect(250, 243, 7, 14);
@@ -2141,35 +2773,46 @@
         if (isBeamBroken) {
           ctx.fillStyle = '#EF4444';
           ctx.font = 'bold 7.5px JetBrains Mono';
-          ctx.fillText('FAISCEAU COUPÉ : ANTI-ÉCRASEMENT', 160, 242);
+          const beamAlert = currentLang === 'ar' ? 'انقطاع الحزمة: نظام منع الاصطدام' : (currentLang === 'en' ? 'BEAM INTERRUPTED: ANTI-CRUSH' : 'FAISCEAU COUPE : ANTI-ECRASEMENT');
+          ctx.fillText(beamAlert, 160, 242);
         }
 
         // 4. Heavy Galvanized Structural Toll Gantry
-        // Steel Support Columns
         [15, 450].forEach(colX => {
           const colGrad = ctx.createLinearGradient(colX, 0, colX + 16, 0);
-          colGrad.addColorStop(0, '#334155');
-          colGrad.addColorStop(0.5, '#64748B');
-          colGrad.addColorStop(1, '#1E293B');
+          if (isLight) {
+            colGrad.addColorStop(0, '#64748B');
+            colGrad.addColorStop(0.5, '#94A3B8');
+            colGrad.addColorStop(1, '#475569');
+          } else {
+            colGrad.addColorStop(0, '#334155');
+            colGrad.addColorStop(0.5, '#64748B');
+            colGrad.addColorStop(1, '#1E293B');
+          }
           ctx.fillStyle = colGrad;
           ctx.fillRect(colX, 15, 16, 95);
-          ctx.strokeStyle = '#475569'; ctx.lineWidth = 1; ctx.strokeRect(colX, 15, 16, 95);
-          // Base Plate Bolts
+          ctx.strokeStyle = isLight ? '#94A3B8' : '#475569'; ctx.lineWidth = 1; ctx.strokeRect(colX, 15, 16, 95);
           ctx.fillStyle = '#94A3B8';
           ctx.fillRect(colX - 3, 105, 22, 6);
         });
 
         // Horizontal Steel Girder Box
         const girderGrad = ctx.createLinearGradient(15, 15, 15, 38);
-        girderGrad.addColorStop(0, '#1E293B');
-        girderGrad.addColorStop(0.5, '#334155');
-        girderGrad.addColorStop(1, '#0F172A');
+        if (isLight) {
+          girderGrad.addColorStop(0, '#334155');
+          girderGrad.addColorStop(0.5, '#475569');
+          girderGrad.addColorStop(1, '#1E293B');
+        } else {
+          girderGrad.addColorStop(0, '#1E293B');
+          girderGrad.addColorStop(0.5, '#334155');
+          girderGrad.addColorStop(1, '#0F172A');
+        }
         ctx.fillStyle = girderGrad;
         ctx.fillRect(15, 15, 451, 24);
-        ctx.strokeStyle = '#475569'; ctx.lineWidth = 1.5; ctx.strokeRect(15, 15, 451, 24);
+        ctx.strokeStyle = isLight ? '#64748B' : '#475569'; ctx.lineWidth = 1.5; ctx.strokeRect(15, 15, 451, 24);
 
         // Steel Truss Internal Lattice Struts
-        ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+        ctx.strokeStyle = isLight ? 'rgba(255, 255, 255, 0.35)' : 'rgba(148, 163, 184, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let t = 20; t < 460; t += 22) {
@@ -2178,7 +2821,7 @@
         }
         ctx.stroke();
 
-        // Bilingual VMS Dual LED Matrix Panel (Variable Message Sign)
+        // Bilingual/Trilingual VMS LED Panel (Variable Message Sign)
         ctx.fillStyle = '#020617';
         ctx.fillRect(95, 19, 290, 28);
         ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.2;
@@ -2189,21 +2832,25 @@
         if (isOpen) {
           ctx.fillStyle = '#10B981';
           ctx.font = 'bold 8.5px JetBrains Mono';
-          ctx.fillText('● VOIE 02 : SORTIE ACCORDÉE | TICKET VALIDÉ', 240, 31);
+          const vmsHeader = (I18N[currentLang] && I18N[currentLang].gantry_sign_open) || "● VOIE 02 : SORTIE ACCORDEE | BONNE ROUTE";
+          ctx.fillText(vmsHeader, 240, 31);
           ctx.fillStyle = '#34D399';
           ctx.font = '7.5px JetBrains Mono';
-          ctx.fillText('PAIEMENT SATIM 100 DZD CONFIRMÉ | BONNE ROUTE', 240, 42);
+          const vmsSub = currentLang === 'ar' ? 'الدفع الإلكتروني CIB/SATIM مؤكد | رافقتكم السلامة' : (currentLang === 'en' ? 'SATIM 100 DZD PAYMENT CONFIRMED | SAFE TRAVELS' : 'PAIEMENT SATIM 100 DZD CONFIRME | BONNE ROUTE');
+          ctx.fillText(vmsSub, 240, 42);
         } else {
           ctx.fillStyle = '#F59E0B';
           ctx.font = 'bold 8.5px JetBrains Mono';
-          ctx.fillText('■ VOIE 02 : PÉAGE AUTOMATIQUE | 100 DZD', 240, 31);
+          const vmsHeader = (I18N[currentLang] && I18N[currentLang].gantry_sign_closed) || "■ VOIE 02 : PEAGE AUTOMATIQUE | 100 DZD";
+          ctx.fillText(vmsHeader, 240, 31);
           ctx.fillStyle = '#FCD34D';
           ctx.font = '7.5px JetBrains Mono';
-          ctx.fillText("MARQUEZ L'ARRÊT DEVANT LA BARRIÈRE", 240, 42);
+          const vmsSub = currentLang === 'ar' ? 'يرجى التوقف أمام الحاجز الآلي' : (currentLang === 'en' ? 'STOP IN FRONT OF AUTOMATIC BARRIER' : "MARQUEZ L'ARRET DEVANT LA BARRIERE");
+          ctx.fillText(vmsSub, 240, 42);
         }
         ctx.textAlign = 'left';
 
-        // Overhead Lane Control Signal Lights (Left = Arrow, Right = Cross)
+        // Overhead Lane Control Signals
         // Red Cross
         ctx.fillStyle = !isOpen ? '#EF4444' : '#450A0A';
         ctx.beginPath(); ctx.arc(68, 30, 7, 0, Math.PI * 2); ctx.fill();
@@ -2219,12 +2866,11 @@
         ctx.fillStyle = '#FFFFFF';
         ctx.fillText('↓', 409, 33);
 
-        // Gantry-mounted ALPR Camera with pulsing 850nm IR Ring
+        // Gantry-mounted ALPR Camera with pulsing IR Ring
         ctx.fillStyle = '#0284C7';
         ctx.fillRect(40, 40, 22, 14);
         ctx.fillStyle = '#E2E8F0';
         ctx.beginPath(); ctx.arc(40, 47, 4.5, 0, Math.PI * 2); ctx.fill();
-        // Pulsing IR Ring when car approaches
         const irAlpha = (Math.sin(frameCount * 0.2) + 1) / 2;
         ctx.strokeStyle = `rgba(6, 182, 212, ${0.3 + irAlpha * 0.7})`;
         ctx.lineWidth = 1.5;
@@ -2235,29 +2881,42 @@
           carX += 3.4;
           const vy = 142;
 
-          // Realistic Chassis Ground Shadow
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+          // Chassis Ground Shadow
+          ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.45)' : 'rgba(0, 0, 0, 0.75)';
           ctx.beginPath();
           ctx.ellipse(carX + 58, vy + 46, 68, 11, 0, 0, Math.PI * 2);
           ctx.fill();
 
-          // Sedan Lower Body (Metallic Charcoal Gradient)
+          // Sedan Lower Body
           const carGrad = ctx.createLinearGradient(carX, vy, carX, vy + 44);
-          carGrad.addColorStop(0, '#475569');
-          carGrad.addColorStop(0.35, '#334155');
-          carGrad.addColorStop(0.7, '#1E293B');
-          carGrad.addColorStop(1, '#0F172A');
+          if (isLight) {
+            carGrad.addColorStop(0, '#64748B');
+            carGrad.addColorStop(0.35, '#475569');
+            carGrad.addColorStop(0.7, '#334155');
+            carGrad.addColorStop(1, '#1E293B');
+          } else {
+            carGrad.addColorStop(0, '#475569');
+            carGrad.addColorStop(0.35, '#334155');
+            carGrad.addColorStop(0.7, '#1E293B');
+            carGrad.addColorStop(1, '#0F172A');
+          }
           ctx.fillStyle = carGrad;
           ctx.beginPath();
           ctx.roundRect(carX, vy + 12, 118, 32, 6);
           ctx.fill();
-          ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1; ctx.stroke();
+          ctx.strokeStyle = isLight ? '#94A3B8' : '#64748B'; ctx.lineWidth = 1; ctx.stroke();
 
-          // Aerodynamic Cabin Glasshouse (Windshield, Side Windows, Rear Glass)
+          // Aerodynamic Cabin Glasshouse
           const glassGrad = ctx.createLinearGradient(carX + 20, vy, carX + 90, vy + 14);
-          glassGrad.addColorStop(0, '#0369A1');
-          glassGrad.addColorStop(0.5, '#0284C7');
-          glassGrad.addColorStop(1, '#0F172A');
+          if (isLight) {
+            glassGrad.addColorStop(0, '#38BDF8');
+            glassGrad.addColorStop(0.5, '#7DD3FC');
+            glassGrad.addColorStop(1, '#0284C7');
+          } else {
+            glassGrad.addColorStop(0, '#0369A1');
+            glassGrad.addColorStop(0.5, '#0284C7');
+            glassGrad.addColorStop(1, '#0F172A');
+          }
           ctx.fillStyle = glassGrad;
           ctx.beginPath();
           ctx.moveTo(carX + 22, vy + 12);
@@ -2268,7 +2927,7 @@
           ctx.fill();
           ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
 
-          // Window B-Pillar Divider
+          // B-Pillar Divider
           ctx.fillStyle = '#0F172A';
           ctx.fillRect(carX + 64, vy - 1, 4, 13);
 
@@ -2277,11 +2936,7 @@
           ctx.beginPath(); ctx.arc(carX + 54, vy + 4, 6.5, 0, Math.PI * 2); ctx.fill();
           ctx.beginPath(); ctx.ellipse(carX + 54, vy + 12, 9, 5, 0, 0, Math.PI); ctx.fill();
 
-          // Door Seams & Chrome Door Handles
-          ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(carX + 65, vy + 12); ctx.lineTo(carX + 65, vy + 38);
-          ctx.stroke();
+          // Door Handles
           ctx.fillStyle = '#CBD5E1';
           ctx.fillRect(carX + 48, vy + 16, 7, 2);
           ctx.fillRect(carX + 72, vy + 16, 7, 2);
@@ -2289,19 +2944,18 @@
           // Rotating Alloy Wheels (Tire + 5 Split Spokes + Disc + Caliper)
           [carX + 28, carX + 92].forEach(wx => {
             const wy = vy + 42;
-            // Black Rubber Tire
             ctx.fillStyle = '#020617';
             ctx.beginPath(); ctx.arc(wx, wy, 12.5, 0, Math.PI * 2); ctx.fill();
             ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
 
-            // Steel Brake Rotor
+            // Steel Rotor
             ctx.fillStyle = '#64748B';
             ctx.beginPath(); ctx.arc(wx, wy, 8, 0, Math.PI * 2); ctx.fill();
             // Red Brake Caliper
             ctx.fillStyle = '#EF4444';
             ctx.beginPath(); ctx.arc(wx - 4, wy - 3, 3.5, 0, Math.PI * 2); ctx.fill();
 
-            // Rotating Alloy Wheel Spokes
+            // Rotating Alloy Spokes
             ctx.strokeStyle = '#E2E8F0'; ctx.lineWidth = 1.8;
             for (let s = 0; s < 5; s++) {
               const ang = wheelRot + (s * Math.PI * 2) / 5;
@@ -2316,29 +2970,33 @@
             ctx.beginPath(); ctx.arc(wx, wy, 2.5, 0, Math.PI * 2); ctx.fill();
           });
 
-          // LED Headlights with Volumetric Beam Projection
+          // Headlights
           ctx.fillStyle = '#FEF08A';
           ctx.fillRect(carX + 115, vy + 18, 3.5, 8);
-          const fBeam = ctx.createLinearGradient(carX + 118, vy + 22, carX + 210, vy + 22);
-          fBeam.addColorStop(0, 'rgba(254, 240, 138, 0.6)');
-          fBeam.addColorStop(1, 'rgba(254, 240, 138, 0)');
-          ctx.fillStyle = fBeam;
-          ctx.beginPath();
-          ctx.moveTo(carX + 118, vy + 16);
-          ctx.lineTo(carX + 210, vy + 4);
-          ctx.lineTo(carX + 210, vy + 48);
-          ctx.lineTo(carX + 118, vy + 32);
-          ctx.closePath();
-          ctx.fill();
+          if (!isLight) {
+            const fBeam = ctx.createLinearGradient(carX + 118, vy + 22, carX + 210, vy + 22);
+            fBeam.addColorStop(0, 'rgba(254, 240, 138, 0.6)');
+            fBeam.addColorStop(1, 'rgba(254, 240, 138, 0)');
+            ctx.fillStyle = fBeam;
+            ctx.beginPath();
+            ctx.moveTo(carX + 118, vy + 16);
+            ctx.lineTo(carX + 210, vy + 4);
+            ctx.lineTo(carX + 210, vy + 48);
+            ctx.lineTo(carX + 118, vy + 32);
+            ctx.closePath();
+            ctx.fill();
+          }
 
-          // Rear LED Taillight Clusters
+          // Rear Taillights
           ctx.fillStyle = '#EF4444';
           ctx.fillRect(carX, vy + 18, 3, 8);
-          const rGlow = ctx.createRadialGradient(carX, vy + 22, 1, carX, vy + 22, 14);
-          rGlow.addColorStop(0, 'rgba(239, 68, 68, 0.5)');
-          rGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
-          ctx.fillStyle = rGlow;
-          ctx.beginPath(); ctx.arc(carX, vy + 22, 14, 0, Math.PI * 2); ctx.fill();
+          if (!isLight) {
+            const rGlow = ctx.createRadialGradient(carX, vy + 22, 1, carX, vy + 22, 14);
+            rGlow.addColorStop(0, 'rgba(239, 68, 68, 0.5)');
+            rGlow.addColorStop(1, 'rgba(239, 68, 68, 0)');
+            ctx.fillStyle = rGlow;
+            ctx.beginPath(); ctx.arc(carX, vy + 22, 14, 0, Math.PI * 2); ctx.fill();
+          }
 
           // Authentic Algerian Rear License Plate
           ctx.fillStyle = '#FDE047';
@@ -2348,7 +3006,7 @@
           ctx.font = 'bold 5.5px JetBrains Mono';
           ctx.fillText('08192 120 09', carX + 4, vy + 36);
 
-          // Computer Vision ALPR Tracking Box
+          // ALPR Tracking Box
           if (carX < 240) {
             ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1.2;
             ctx.strokeRect(carX - 2, vy + 24, 38, 18);
@@ -2358,21 +3016,24 @@
             ctx.strokeRect(carX - 10, vy + 2, 98, 15);
             ctx.fillStyle = '#10B981';
             ctx.font = 'bold 7px JetBrains Mono';
-            ctx.fillText('● SATIM CIB VALIDÉ [09 BLIDA]', carX - 6, vy + 12);
+            ctx.fillText('● SATIM CIB VALIDE [09 BLIDA]', carX - 6, vy + 12);
           }
 
           if (carX > cvs.width + 70) {
             carRolling = false;
             targetAngle = 0;
-            document.getElementById('cam3-arm-text').innerText = 'BAISSÉE';
-            document.getElementById('cam3-arm-text').className = 'text-red-400 font-semibold';
+            const armEl = document.getElementById('cam3-arm-text');
+            if (armEl) {
+              armEl.innerText = currentLang === 'ar' ? 'مغلق' : (currentLang === 'en' ? 'CLOSED' : 'BAISSEE');
+              armEl.className = 'text-red-400 font-semibold';
+            }
           }
         }
 
         // 6. Automatic Industrial Barrier Pillar & Articulated Boom Arm
         const pillarX = 265, pillarY = 82, pillarW = 28, pillarH = 150;
 
-        // RAL 2004 Pure Orange Powder-Coated Steel Cabinet
+        // RAL 2004 Orange Powder-Coated Steel Cabinet
         const cabGrad = ctx.createLinearGradient(pillarX, 0, pillarX + pillarW, 0);
         cabGrad.addColorStop(0, '#EA580C');
         cabGrad.addColorStop(0.5, '#F97316');
@@ -2383,13 +3044,13 @@
         ctx.fill();
         ctx.strokeStyle = '#7C2D12'; ctx.lineWidth = 1.5; ctx.stroke();
 
-        // Cabinet Access Door & Keyhole
+        // Cabinet Access Door
         ctx.fillStyle = '#1E293B';
         ctx.fillRect(pillarX + 3, pillarY + 22, pillarW - 6, 26);
         ctx.fillStyle = '#F59E0B';
         ctx.beginPath(); ctx.arc(pillarX + pillarW / 2, pillarY + 35, 2.5, 0, Math.PI * 2); ctx.fill();
 
-        // Top Flashing Warning Strobe Beacon
+        // Top Warning Strobe Beacon
         const beaconActive = targetAngle < -40;
         const strobeBlink = Math.floor(frameCount / 6) % 2 === 0;
         const beaconColor = beaconActive ? '#10B981' : (Math.abs(armAngle - targetAngle) > 4 && strobeBlink ? '#F59E0B' : '#EF4444');
@@ -2398,13 +3059,8 @@
         ctx.arc(pillarX + pillarW / 2, pillarY - 3, 7.5, Math.PI, Math.PI * 2);
         ctx.fill();
         ctx.strokeStyle = '#FFFFFF'; ctx.lineWidth = 1; ctx.stroke();
-        // Beacon Glow Halo
-        ctx.fillStyle = beaconActive ? 'rgba(16, 185, 129, 0.4)' : 'rgba(239, 68, 68, 0.35)';
-        ctx.beginPath();
-        ctx.arc(pillarX + pillarW / 2, pillarY - 3, 16, 0, Math.PI * 2);
-        ctx.fill();
 
-        // Smooth Mechanical Arm Physics Rotation
+        // Smooth Mechanical Arm Rotation
         armAngle += (targetAngle - armAngle) * 0.075;
 
         // Draw Articulated Boom Arm
@@ -2432,7 +3088,7 @@
           ctx.fill();
         }
 
-        // Active Upper LED Neon Light Strip
+        // Active LED Neon Strip
         const neonCol = beaconActive ? '#10B981' : (Math.abs(armAngle - targetAngle) > 4 ? '#F59E0B' : '#EF4444');
         ctx.strokeStyle = neonCol;
         ctx.lineWidth = 3;
@@ -2441,11 +3097,11 @@
         ctx.lineTo(-4, -boomHeight / 2 - 1);
         ctx.stroke();
 
-        // Lower EPDM Rubber Safety Cushion
+        // Lower Rubber Cushion
         ctx.fillStyle = '#0F172A';
         ctx.fillRect(-boomLength + 2, boomHeight / 2 - 1, boomLength - 4, 3);
 
-        // Heavy Mechanical Hub Collar & Flange Bolts
+        // Hub Collar & Flange Bolts
         ctx.fillStyle = '#334155';
         ctx.beginPath(); ctx.arc(0, 0, 9, 0, Math.PI * 2); ctx.fill();
         ctx.fillStyle = '#E2E8F0';
@@ -2454,8 +3110,9 @@
         ctx.restore();
 
         // Apply CCTV Effects & Security OSD
-        const now = new Date().toLocaleTimeString('fr-DZ');
-        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-03', 'SORTIE VOIE 2 & BARRIÈRE', 25.0, now, true);
+        const now = new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-DZ' : (currentLang === 'en' ? 'en-US' : 'fr-DZ'));
+        const camTitle = (I18N[currentLang] && I18N[currentLang].cam3_name) || 'CAM-03 : SORTIE VOIE 2';
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-03', camTitle, 25.0, now, true);
 
         requestAnimationFrame(render);
       }
@@ -2466,8 +3123,11 @@
           targetAngle = -85;
           carRolling = true;
           carX = -100;
-          document.getElementById('cam3-arm-text').innerText = 'LEVÉE (OUVERT)';
-          document.getElementById('cam3-arm-text').className = 'text-emeraldAccent font-semibold';
+          const armEl = document.getElementById('cam3-arm-text');
+          if (armEl) {
+            armEl.innerText = currentLang === 'ar' ? 'مفتوح' : (currentLang === 'en' ? 'OPEN' : 'LEVEE (OUVERT)');
+            armEl.className = 'text-emeraldAccent font-semibold';
+          }
         }
       };
     }
@@ -2478,32 +3138,36 @@
       cvs.width = 480; cvs.height = 270;
       let frameCount = 0;
 
-      // Realistic vehicle palette for occupied stalls
       const vehicleColors = [
-        { body: '#1E293B', roof: '#0F172A', glass: '#0284C7' }, // Slate Gray
-        { body: '#0F172A', roof: '#020617', glass: '#0369A1' }, // Obsidian Black
-        { body: '#F1F5F9', roof: '#E2E8F0', glass: '#0284C7' }, // Glacier White
-        { body: '#1E3A8A', roof: '#172554', glass: '#38BDF8' }, // Sapphire Blue
-        { body: '#831843', roof: '#500724', glass: '#0284C7' }, // Burgundy Metallic
-        { body: '#334155', roof: '#1E293B', glass: '#0284C7' }, // Gunmetal
-        { body: '#047857', roof: '#064E3B', glass: '#38BDF8' }, // Emerald Dark
+        { body: '#1E293B', roof: '#0F172A', glass: '#0284C7' },
+        { body: '#0F172A', roof: '#020617', glass: '#0369A1' },
+        { body: '#F1F5F9', roof: '#E2E8F0', glass: '#0284C7' },
+        { body: '#1E3A8A', roof: '#172554', glass: '#38BDF8' },
+        { body: '#831843', roof: '#500724', glass: '#0284C7' },
+        { body: '#334155', roof: '#1E293B', glass: '#0284C7' },
+        { body: '#047857', roof: '#064E3B', glass: '#38BDF8' },
       ];
 
       function render() {
         frameCount++;
-        ctx.fillStyle = '#040711';
-        ctx.fillRect(0, 0, cvs.width, cvs.height);
+        const isLight = document.documentElement.classList.contains('light');
 
         // 1. Industrial Epoxy Parking Deck Floor
         const floorGrad = ctx.createLinearGradient(0, 0, cvs.width, cvs.height);
-        floorGrad.addColorStop(0, '#091122');
-        floorGrad.addColorStop(0.5, '#060B18');
-        floorGrad.addColorStop(1, '#030610');
+        if (isLight) {
+          floorGrad.addColorStop(0, '#F1F5F9');
+          floorGrad.addColorStop(0.5, '#E2E8F0');
+          floorGrad.addColorStop(1, '#CBD5E1');
+        } else {
+          floorGrad.addColorStop(0, '#091122');
+          floorGrad.addColorStop(0.5, '#060B18');
+          floorGrad.addColorStop(1, '#030610');
+        }
         ctx.fillStyle = floorGrad;
         ctx.fillRect(0, 0, cvs.width, cvs.height);
 
         // Epoxy Floor Joint Seams
-        ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        ctx.strokeStyle = isLight ? 'rgba(148, 163, 184, 0.5)' : 'rgba(30, 41, 59, 0.4)';
         ctx.lineWidth = 1;
         ctx.beginPath();
         for (let y = 30; y < cvs.height; y += 45) {
@@ -2511,25 +3175,23 @@
         }
         ctx.stroke();
 
-        // 2. Central Driving Aisle with Directional White Arrows
-        ctx.fillStyle = '#020617';
+        // 2. Central Driving Aisle
+        ctx.fillStyle = isLight ? '#334155' : '#020617';
         ctx.fillRect(10, 115, cvs.width - 20, 42);
-        ctx.strokeStyle = 'rgba(51, 65, 85, 0.6)';
+        ctx.strokeStyle = isLight ? '#64748B' : 'rgba(51, 65, 85, 0.6)';
         ctx.lineWidth = 1;
         ctx.strokeRect(10, 115, cvs.width - 20, 42);
 
-        // White Lane Direction Arrows Painted on Floor
-        ctx.fillStyle = 'rgba(241, 245, 249, 0.5)';
+        // Direction Arrows
+        ctx.fillStyle = 'rgba(241, 245, 249, 0.7)';
         [100, 240, 380].forEach((ax, idx) => {
           ctx.beginPath();
           if (idx % 2 === 0) {
-            // Forward Arrow ->
             ctx.moveTo(ax - 10, 133); ctx.lineTo(ax + 6, 133);
             ctx.lineTo(ax + 6, 130); ctx.lineTo(ax + 14, 136);
             ctx.lineTo(ax + 6, 142); ctx.lineTo(ax + 6, 139);
             ctx.lineTo(ax - 10, 139);
           } else {
-            // Backward Arrow <-
             ctx.moveTo(ax + 10, 133); ctx.lineTo(ax - 6, 133);
             ctx.lineTo(ax - 6, 130); ctx.lineTo(ax - 14, 136);
             ctx.lineTo(ax - 6, 142); ctx.lineTo(ax - 6, 139);
@@ -2540,13 +3202,14 @@
         });
 
         // Green Pedestrian Safety Corridor (Right Side)
-        ctx.fillStyle = 'rgba(6, 78, 59, 0.35)';
+        ctx.fillStyle = isLight ? 'rgba(16, 185, 129, 0.25)' : 'rgba(6, 78, 59, 0.35)';
         ctx.fillRect(445, 20, 25, 230);
         ctx.strokeStyle = '#059669'; ctx.lineWidth = 1;
         ctx.strokeRect(445, 20, 25, 230);
         ctx.fillStyle = '#10B981';
         ctx.font = '7px JetBrains Mono';
-        ctx.fillText('PIÉTONS', 446, 138);
+        const pedText = currentLang === 'ar' ? 'مشاة' : (currentLang === 'en' ? 'WALK' : 'PIETONS');
+        ctx.fillText(pedText, 446, 138);
 
         // 3. Render Parking Stalls (Rows A and B)
         const rowAY = 26;
@@ -2557,31 +3220,29 @@
 
         for (let i = 0; i < 7; i++) {
           const sx = startX + i * 59;
-
-          // Upper Row A Stalls
-          renderSingleStall(ctx, sx, rowAY, stallW, stallH, `A0${i+1}`, i, true);
-          // Lower Row B Stalls
-          renderSingleStall(ctx, sx, rowBY, stallW, stallH, `B0${i+1}`, i + 7, false);
+          renderSingleStall(ctx, sx, rowAY, stallW, stallH, `A0${i+1}`, i, true, isLight);
+          renderSingleStall(ctx, sx, rowBY, stallW, stallH, `B0${i+1}`, i + 7, false, isLight);
         }
 
         // Apply CCTV Effects & Security OSD
-        const now = new Date().toLocaleTimeString('fr-DZ');
-        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-04', 'VUE AÉRIENNE ZONE STALLES', 25.0, now, true);
+        const now = new Date().toLocaleTimeString(currentLang === 'ar' ? 'ar-DZ' : (currentLang === 'en' ? 'en-US' : 'fr-DZ'));
+        const camTitle = (I18N[currentLang] && I18N[currentLang].cam4_name) || 'CAM-04 : ZONE A & B (AERIENNE)';
+        drawCCTVEffects(ctx, cvs.width, cvs.height, 'CAM-04', camTitle, 25.0, now, true);
 
         requestAnimationFrame(render);
       }
 
-      function renderSingleStall(ctx, x, y, w, h, slotId, index, isTopRow) {
+      function renderSingleStall(ctx, x, y, w, h, slotId, index, isTopRow, isLight) {
         const stallData = currentStalls.find(s => s.slot_number === slotId) || { status: 'vacant', plate: null };
         const isOcc = stallData.status === 'occupied';
         const isRes = stallData.status === 'reserved';
 
-        // Dual Stall Marking Lines (White)
-        ctx.strokeStyle = 'rgba(241, 245, 249, 0.65)';
+        // Dual Stall Marking Lines
+        ctx.strokeStyle = isLight ? 'rgba(71, 85, 105, 0.6)' : 'rgba(241, 245, 249, 0.65)';
         ctx.lineWidth = 2;
         ctx.strokeRect(x, y, w, h);
 
-        // Yellow Concrete Wheel Stop Curb at the back of the bay
+        // Yellow Concrete Wheel Stop Curb
         const curbY = isTopRow ? y + 4 : y + h - 8;
         ctx.fillStyle = '#F59E0B';
         ctx.fillRect(x + 5, curbY, w - 10, 4);
@@ -2598,11 +3259,10 @@
         ctx.beginPath(); ctx.arc(ledX, ledY, 7, 0, Math.PI * 2); ctx.fill();
 
         // Slot Number Identifier
-        ctx.fillStyle = '#94A3B8';
+        ctx.fillStyle = isLight ? '#334155' : '#94A3B8';
         ctx.font = 'bold 7.5px JetBrains Mono';
         ctx.fillText(slotId, x + 4, isTopRow ? y + 14 : y + h - 10);
 
-        // If Occupied: Draw High-Detail Top-Down Vehicle
         if (isOcc) {
           const colScheme = vehicleColors[index % vehicleColors.length];
           const carW = w - 14;
@@ -2611,12 +3271,12 @@
           const carY = y + 10;
 
           // Vehicle Ground Shadow
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.65)';
+          ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.35)' : 'rgba(0, 0, 0, 0.65)';
           ctx.beginPath();
           ctx.roundRect(carX - 2, carY - 2, carW + 4, carH + 4, 8);
           ctx.fill();
 
-          // Vehicle Metallic Painted Body
+          // Vehicle Body
           const vGrad = ctx.createLinearGradient(carX, carY, carX + carW, carY);
           vGrad.addColorStop(0, colScheme.body);
           vGrad.addColorStop(0.5, '#475569');
@@ -2625,46 +3285,46 @@
           ctx.beginPath();
           ctx.roundRect(carX, carY, carW, carH, 6);
           ctx.fill();
-          ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1; ctx.stroke();
+          ctx.strokeStyle = isLight ? '#64748B' : '#1E293B'; ctx.lineWidth = 1; ctx.stroke();
 
           // Side Mirrors
           ctx.fillStyle = colScheme.body;
           ctx.fillRect(carX - 3, carY + (isTopRow ? 18 : carH - 24), 3, 7);
           ctx.fillRect(carX + carW, carY + (isTopRow ? 18 : carH - 24), 3, 7);
 
-          // Front Windshield Glass
+          // Front Windshield
           ctx.fillStyle = colScheme.glass;
           const wY = isTopRow ? carY + 16 : carY + carH - 24;
           ctx.beginPath();
           ctx.roundRect(carX + 3, wY, carW - 6, 9, 3);
           ctx.fill();
 
-          // Panoramic Sunroof
+          // Sunroof
           ctx.fillStyle = colScheme.roof;
           ctx.beginPath();
           ctx.roundRect(carX + 4, carY + 28, carW - 8, carH - 46, 3);
           ctx.fill();
 
-          // Rear Window Glass
+          // Rear Window
           ctx.fillStyle = colScheme.glass;
           const rY = isTopRow ? carY + carH - 16 : carY + 8;
           ctx.beginPath();
           ctx.roundRect(carX + 3, rY, carW - 6, 7, 2);
           ctx.fill();
 
-          // Miniature Algerian License Plate on Bumper
+          // Algerian License Plate on Bumper
           const pY = isTopRow ? carY + carH - 3 : carY + 1;
           ctx.fillStyle = '#FDE047';
           ctx.fillRect(carX + carW / 2 - 10, pY, 20, 4);
           ctx.strokeStyle = '#000000'; ctx.lineWidth = 0.5;
           ctx.strokeRect(carX + carW / 2 - 10, pY, 20, 4);
 
-          // Computer Vision Bounding Box Overlay
+          // CV Bounding Box Overlay
           ctx.strokeStyle = '#EF4444';
           ctx.lineWidth = 1;
           ctx.strokeRect(carX - 1, carY - 1, carW + 2, carH + 2);
         } else {
-          // Vacant Slot Computer Vision Detection Box
+          // Vacant Slot CV Detection Box
           ctx.strokeStyle = 'rgba(16, 185, 129, 0.4)';
           ctx.lineWidth = 0.8;
           ctx.setLineDash([3, 3]);
@@ -2672,7 +3332,8 @@
           ctx.setLineDash([]);
           ctx.fillStyle = '#10B981';
           ctx.font = '7px JetBrains Mono';
-          ctx.fillText('LIBRE', x + w / 2 - 11, y + h / 2);
+          const freeText = (I18N[currentLang] && I18N[currentLang].stall_available) || 'LIBRE';
+          ctx.fillText(freeText, x + w / 2 - 11, y + h / 2);
         }
       }
 
@@ -3211,6 +3872,9 @@
       }
     });
 
+    // Initialize Theme & Language on boot
+    applyTheme(currentTheme);
+    switchLanguage(currentLang);
     lucide.createIcons();
   </script>
 </body>
