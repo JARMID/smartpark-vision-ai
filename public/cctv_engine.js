@@ -27,8 +27,8 @@
         btn.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border border-emerald-500/40 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50 transition';
         txt.innerText = (I18N[lang] && I18N[lang].engine_running) || "Moteur : EN MARCHE (820 RPM)";
       } else {
-        dot.className = 'w-2 h-2 rounded-full bg-amber-400';
-        btn.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border border-amber-500/40 bg-amber-950/40 text-amber-400 hover:bg-amber-900/50 transition';
+        dot.className = 'w-2 h-2 rounded-full bg-slate-500';
+        btn.className = 'flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-mono border border-slate-600/40 bg-slate-900/60 text-slate-300 hover:bg-slate-800 transition';
         txt.innerText = (I18N[lang] && I18N[lang].engine_off) || "Moteur : ÉTEINT (0 RPM)";
       }
     }
@@ -112,7 +112,7 @@
 
     ctx.fillStyle = isLight ? '#334155' : '#94A3B8';
     ctx.font = '8px "JetBrains Mono", monospace';
-    const lawText = lang === 'ar' ? 'القانون 25-11 لحماية المعطيات الشخصية | NVDEC 4.8 Mb/s' : (lang === 'en' ? 'LAW 25-11 PRIVACY COMPLIANT | NVDEC 4.8 Mb/s' : 'LOI 25-11 PROTECTION DES DONNEES | NVDEC 4.8 Mb/s');
+    const lawText = lang === 'ar' ? 'المراقبة الذكية نشطة | NVDEC 4.8 Mb/s' : (lang === 'en' ? 'AI COMPUTER VISION ACTIVE | NVDEC 4.8 Mb/s' : 'VISION IA ACTIVE | NVDEC 4.8 Mb/s');
     ctx.fillText(`1080p50 H.265 | ${lawText}`, 10, h - 7);
 
     ctx.textAlign = 'right';
@@ -602,7 +602,7 @@
       const signText = isGateOpen
         ? (lang === 'ar' ? '● تم السماح بالدخول | مرحباً بكم' : (lang === 'en' ? '● ACCESS GRANTED | WELCOME' : '● ACCÈS AUTORISÉ | BIENVENUE'))
         : (lang === 'ar' ? '● سمارت بارك • الجزائر الوسطى | الدخول' : (lang === 'en' ? '● SMART PARK • ALGIERS CENTRAL | ENTRANCE' : '● SMART PARK • ALGER-CENTRE | ENTRÉE'));
-      ctx.fillStyle = isGateOpen ? '#10B981' : '#F59E0B';
+      ctx.fillStyle = isGateOpen ? '#10B981' : '#38BDF8';
       ctx.font = 'bold 8px "JetBrains Mono", monospace';
       ctx.textAlign = 'center';
       ctx.fillText(signText, 240, portalY + 14);
@@ -616,10 +616,10 @@
       ctx.fillText(isGateOpen ? '↓' : '✕', 408, portalY + portalH / 2 + 2.5);
 
       // 11. Real-Time YOLOv11 Vehicle Bounding Box (Surrounding ONLY the vehicle)
-      ctx.strokeStyle = '#06B6D4';
+      ctx.strokeStyle = '#00F2FE';
       ctx.lineWidth = 1.6;
       ctx.strokeRect(x - 4, y - 4, w + 8, h + 6);
-      ctx.fillStyle = 'rgba(6, 182, 212, 0.9)';
+      ctx.fillStyle = 'rgba(0, 242, 254, 0.9)';
       ctx.fillRect(x - 4, y - 16, 150, 13);
       ctx.fillStyle = '#000000';
       ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
@@ -631,7 +631,7 @@
       ctx.fillText(vehLabel, x - 1, y - 6.5);
 
       // Optical Engine Status & Vibration Telemetry Pill (On vehicle hood)
-      const engColor = isEngineRunning ? '#10B981' : '#F59E0B';
+      const engColor = isEngineRunning ? '#10B981' : '#94A3B8';
       const engText = isEngineRunning
         ? (lang === 'ar' ? '● رصد المحرك: يعمل (820 د/د | 13.8 هرتز)' : (lang === 'en' ? '● ENGINE: RUNNING (820 RPM | 13.8Hz VIB)' : '● MOTEUR: EN MARCHE (820 RPM | 13.8Hz VIB)'))
         : (lang === 'ar' ? '■ رصد المحرك: متوقف (0 د/د | سكون)' : (lang === 'en' ? '■ ENGINE: STOPPED (0 RPM | STATIC)' : '■ MOTEUR: ÉTEINT (0 RPM | VIB NULLE)'));
@@ -1556,11 +1556,11 @@
         let subText = '';
 
         if (carState === 'APPROACHING') {
-          tagColor = '#06B6D4';
+          tagColor = '#00F2FE';
           statusText = lang === 'ar' ? `رصد: يقترب (${speedKmH} كم/سا)` : (lang === 'en' ? `[AI] APPROACHING: ${speedKmH} km/h` : `[IA] EN APPROCHE : ${speedKmH} km/h`);
           subText = lang === 'ar' ? 'حاجز مسلك 2: مغلق (مغلق)' : (lang === 'en' ? 'BARRIER: INTERLOCKED (LOWERED)' : 'BARRIÈRE : VERROUILLÉE (BAISSÉE)');
         } else if (carState === 'STOPPED') {
-          tagColor = isEngineOn ? '#10B981' : '#F59E0B';
+          tagColor = isEngineOn ? '#10B981' : '#94A3B8';
           statusText = lang === 'ar' ? `رصد: متوقف (0.0 كم/سا) | ${plateText}` : (lang === 'en' ? `[AI] STOPPED: 0.0 km/h | ${plateText}` : `[IA] ARRÊTÉ : 0.0 km/h | ${plateText}`);
           subText = lang === 'ar' ? (isEngineOn ? 'المحرك: يعمل (820 د/د) | بانتظار الفتح' : 'المحرك: متوقف (0 د/د)') : (lang === 'en' ? (isEngineOn ? 'ENGINE: IDLE (820 RPM) | CLEAR TO LIFT' : 'ENGINE: OFF (0 RPM)') : (isEngineOn ? 'MOTEUR : AU RALENTI (820 RPM)' : 'MOTEUR : ÉTEINT (0 RPM)'));
         } else if (carState === 'OPENING') {

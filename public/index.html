@@ -29,13 +29,16 @@
             arabic: ['Cairo', 'sans-serif'],
           },
           colors: {
-            obsidian: '#070A12',
-            surface: '#0F1626',
-            surfaceBorder: '#1E293B',
+            obsidian: '#080C14',
+            surface: '#0D131F',
+            surfaceBorder: '#1A2436',
+            cyberCyan: '#00F2FE',
+            electricCyan: '#38BDF8',
             emeraldAccent: '#10B981',
-            crimsonAlarm: '#EF4444',
-            amberWarn: '#F59E0B',
-            cyanStream: '#06B6D4',
+            mintClearance: '#00F5A0',
+            crimsonAlarm: '#F43F5E',
+            amberWarn: '#FB923C',
+            cyanStream: '#00F2FE',
             plateYellow: '#FDE047',
           }
         }
@@ -43,20 +46,20 @@
     }
   </script>
   <style>
-    body { background-color: #070A12; color: #F8FAFC; transition: background-color 0.3s ease, color 0.3s ease; }
+    body { background-color: #080C14; color: #F8FAFC; transition: background-color 0.3s ease, color 0.3s ease; }
     .glass-panel {
-      background: rgba(15, 22, 38, 0.75);
+      background: rgba(13, 19, 31, 0.78);
       backdrop-filter: blur(16px);
       -webkit-backdrop-filter: blur(16px);
       border: 1px solid rgba(255, 255, 255, 0.08);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
       transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
     }
     .glass-panel-glow {
-      background: rgba(15, 22, 38, 0.85);
+      background: rgba(13, 19, 31, 0.88);
       backdrop-filter: blur(16px);
-      border: 1px solid rgba(16, 185, 129, 0.25);
-      box-shadow: 0 0 25px rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.35);
+      box-shadow: 0 0 25px rgba(0, 242, 254, 0.12);
     }
     .plate-badge {
       font-family: 'JetBrains Mono', monospace;
@@ -156,7 +159,8 @@
       background-color: #E2E8F0 !important;
     }
 
-    /* Arabic RTL Font and Layout Adjustments */
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg">
+  <!-- Arabic RTL Font and Layout Adjustments -->
     html[lang="ar"] body {
       font-family: 'Cairo', 'Inter', sans-serif;
     }
@@ -167,8 +171,8 @@
   <!-- TOP APP HEADER WITH LIQUID GLASS STYLE -->
   <header class="bg-surface/90 border-b border-surfaceBorder px-4 py-2 flex items-center justify-between shrink-0 glass-panel">
     <div class="flex items-center space-x-3">
-      <div class="w-9 h-9 rounded-xl bg-emeraldAccent/20 border border-emeraldAccent/40 flex items-center justify-center text-emeraldAccent font-bold shadow-lg shadow-emeraldAccent/10">
-        <i data-lucide="shield-check" class="w-5 h-5"></i>
+      <div class="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center shadow-lg shadow-cyan-500/20 border border-cyan-500/40 bg-black/40">
+        <img src="./assets/logos/logo.svg" alt="Smart Park Logo" class="w-full h-full object-contain">
       </div>
       <div>
         <div class="flex items-center space-x-2">
@@ -209,7 +213,7 @@
 
       <!-- Day / Night Mode Toggle -->
       <button id="theme-btn" onclick="toggleTheme()" class="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Basculer Mode Jour / Nuit">
-        <i data-lucide="sun" id="theme-icon" class="w-4 h-4 text-amberWarn"></i>
+        <i data-lucide="sun" id="theme-icon" class="w-4 h-4 text-cyanStream"></i>
       </button>
 
       <div id="backend-status-badge" class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300">
@@ -225,7 +229,7 @@
         <span class="font-mono text-[11px]" id="header-gpu">RTX 4070 (6.1/8GB)</span>
       </div>
       <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300" title="Mémoire RAM Système">
-        <i data-lucide="zap" class="w-3.5 h-3.5 text-plateYellow"></i>
+        <i data-lucide="zap" class="w-3.5 h-3.5 text-cyanStream"></i>
         <span class="font-mono text-[11px]" id="header-ram">RAM: 17/32GB (52%)</span>
       </div>
       <button id="sound-btn" onclick="toggleAudio()" class="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Activer / Couper le son">
@@ -258,8 +262,8 @@
         <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
         <span data-i18n="scenario_vip">[1] VIP (104822 119 16)</span>
       </button>
-      <button onclick="triggerScenario('temporary_00')" class="px-2.5 py-1 rounded-lg bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
-        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+      <button onclick="triggerScenario('temporary_00')" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
         <span data-i18n="scenario_temp">[2] Provisoire 00 (08412 00 16)</span>
       </button>
       <button onclick="triggerScenario('watchlist_alert')" class="px-2.5 py-1 rounded-lg bg-crimsonAlarm/15 hover:bg-crimsonAlarm/25 text-red-300 border border-crimsonAlarm/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
@@ -270,8 +274,8 @@
         <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
         <span data-i18n="scenario_spoof">[4] Fraude Photo</span>
       </button>
-      <button onclick="triggerScenario('driver_mismatch')" class="px-2.5 py-1 rounded-lg bg-amberWarn/15 hover:bg-amberWarn/25 text-amber-300 border border-amberWarn/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
-        <span class="w-1.5 h-1.5 rounded-full bg-amberWarn"></span>
+      <button onclick="triggerScenario('driver_mismatch')" class="px-2.5 py-1 rounded-lg bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
+        <span class="w-1.5 h-1.5 rounded-full bg-rose-400"></span>
         <span data-i18n="scenario_mismatch">[5] Chauffeur Inconnu</span>
       </button>
       <button onclick="triggerScenario('visitor_payment_exit')" class="px-2.5 py-1 rounded-lg bg-teal-500/15 hover:bg-teal-500/25 text-teal-300 border border-teal-500/40 text-xs font-medium transition flex items-center space-x-1 shrink-0">
@@ -400,7 +404,7 @@
               </div>
               <div class="relative flex-1 min-h-0 bg-black">
                 <canvas id="cam1-canvas" class="w-full h-full object-cover"></canvas>
-                <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-yellow-500/50 p-2 rounded-xl flex items-center justify-between hidden">
+                <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-cyan-500/50 p-2 rounded-xl flex items-center justify-between hidden">
                   <div>
                     <span class="text-[10px] text-gray-400 uppercase" data-i18n="plate_detected">Plaque Détectée</span>
                     <div class="mt-0.5" id="cam1-plate-box"><span class="plate-badge">104822 119 16</span></div>
@@ -542,8 +546,8 @@
             <i data-lucide="unlock" class="w-3.5 h-3.5 text-emeraldAccent"></i>
             <span data-i18n="btn_open_lane1">Ouvrir Voie 1 [Espace]</span>
           </button>
-          <button onclick="openTicketModal()" class="px-2 py-2 rounded-xl bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 text-xs font-semibold border border-blue-500/40 flex items-center justify-center space-x-1.5 transition">
-            <i data-lucide="qr-code" class="w-3.5 h-3.5 text-blue-400"></i>
+          <button onclick="openTicketModal()" class="px-2 py-2 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 text-xs font-semibold border border-cyan-500/40 flex items-center justify-center space-x-1.5 transition">
+            <i data-lucide="qr-code" class="w-3.5 h-3.5 text-cyan-400"></i>
             <span data-i18n="btn_ticket">Ticket Visiteur</span>
           </button>
         </div>
@@ -663,25 +667,25 @@
   <!-- MODAL 2: TICKET QR IMPRIMÉ VISITEUR (CARTE GRISE PROVISOIRE 00) -->
   <!-- ======================================================= -->
   <div id="ticket-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
-    <div class="glass-panel rounded-2xl border border-blue-500/40 max-w-sm w-full p-5 shadow-2xl space-y-4">
+    <div class="glass-panel rounded-2xl border border-cyan-500/40 max-w-sm w-full p-5 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-gray-800 pb-2">
         <h3 class="font-bold text-sm text-white flex items-center space-x-2">
-          <i data-lucide="ticket" class="w-4 h-4 text-blue-400"></i>
+          <i data-lucide="ticket" class="w-4 h-4 text-cyan-400"></i>
           <span data-i18n="ticket_modal_title">Ticket d'Accès Stationnement</span>
         </h3>
         <button onclick="closeTicketModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
 
       <!-- Thermal Paper Receipt Mockup -->
-      <div class="bg-amber-50 text-gray-900 p-4 rounded-xl font-mono text-center space-y-2 shadow-inner border border-amber-200">
+      <div class="bg-slate-50 text-gray-900 p-4 rounded-xl font-mono text-center space-y-2 shadow-inner border border-slate-300">
         <div class="text-xs font-bold uppercase tracking-wider text-gray-800">Parking Alger-Centre</div>
         <div class="text-[10px] text-gray-600">Wilaya d'Alger (16) - El Biar</div>
         <div class="border-t border-dashed border-gray-400 my-1"></div>
 
         <div>
           <span class="text-[10px] text-gray-500 block" data-i18n="ticket_plate_label">IMMATRICULATION DÉTECTÉE :</span>
-          <span class="font-bold text-sm bg-yellow-300 px-2 py-0.5 rounded border border-yellow-500 inline-block mt-0.5">08412 00 16</span>
-          <span class="text-[10px] text-blue-700 block mt-0.5" data-i18n="ticket_series_label">(Série Provisoire 00)</span>
+          <span class="font-bold text-sm bg-slate-900 text-cyan-300 px-3 py-1 rounded border border-cyan-500/40 inline-block mt-0.5 shadow-sm">08412 00 16</span>
+          <span class="text-[10px] text-slate-500 block mt-0.5" data-i18n="ticket_series_label">(Série Provisoire 00)</span>
         </div>
 
         <div class="flex justify-between text-[11px] text-gray-700 px-2">
@@ -703,7 +707,7 @@
         </div>
 
         <div class="border-t border-dashed border-gray-400 my-1"></div>
-        <p class="text-[9px] text-gray-500 leading-tight" data-i18n="ticket_law_notice">Conforme Loi 18-07 & Loi 25-11. Les images sont conservées 30 jours au titre de la sécurité du site.</p>
+        <p class="text-[9px] text-gray-500 leading-tight" data-i18n="ticket_law_notice">Système sécurisé Smart Park. Conservation 30 jours au titre de la sécurité du site.</p>
       </div>
 
       <div class="flex items-center justify-end space-x-2 pt-1">
@@ -715,9 +719,9 @@
   <!-- ======================================================= -->
   <!-- MODAL 3: GUARD DRAWER (DRIVER MISMATCH) -->
   <!-- ======================================================= -->
-  <div id="guard-drawer" class="fixed bottom-4 right-4 max-w-md w-full glass-panel-glow border-amberWarn/60 rounded-2xl p-4 shadow-2xl z-50 space-y-3 hidden transition-all duration-300">
+  <div id="guard-drawer" class="fixed bottom-4 right-4 max-w-md w-full glass-panel-glow border-rose-500/60 rounded-2xl p-4 shadow-2xl z-50 space-y-3 hidden transition-all duration-300">
     <div class="flex items-center justify-between border-b border-gray-800 pb-2">
-      <div class="flex items-center space-x-2 text-amberWarn">
+      <div class="flex items-center space-x-2 text-rose-400">
         <i data-lucide="alert-triangle" class="w-5 h-5"></i>
         <h3 class="font-bold text-sm text-white" data-i18n="guard_drawer_title">Validation Requise : Conducteur Inconnu</h3>
       </div>
@@ -739,13 +743,13 @@
         <div class="text-[10px] text-emeraldAccent" data-i18n="guard_subscriber">Abonné Actif</div>
       </div>
 
-      <div class="bg-black/50 p-2 rounded-xl border border-amberWarn/50 text-center space-y-1">
-        <span class="text-[10px] text-amberWarn font-semibold uppercase block" data-i18n="guard_live_cam">Capture CAM-02</span>
-        <div class="w-16 h-16 rounded-full bg-amberWarn/20 border-2 border-amberWarn mx-auto flex items-center justify-center text-amberWarn">
+      <div class="bg-black/50 p-2 rounded-xl border border-rose-500/50 text-center space-y-1">
+        <span class="text-[10px] text-rose-400 font-semibold uppercase block" data-i18n="guard_live_cam">Capture CAM-02</span>
+        <div class="w-16 h-16 rounded-full bg-rose-500/20 border-2 border-rose-500 mx-auto flex items-center justify-center text-rose-400">
           <i data-lucide="user-x" class="w-8 h-8"></i>
         </div>
         <div class="font-bold text-white text-xs" data-i18n="guard_unknown_driver">Conducteur Non Reconnu</div>
-        <div class="text-[10px] text-amberWarn font-mono">Distance: 0.62</div>
+        <div class="text-[10px] text-rose-400 font-mono">Distance: 0.62</div>
       </div>
     </div>
 
@@ -828,7 +832,7 @@
           </div>
 
           <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
-            <span class="font-semibold text-blue-400" data-i18n="guide_scen2_title">[2] Véhicule Neuf / Plaque Provisoire 00 (Touche 2) :</span>
+            <span class="font-semibold text-cyan-400" data-i18n="guide_scen2_title">[2] Véhicule Neuf / Plaque Provisoire 00 (Touche 2) :</span>
             <p class="text-gray-400 mt-0.5" data-i18n="guide_scen2_desc">Démontre la gestion du code 00 propre aux véhicules sortis d'usine ou d'importation récente. Un ticket QR est délivré et la barrière s'ouvre.</p>
           </div>
 
@@ -843,7 +847,7 @@
           </div>
 
           <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
-            <span class="font-semibold text-amber-400" data-i18n="guide_scen5_title">[5] Discordance Chauffeur / Voiture (Touche 5) :</span>
+            <span class="font-semibold text-rose-400" data-i18n="guide_scen5_title">[5] Discordance Chauffeur / Voiture (Touche 5) :</span>
             <p class="text-gray-400 mt-0.5" data-i18n="guide_scen5_desc">La plaque correspond à un abonné, mais le conducteur est inconnu. La barrière reste en attente de validation manuelle par l'agent de garde via le tiroir d'action.</p>
           </div>
 
@@ -871,11 +875,11 @@
     <div class="glass-panel rounded-2xl border border-surfaceBorder max-w-2xl w-full p-5 shadow-2xl space-y-4">
       <div class="flex items-center justify-between border-b border-surfaceBorder pb-3">
         <div class="flex items-center space-x-2.5">
-          <div class="w-8 h-8 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+          <div class="w-8 h-8 rounded-xl bg-cyan-500/20 border border-cyan-500/40 flex items-center justify-center text-cyan-400">
             <i data-lucide="scale" class="w-5 h-5"></i>
           </div>
           <div>
-            <h3 class="font-bold text-sm text-white" data-i18n="anpdp_modal_title">Dossier de Conformité Réglementaire ANPDP (Loi 18-07 & Loi 25-11)</h3>
+            <h3 class="font-bold text-sm text-white" data-i18n="anpdp_modal_title">Dossier de Conformité et Protection des Données ANPDP</h3>
             <p class="text-xs text-gray-400" data-i18n="anpdp_modal_sub">Autorité Nationale de Protection des Données à Caractère Personnel</p>
           </div>
         </div>
@@ -950,11 +954,11 @@
         </div>
         <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
           <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_occupancy">Occupation Pic</span>
-          <div class="text-base font-bold text-amberWarn font-mono mt-0.5" id="rpt-occupancy-val">50.0% (7/14)</div>
+          <div class="text-base font-bold text-cyanStream font-mono mt-0.5" id="rpt-occupancy-val">50.0% (7/14)</div>
           <span class="text-[9px] text-gray-500">7 Stalles Libres</span>
         </div>
         <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
-          <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_compliance">Conformité 25-11</span>
+          <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_compliance">Conformité Système</span>
           <div class="text-base font-bold text-teal-300 font-mono mt-0.5" id="rpt-compliance-val">100% Homologué</div>
           <span class="text-[9px] text-gray-500">86 Purges (24h)</span>
         </div>
@@ -1109,8 +1113,8 @@
         rpt_turnover: "Recette Totale",
         rpt_movements: "Mouvements Jour",
         rpt_occupancy: "Occupation Pic",
-        rpt_compliance: "Conformité 25-11",
-        btn_download_csv: "Exporter Journal CSV (Comptabilité & ANPDP)",
+        rpt_compliance: "Conformité Système",
+        btn_download_csv: "Exporter Journal CSV (Comptabilité & Sécurité)",
         mobile_modal_title: "Smart Park Mobile (Chauffeur & Patrouille)"
       },
       en: {
@@ -1202,8 +1206,8 @@
         rpt_turnover: "Total Turnover",
         rpt_movements: "Daily Movements",
         rpt_occupancy: "Peak Occupancy",
-        rpt_compliance: "Law 25-11 Audit",
-        btn_download_csv: "Export CSV Audit Log (Accounting & ANPDP)",
+        rpt_compliance: "System Compliance",
+        btn_download_csv: "Export CSV Audit Log (Accounting & Security)",
         mobile_modal_title: "Smart Park Mobile (Driver & Patrol)"
       },
       ar: {
@@ -1295,8 +1299,8 @@
         rpt_turnover: "الإيراد الإجمالي",
         rpt_movements: "حركة المركبات",
         rpt_occupancy: "ذروة الإشغال",
-        rpt_compliance: "مطابقة القانون 25-11",
-        btn_download_csv: "تصدير سجل العمليات CSV (المحاسبة والرقابة)",
+        rpt_compliance: "مطابقة النظام",
+        btn_download_csv: "تصدير سجل العمليات CSV (المحاسبة والأمن)",
         mobile_modal_title: "سمارت بارك موبايل (السائق والدوريات)"
       }
     };
@@ -1719,10 +1723,10 @@
         let badgeColor = 'bg-emeraldAccent/20 text-emeraldAccent';
 
         if (st === 'cleared_visitor') {
-          borderClass = 'border-blue-500/30 bg-blue-950/20';
-          icon = 'ticket'; iconColor = 'text-blue-400';
+          borderClass = 'border-cyan-500/30 bg-cyan-950/20';
+          icon = 'ticket'; iconColor = 'text-cyan-400';
           badgeText = dict.status_cleared_visitor || 'VISITEUR ENTRÉE';
-          badgeColor = 'bg-blue-500/20 text-blue-300';
+          badgeColor = 'bg-cyan-500/20 text-cyan-300';
         } else if (st === 'denied_blacklist') {
           borderClass = 'border-crimsonAlarm/40 bg-red-950/40';
           icon = 'alert-triangle'; iconColor = 'text-crimsonAlarm';
@@ -1734,10 +1738,10 @@
           badgeText = dict.status_denied_spoof || 'ATTAQUE PHOTO';
           badgeColor = 'bg-purple-500/30 text-purple-300';
         } else if (st === 'hold_guard_review') {
-          borderClass = 'border-amberWarn/40 bg-amber-950/30';
-          icon = 'help-circle'; iconColor = 'text-amberWarn';
+          borderClass = 'border-rose-500/40 bg-rose-950/30';
+          icon = 'help-circle'; iconColor = 'text-rose-400';
           badgeText = dict.status_hold_guard || 'VÉRIF. GARDE';
-          badgeColor = 'bg-amberWarn/30 text-amber-300';
+          badgeColor = 'bg-rose-500/30 text-rose-300';
         } else if (st === 'cleared_exit') {
           borderClass = 'border-teal-500/30 bg-teal-950/20';
           icon = 'log-out'; iconColor = 'text-teal-400';
@@ -2261,7 +2265,7 @@
               const isAC = data.ups_status.power_plugged !== false;
               pwrEl.innerText = isAC ? `PWR: 230V AC (${data.ups_status.battery_percent}%)` : `BATT: ${data.ups_status.battery_percent}% (${data.ups_status.runtime_remaining_min}m)`;
               if (pwrDot) {
-                pwrDot.className = isAC ? 'w-2 h-2 rounded-full bg-emeraldAccent' : 'w-2 h-2 rounded-full bg-amberWarn animate-pulse';
+                pwrDot.className = isAC ? 'w-2 h-2 rounded-full bg-emeraldAccent' : 'w-2 h-2 rounded-full bg-rose-500 animate-pulse';
               }
             }
           }

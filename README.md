@@ -1,6 +1,10 @@
-# Smart Park - Sovereign Edge Parking Access Platform
+<p align="center">
+  <img src="public/assets/logos/logo.svg" alt="Smart Park Official Logo" width="128" height="128">
+</p>
 
-Smart Park is an edge-first automated parking and security access management platform built for Algerian municipal and enterprise parking facilities. The system combines real-time computer vision, dual-spectrum biometric liveness verification, automated license plate recognition (ALPR), 3D WebGL digital twin spatial monitoring, and domestic e-payments via Chargily Pay V2.
+# Smart Park - Intelligent Edge Parking Access Platform
+
+Smart Park is an edge-first automated parking and security access management platform engineered for municipal, commercial, and enterprise parking facilities. The system combines real-time computer vision, dual-spectrum biometric liveness verification, automated license plate recognition (ALPR), 3D WebGL digital twin spatial monitoring, and domestic e-payments via Chargily Pay V2.
 
 Live Production URL: https://smartpark-vision-ai.vercel.app
 
@@ -21,12 +25,13 @@ Live Production URL: https://smartpark-vision-ai.vercel.app
 3. **Multi-Camera CCTV Matrix (V3.2):**
    - **CAM-01 (Voie 1 Entry ALPR):** High-angle architectural perspective showing the entry lane, barrier pedestal, guard booth, portal canopy, and real-time detection bounding boxes.
    - **CAM-02 (Biometric Access Kiosk):** Close-up driver view through the vehicle window, maintaining 100% spatial continuity with CAM-01, with a live 850nm NIR thermal/luminescence picture-in-picture window.
-   - **CAM-03 (Voie 2 Exit ALPR & Toll Barrier):** Exit lane perspective with dual inductive loops, flashing orange barrier pedestal, and articulated barrier arm.
+   - **CAM-03 (Voie 2 Exit ALPR & Toll Barrier):** Realistic physical state machine (`APPROACHING` -> `STOPPED` -> `OPENING` -> `DEPARTING` -> `LANE_CLEAR`) with wheel rotation strictly locked to vehicle velocity.
    - **CAM-04 (Zone A & B Deck Overview):** Overhead tactical CCTV feed with ceiling-mounted ultrasonic guidance pucks synchronized with live stall data.
    - **Live 1080p Inspector Modal:** Expand any camera feed into an HD mirror view with hardware decoding telemetry.
 
-4. **Day and Night Mode Parity:**
-   - Full dual-theme palette across the dashboard shell, 3D WebGL Three.js digital twin, 2D tactical CAD blueprint, and all 4 camera canvas feeds.
+4. **Brand Design System (Cyber Obsidian & Mint):**
+   - Modern high-contrast color scheme: Deep Carbon Obsidian (`#080C14`), Electric Cyan (`#00F2FE`), and Precision Mint (`#10B981`) clearance indicators.
+   - Official vector logo: *The Quantum Gate (Edition 1: The Dynamic Lift)* featuring an architectural 'P' monogram and a 40° kinetic automated barrier boom.
 
 5. **Trilingual Localization (FR / EN / AR RTL):**
    - Seamless one-click switching between French, English, and Arabic.
@@ -36,9 +41,8 @@ Live Production URL: https://smartpark-vision-ai.vercel.app
    - Direct checkout integration with Chargily Pay V2 for EDAHABIA and CIB debit cards.
    - Automated 15-minute exit grace window calculation upon payment validation.
 
-7. **Regulatory Compliance (Algerian Law 18-07 & Law 25-11):**
+7. **Data Sovereignty & Security:**
    - Strict edge-isolated database partitioning under the `smartpark` schema.
-   - 5-day ANPDP security breach triage protocol.
    - Automated 30-day rolling log purge to prevent unauthorized data accumulation.
 
 ---
