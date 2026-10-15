@@ -10,6 +10,9 @@ import hashlib
 from typing import List, Optional, Dict, Any
 
 
+from desktop.src.db import DesktopDatabase
+
+
 @dataclass
 class TransactionRecord:
     transaction_id: str
@@ -43,14 +46,35 @@ class ShiftSummary:
 class CashierPosManager:
     """
     Booth Point of Sale manager ensuring accurate cash drawer tracking
-    and audit trail compliance.
+    and audit trail compliance backed by local SQLite persistence.
     """
 
-    def __init__(self, booth_id: str = "BOOTH-01"):
+    def __init__(self, booth_id: str = "BOOTH-01", db: Optional[DesktopDatabase] = None):
         self.booth_id = booth_id
+        self.db = db or DesktopDatabase()
         self.active_shift: Optional[ShiftSummary] = None
         self.shift_history: List[ShiftSummary] = []
         self._tx_counter = 5000
+
+        # Hydrate or resume active shift from SQLite
+        db_shift = self.db.get_or_open_shift(booth_id=booth_id)
+        if db_shift:
+            try:
+                opened_dt = datetime.strptime(db_shift["opened_at"], "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                opened_dt = datetime.now()
+            self.active_shift = ShiftSummary(
+                shift_id=db_shift["shift_id"],
+                cashier_id=db_shift["cashier_id"],
+                booth_id=db_shift["booth_id"],
+                opened_at=opened_dt,
+                closed_at=None,
+                opening_float_dzd=float(db_shift["opening_float_dzd"]),
+                total_cash_collected_dzd=float(db_shift["total_cash_in_dzd"]),
+                total_card_collected_dzd=float(db_shift["total_card_in_dzd"]),
+                total_exemptions_dzd=0.0,
+                tickets_settled_count=int(db_shift["transaction_count"]),
+            )
 
     def open_shift(self, cashier_id: str, opening_float_dzd: float = 5000.0) -> ShiftSummary:
         """Open a new cashier working shift."""
@@ -113,6 +137,23 @@ class CashierPosManager:
         elif payment_method == "VIP_EXEMPT":
             self.active_shift.total_exemptions_dzd += amount_dzd
 
+        # Persist transaction to SQLite
+        try:
+            self.db.record_transaction(
+                shift_id=self.active_shift.shift_id,
+                ticket_id=ticket_id,
+                plate_number=plate_number,
+                entry_time=now.strftime("%Y-%m-%d %H:%M:%S"),
+                exit_time=now.strftime("%Y-%m-%d %H:%M:%S"),
+                duration_minutes=120,
+                amount_due_dzd=amount_dzd,
+                amount_tendered_dzd=tender,
+                change_dzd=change,
+                payment_method=payment_method,
+            )
+        except Exception:
+            pass
+
         return tx
 
     def close_shift(self) -> Dict[str, Any]:
@@ -131,6 +172,12 @@ class CashierPosManager:
             f"{total_revenue}|{self.active_shift.tickets_settled_count}|{now.isoformat()}"
         )
         z_hash = hashlib.sha256(audit_payload.encode("utf-8")).hexdigest()[:16].upper()
+
+        # Update SQLite
+        try:
+            self.db.close_shift(self.active_shift.shift_id)
+        except Exception:
+            pass
 
         z_report = {
             "report_title": "RAPPORT Z DE CLOTURE DE CAISSE",

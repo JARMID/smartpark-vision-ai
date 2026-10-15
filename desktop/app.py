@@ -16,11 +16,25 @@ from desktop.src.operator_window import launch_desktop_station, DesktopBridgeApi
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SmartPark Vision AI - Desktop Guard & Cashier Station")
-    parser.add_argument("--server", type=str, default="http://127.0.0.1:8080", help="FastAPI gateway server URL")
+    # Load config.json if present
+    cfg_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "config.json")
+    cfg = {}
+    if os.path.exists(cfg_path):
+        try:
+            with open(cfg_path, "r", encoding="utf-8") as f:
+                cfg = json.load(f)
+        except Exception:
+            pass
+
+    default_server = cfg.get("gateway_server_url", "http://127.0.0.1:8080")
+    default_booth = cfg.get("booth_id", "BOOTH-01")
+    default_cashier = cfg.get("cashier_id", "AGENT-MEZIANE")
+
+    parser = argparse.ArgumentParser(description="Smart Park - Desktop Guard & Cashier Station")
+    parser.add_argument("--server", type=str, default=default_server, help="FastAPI gateway server URL")
     parser.add_argument("--headless", action="store_true", help="Run without graphical display for background testing")
-    parser.add_argument("--booth", type=str, default="BOOTH-01", help="Operator booth identifier")
-    parser.add_argument("--cashier", type=str, default="AGENT-MEZIANE", help="Cashier badge identifier")
+    parser.add_argument("--booth", type=str, default=default_booth, help="Operator booth identifier")
+    parser.add_argument("--cashier", type=str, default=default_cashier, help="Cashier badge identifier")
 
     args = parser.parse_args()
 

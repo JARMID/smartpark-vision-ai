@@ -13,6 +13,8 @@ from desktop.src.scanner import BarcodeScannerDecoder, ScanResult
 from desktop.src.audio_synthesizer import AudioThreatSynthesizer
 from desktop.src.pos_manager import CashierPosManager, TransactionRecord
 from desktop.src.operator_window import DesktopBridgeApi, launch_desktop_station
+from desktop.src.db import DesktopDatabase
+from desktop.src.modbus_direct import DirectModbusController
 
 
 class TestThermalTicketEngine(unittest.TestCase):
@@ -56,6 +58,12 @@ class TestThermalTicketEngine(unittest.TestCase):
         success, msg = self.engine.dispatch_print_job(ticket, target="simulation")
         self.assertTrue(success)
         self.assertIn("simulation spooler", msg)
+
+    def test_cash_drawer_kick(self):
+        success, msg = self.engine.kick_cash_drawer(target="simulation")
+        self.assertTrue(success)
+        self.assertIn("tiroir-caisse", msg)
+
 
 
 class TestBarcodeScannerDecoder(unittest.TestCase):
@@ -211,6 +219,98 @@ class TestDesktopBridgeApi(unittest.TestCase):
     def test_headless_launcher(self):
         inst = launch_desktop_station(server_url="http://127.0.0.1:8080", headless=True)
         self.assertIsNotNone(inst)
+
+
+class TestDesktopDatabaseAndHardware(unittest.TestCase):
+    def setUp(self):
+        import tempfile
+        self.test_dir = tempfile.TemporaryDirectory()
+        self.db_path = os.path.join(self.test_dir.name, "test_station.db")
+        self.db = DesktopDatabase(self.db_path)
+
+    def tearDown(self):
+        self.db.close()
+        self.test_dir.cleanup()
+
+    def test_database_shift_and_transactions(self):
+        # Open shift
+        shift = self.db.get_or_open_shift(
+            booth_id="BOOTH-TEST",
+            cashier_id="CASHIER-01",
+            cashier_name="Amine Test",
+            opening_float_dzd=5000.0,
+        )
+        self.assertEqual(shift["booth_id"], "BOOTH-TEST")
+        self.assertEqual(shift["status"], "OPEN")
+
+        # Create local ticket
+        tkt = self.db.create_local_ticket(
+            plate_number="104822 119 16",
+            lane_id="LANE-01",
+            zone_name="Zone B",
+            tariff_due_dzd=150.0,
+        )
+        self.assertTrue(tkt["ticket_id"].startswith("TKT-"))
+        self.assertEqual(len(tkt["barcode_value"]), 13)
+
+        # Lookup ticket
+        found = self.db.find_ticket_by_barcode(tkt["barcode_value"])
+        self.assertIsNotNone(found)
+        self.assertEqual(found["plate_number"], "104822 119 16")
+
+        # Record cash transaction
+        tx = self.db.record_transaction(
+            shift_id=shift["shift_id"],
+            ticket_id=tkt["ticket_id"],
+            plate_number="104822 119 16",
+            entry_time=tkt["entry_time"],
+            exit_time="2026-10-15 15:00:00",
+            duration_minutes=45,
+            amount_due_dzd=150.0,
+            amount_tendered_dzd=200.0,
+            change_dzd=50.0,
+            payment_method="CASH",
+        )
+        self.assertTrue(tx["transaction_id"].startswith("TX-"))
+        self.assertEqual(tx["change_dzd"], 50.0)
+
+        # Verify recent transactions
+        recent = self.db.get_recent_transactions(limit=5)
+        self.assertEqual(len(recent), 1)
+        self.assertEqual(recent[0]["ticket_id"], tkt["ticket_id"])
+
+        # Log barrier override action
+        self.db.log_barrier_action(
+            channel=1,
+            duration_ms=500,
+            reason="PAYMENT_AUTHORIZED",
+            operator_name="Amine Test",
+            success=True,
+        )
+
+        # Close shift and check Z-Report
+        z_report = self.db.close_shift(shift["shift_id"])
+        self.assertEqual(z_report["status"], "CLOSED")
+        self.assertEqual(z_report["total_cash_in_dzd"], 150.0)
+        self.assertEqual(z_report["expected_drawer_cash_dzd"], 5150.0)
+        self.assertTrue(z_report["audit_hash"].startswith("SHA256-"))
+
+    def test_direct_modbus_controller(self):
+        controller = DirectModbusController(simulation_mode=True)
+        res = controller.pulse_barrier(channel=1, duration_ms=250)
+        self.assertTrue(res["success"])
+        self.assertEqual(res["mode"], "SIMULATION")
+
+        # Test fallback on unreachable physical address
+        hw_controller = DirectModbusController(
+            host="127.0.0.1",
+            port=55502,
+            timeout_sec=0.1,
+            simulation_mode=False,
+        )
+        fallback_res = hw_controller.pulse_barrier(channel=2, duration_ms=100)
+        self.assertTrue(fallback_res["success"])
+        self.assertEqual(fallback_res["mode"], "FALLBACK_SIMULATION")
 
 
 if __name__ == "__main__":

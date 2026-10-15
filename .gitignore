@@ -27,3 +27,6 @@ mobile/.flutter-plugins*
 mobile/.pub-cache/
 mobile/.pub/
 mobile/build/
+
+desktop/spool/*.bin
+

@@ -18,11 +18,13 @@ from desktop.src.printer import ThermalTicketEngine, ParkingTicket
 from desktop.src.scanner import BarcodeScannerDecoder, ScanResult
 from desktop.src.audio_synthesizer import AudioThreatSynthesizer
 from desktop.src.pos_manager import CashierPosManager
+from desktop.src.modbus_direct import DirectModbusController
 
 
 class DesktopBridgeApi:
     """
     Python backend exposed directly to JavaScript in the desktop window via pywebview.
+    Operates with full offline resilience, local SQLite persistence, and direct Modbus control.
     """
 
     def __init__(self, server_url: str = "http://127.0.0.1:8080"):
@@ -31,26 +33,51 @@ class DesktopBridgeApi:
         self.scanner_decoder = BarcodeScannerDecoder()
         self.audio_synth = AudioThreatSynthesizer()
         self.pos_manager = CashierPosManager(booth_id="BOOTH-01")
-        self.pos_manager.open_shift("AGENT-MEZIANE", 5000.0)
+        self.modbus_direct = DirectModbusController(host="192.168.10.200", port=502)
 
     def trigger_barrier(self, channel: int = 1, duration_ms: int = 500) -> Dict[str, Any]:
-        """Trigger physical Modbus barrier relay via backend server or local simulation."""
+        """Trigger physical Modbus barrier relay via backend server or direct local TCP socket."""
         import urllib.request
         self.audio_synth.play_success_chime()
         url = f"{self.server_url}/api/barrier/override"
         payload = json.dumps({"channel": channel, "duration_ms": duration_ms}).encode("utf-8")
+        
+        # Try backend server first, fallback to direct Modbus TCP
+        server_ok = False
+        server_data = None
         try:
             req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
             with urllib.request.urlopen(req, timeout=1.5) as resp:
-                data = json.loads(resp.read().decode("utf-8"))
-                return {"success": True, "message": f"Barriere voie {channel} declenchee avec succes", "data": data}
+                server_data = json.loads(resp.read().decode("utf-8"))
+                server_ok = True
         except Exception:
-            # Fallback to local simulation
+            pass
+
+        # Trigger direct Modbus relay as well
+        direct_res = self.modbus_direct.pulse_barrier(channel=channel, duration_ms=duration_ms)
+
+        # Log into persistent SQLite barrier audit log
+        try:
+            cashier = self.pos_manager.active_shift.cashier_id if self.pos_manager.active_shift else "BOOTH-01"
+            self.pos_manager.db.log_barrier_action(
+                channel=channel,
+                duration_ms=duration_ms,
+                reason="Impulsion manuelle poste operateur",
+                operator_name=cashier,
+                success=True,
+            )
+        except Exception:
+            pass
+
+        if server_ok:
+            return {"success": True, "message": f"Barriere voie {channel} actionnee (Synchronise)", "data": server_data}
+        else:
             return {
                 "success": True,
-                "message": f"Barriere voie {channel} actionnee (Mode Secours Local)",
+                "message": f"Barriere voie {channel} actionnee ({direct_res.get('message', 'Mode Autonome Direct')})",
                 "channel": channel,
                 "duration_ms": duration_ms,
+                "mode": direct_res.get("mode", "LOCAL_AUTONOMOUS"),
             }
 
     def simulate_scenario(self, scenario_key: str) -> Dict[str, Any]:
@@ -129,6 +156,9 @@ class DesktopBridgeApi:
             tendered_dzd=tendered_dzd,
         )
         self.audio_synth.play_success_chime()
+        # Pulse cash drawer on cash transactions
+        if payment_method.upper() == "CASH":
+            self.printer_engine.kick_cash_drawer()
         # Open exit barrier
         self.trigger_barrier(channel=2, duration_ms=500)
         return {
@@ -1077,8 +1107,36 @@ def get_desktop_ui_html() -> str:
       }
     }
 
-    /* Global Physical Keyboard Shortcuts */
+    /* Global USB Barcode Gun Hardware Wedge Listener */
+    let barcodeGunBuffer = "";
+    let lastGunKeyTimestamp = 0;
+
+    /* Global Physical Keyboard Shortcuts & Scanner Trap */
     window.addEventListener('keydown', (e) => {
+      const now = Date.now();
+      const timeDelta = now - lastGunKeyTimestamp;
+      lastGunKeyTimestamp = now;
+
+      // Handle barcode scanner burst finishing with Enter
+      if (e.key === 'Enter') {
+        if (barcodeGunBuffer.length >= 8) {
+          e.preventDefault();
+          const scannedCode = barcodeGunBuffer;
+          barcodeGunBuffer = "";
+          switchTab('pos');
+          document.getElementById('barcodeInput').value = scannedCode;
+          submitBarcode();
+          return;
+        }
+        barcodeGunBuffer = "";
+      } else if (e.key.length === 1 && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        // Hardware barcode guns type characters with <50ms inter-character interval
+        if (timeDelta > 65) {
+          barcodeGunBuffer = "";
+        }
+        barcodeGunBuffer += e.key;
+      }
+
       // Spacebar: Instant Barrier Override
       if (e.code === 'Space' && e.target.tagName !== 'INPUT') {
         e.preventDefault();

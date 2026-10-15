@@ -1,0 +1,30 @@
+{
+  "facility_name": "Smart Park Alger-Centre",
+  "facility_code": "DZ-ALG-01",
+  "booth_id": "BOOTH-01",
+  "lane_id": "LANE-01",
+  "cashier_id": "AGENT-MEZIANE",
+  "cashier_name": "Amine Meziane",
+  "opening_float_dzd": 5000.0,
+  "gateway_server_url": "http://127.0.0.1:8080",
+  "direct_modbus": {
+    "enabled": true,
+    "host": "192.168.10.200",
+    "port": 502,
+    "entry_channel": 1,
+    "exit_channel": 2,
+    "pulse_duration_ms": 500,
+    "simulation_mode": true
+  },
+  "printer": {
+    "target": "simulation",
+    "printer_name": "POS-80",
+    "paper_width_mm": 80,
+    "auto_drawer_kick": true
+  },
+  "tariff": {
+    "base_hourly_rate_dzd": 100.0,
+    "grace_period_minutes": 15,
+    "currency": "DZD"
+  }
+}

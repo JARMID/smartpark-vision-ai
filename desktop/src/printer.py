@@ -34,6 +34,7 @@ class EscPosCommands:
     HW_INIT = b"\x1b@"
     CUT_PAPER_FULL = b"\x1dVA0"
     CUT_PAPER_PARTIAL = b"\x1dVA1"
+    DRAWER_KICK = b"\x1bp\x00\x19\xfa"  # Standard pin 2 pulse to open cash drawer
 
     # Text Alignment
     ALIGN_LEFT = b"\x1ba\x00"
@@ -280,3 +281,25 @@ class ThermalTicketEngine:
                 return False, "win32print not available on this platform"
             except Exception as e:
                 return False, f"Windows print error: {str(e)}"
+
+    def kick_cash_drawer(self, target: str = "simulation") -> Tuple[bool, str]:
+        """Pulse pin 2 of printer cash drawer port to pop open physical cash register."""
+        pulse_bytes = EscPosCommands.DRAWER_KICK
+        if target == "simulation":
+            return True, "Signal d'ouverture tiroir-caisse émis (Simulation)."
+        try:
+            import win32print
+            printer_name = target if target != "default" else win32print.GetDefaultPrinter()
+            handle = win32print.OpenPrinter(printer_name)
+            try:
+                win32print.StartDocPrinter(handle, 1, ("SmartPark Drawer Kick", None, "RAW"))
+                win32print.StartPagePrinter(handle)
+                win32print.WritePrinter(handle, pulse_bytes)
+                win32print.EndPagePrinter(handle)
+                win32print.EndDocPrinter(handle)
+            finally:
+                win32print.ClosePrinter(handle)
+            return True, f"Impulsion tiroir-caisse envoyée à l'imprimante: {printer_name}"
+        except Exception as e:
+            return False, f"Erreur déclenchement tiroir: {str(e)}"
+
