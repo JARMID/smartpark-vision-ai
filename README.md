@@ -1,6 +1,6 @@
-# SmartPark Vision AI - Sovereign Edge Parking Access Platform
+# Smart Park - Sovereign Edge Parking Access Platform
 
-SmartPark Vision AI is an edge-first automated parking and security access management platform built for Algerian municipal and enterprise parking facilities. The system combines real-time computer vision, dual-spectrum biometric liveness verification, automated license plate recognition (ALPR), 3D WebGL digital twin spatial monitoring, and domestic e-payments via Chargily Pay V2.
+Smart Park is an edge-first automated parking and security access management platform built for Algerian municipal and enterprise parking facilities. The system combines real-time computer vision, dual-spectrum biometric liveness verification, automated license plate recognition (ALPR), 3D WebGL digital twin spatial monitoring, and domestic e-payments via Chargily Pay V2.
 
 Live Production URL: https://smartpark-vision-ai.vercel.app
 

@@ -101,8 +101,70 @@
       this.animate = this.animate.bind(this);
       requestAnimationFrame(this.animate);
 
-      // 11. Handle Resizing
+      // 11. Initial Theme Calibration
+      this.updateTheme();
+
+      // 12. Handle Resizing
       window.addEventListener('resize', () => this.onResize());
+    }
+
+    setTheme(isNight) {
+      this.updateTheme(!isNight);
+    }
+
+    updateTheme(isLight) {
+      if (typeof isLight === 'undefined') {
+        isLight = document.documentElement.classList.contains('light');
+      }
+      if (isLight) {
+        if (this.scene) {
+          this.scene.background.set(0xF1F5F9);
+          if (this.scene.fog) {
+            this.scene.fog.color.set(0xF1F5F9);
+            this.scene.fog.density = 0.009;
+          }
+        }
+        if (this.ambientLight) {
+          this.ambientLight.color.set(0xCBD5E1);
+          this.ambientLight.intensity = 0.90;
+        }
+        if (this.sunLight) {
+          this.sunLight.color.set(0xFFFFFF);
+          this.sunLight.intensity = 1.30;
+        }
+        if (this.floor && this.floor.material) {
+          this.floor.material.color.set(0x64748B);
+          this.floor.material.roughness = 0.82;
+        }
+        if (this.lane && this.lane.material) {
+          this.lane.material.color.set(0x475569);
+          this.lane.material.roughness = 0.70;
+        }
+      } else {
+        if (this.scene) {
+          this.scene.background.set(0x060913);
+          if (this.scene.fog) {
+            this.scene.fog.color.set(0x060913);
+            this.scene.fog.density = 0.018;
+          }
+        }
+        if (this.ambientLight) {
+          this.ambientLight.color.set(0x94A3B8);
+          this.ambientLight.intensity = 0.40;
+        }
+        if (this.sunLight) {
+          this.sunLight.color.set(0xE2E8F0);
+          this.sunLight.intensity = 0.85;
+        }
+        if (this.floor && this.floor.material) {
+          this.floor.material.color.set(0x0B1120);
+          this.floor.material.roughness = 0.88;
+        }
+        if (this.lane && this.lane.material) {
+          this.lane.material.color.set(0x080D1A);
+          this.lane.material.roughness = 0.75;
+        }
+      }
     }
 
     setupLighting() {
@@ -147,15 +209,15 @@
         roughness: 0.88,
         metalness: 0.12,
       });
-      const floor = new THREE.Mesh(floorGeo, floorMat);
-      floor.rotation.x = -Math.PI / 2;
-      floor.receiveShadow = true;
-      this.scene.add(floor);
+      this.floor = new THREE.Mesh(floorGeo, floorMat);
+      this.floor.rotation.x = -Math.PI / 2;
+      this.floor.receiveShadow = true;
+      this.scene.add(this.floor);
 
       // 2. High-Tech Precision Grid Lines
-      const grid = new THREE.GridHelper(64, 32, 0x1E293B, 0x0F172A);
-      grid.position.y = 0.01;
-      this.scene.add(grid);
+      this.grid = new THREE.GridHelper(64, 32, 0x1E293B, 0x0F172A);
+      this.grid.position.y = 0.01;
+      this.scene.add(this.grid);
 
       // 3. Central Driving Aisle (Asphalt Lane)
       const laneGeo = new THREE.PlaneGeometry(9, 48);
@@ -163,11 +225,11 @@
         color: 0x080D1A,
         roughness: 0.75,
       });
-      const lane = new THREE.Mesh(laneGeo, laneMat);
-      lane.rotation.x = -Math.PI / 2;
-      lane.position.set(0, 0.015, 0);
-      lane.receiveShadow = true;
-      this.scene.add(lane);
+      this.lane = new THREE.Mesh(laneGeo, laneMat);
+      this.lane.rotation.x = -Math.PI / 2;
+      this.lane.position.set(0, 0.015, 0);
+      this.lane.receiveShadow = true;
+      this.scene.add(this.lane);
 
       // 4. Concrete Structural Columns
       const colGeo = new THREE.BoxGeometry(1.2, 7, 1.2);
@@ -442,32 +504,7 @@
     }
 
     setTheme(isDark) {
-      if (!this.scene) return;
-      if (isDark) {
-        this.scene.background.setHex(0x060913);
-        if (this.scene.fog) this.scene.fog.color.setHex(0x060913);
-        if (this.ambientLight) {
-          this.ambientLight.color.setHex(0x94A3B8);
-          this.ambientLight.intensity = 0.4;
-        }
-        if (this.sunLight) {
-          this.sunLight.color.setHex(0xE2E8F0);
-          this.sunLight.intensity = 0.85;
-        }
-        if (this.renderer) this.renderer.toneMappingExposure = 1.1;
-      } else {
-        this.scene.background.setHex(0xD8E2EC);
-        if (this.scene.fog) this.scene.fog.color.setHex(0xD8E2EC);
-        if (this.ambientLight) {
-          this.ambientLight.color.setHex(0xFFFFFF);
-          this.ambientLight.intensity = 0.85;
-        }
-        if (this.sunLight) {
-          this.sunLight.color.setHex(0xFFFBEB);
-          this.sunLight.intensity = 1.45;
-        }
-        if (this.renderer) this.renderer.toneMappingExposure = 1.25;
-      }
+      this.updateTheme(!isDark);
     }
 
     onResize() {

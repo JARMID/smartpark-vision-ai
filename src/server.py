@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Sovereign FastAPI Server and Real-Time Gateway.
+Smart Park - Sovereign FastAPI Server and Real-Time Gateway.
 Serves REST APIs, WebSocket live telemetry, simulation triggers, and command center UI.
 """
 
@@ -21,7 +21,7 @@ from src.compliance.law_25_11_audit import Law2511ComplianceEngine
 from src.payment.chargily_v2_client import ChargilyV2PaymentClient
 from src.camera.edge_stream_manager import EdgeStreamManager
 
-app = FastAPI(title="SmartPark Vision AI Sovereign Server", version="2.0.0")
+app = FastAPI(title="Smart Park Sovereign Server", version="2.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -1061,7 +1061,7 @@ def serve_index():
     index_file = os.path.join(STATIC_DIR, "index.html")
     if os.path.exists(index_file):
         return FileResponse(index_file)
-    return {"message": "SmartPark Vision AI Server Online. Open /docs for API."}
+    return {"message": "Smart Park Server Online. Open /docs for API."}
 
 
 @app.get("/three_digital_twin.js")

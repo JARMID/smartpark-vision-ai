@@ -19,7 +19,7 @@ class SmartParkMobileApp extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         return MaterialApp(
-          title: 'SmartPark Vision AI Mobile',
+          title: 'Smart Park Mobile',
           debugShowCheckedModeBanner: false,
           themeMode: controller.themeMode,
           locale: controller.locale,

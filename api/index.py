@@ -9,4 +9,4 @@ from src.server import app
 
 @app.get("/api")
 def api_root():
-    return {"status": "ONLINE", "service": "SmartPark Vision AI API"}
+    return {"status": "ONLINE", "service": "Smart Park API"}

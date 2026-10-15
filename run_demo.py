@@ -20,7 +20,7 @@ def main():
     url = f"http://{host}:{port}"
 
     print("=" * 80)
-    print("  SmartPark Vision AI - Centre de Contrôle et Démo Interactive")
+    print("  Smart Park - Centre de Contrôle et Démo Interactive")
     print("  Conforme Loi 18-07 & Loi 25-11 (République Algérienne Démocratique et Populaire)")
     print("=" * 80)
     print(f"[*] Serveur Souverain Démarré sur : {url}")

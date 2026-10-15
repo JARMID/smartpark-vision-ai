@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SmartPark Vision AI - Centre de Contrôle Souverain 2D & 3D (Algérie)</title>
+  <title>Smart Park - Centre de Contrôle Souverain 2D & 3D (Algérie)</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
@@ -172,7 +172,7 @@
       </div>
       <div>
         <div class="flex items-center space-x-2">
-          <span class="font-bold text-base tracking-tight text-white" data-i18n="app_title">SmartPark Vision AI</span>
+          <span class="font-bold text-base tracking-tight text-white" data-i18n="app_title">Smart Park</span>
           <span class="text-[10px] px-2 py-0.5 rounded-full bg-emeraldAccent/10 text-emeraldAccent border border-emeraldAccent/30 font-semibold uppercase tracking-wider" data-i18n="app_edition">Édition Souveraine DZ</span>
         </div>
         <p class="text-[11px] text-gray-400" data-i18n="site_location">Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)</p>
@@ -396,40 +396,50 @@
           <div class="grid grid-cols-2 gap-2 flex-1 min-h-0">
             <!-- CAM 1 -->
             <div onclick="inspectCamera(1)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
-              <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
-                <span class="w-1.5 h-1.5 rounded-full bg-emeraldAccent"></span>
-                <span data-i18n="cam1_name">CAM-01 : Voie 1 (Entrée ALPR)</span>
-              </div>
-              <canvas id="cam1-canvas" class="w-full h-full object-cover"></canvas>
-              <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-yellow-500/50 p-2 rounded-xl flex items-center justify-between hidden">
-                <div>
-                  <span class="text-[10px] text-gray-400 uppercase" data-i18n="plate_detected">Plaque Détectée</span>
-                  <div class="mt-0.5" id="cam1-plate-box"><span class="plate-badge">104822 119 16</span></div>
+              <div class="flex items-center justify-between px-2.5 py-1.5 bg-gray-900/90 border-b border-gray-800 text-[11px] text-gray-200 font-mono shrink-0">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emeraldAccent"></span>
+                  <span data-i18n="cam1_name" class="font-semibold text-gray-200">CAM-01 : Voie 1 (Entrée ALPR)</span>
                 </div>
-                <div class="text-right">
-                  <span class="text-[10px] text-gray-400" data-i18n="wilaya_label">Wilaya</span>
-                  <div class="text-xs font-semibold text-emeraldAccent font-mono" id="cam1-wilaya">Alger (16)</div>
+                <span class="text-[10px] text-emeraldAccent font-mono uppercase bg-emeraldAccent/10 px-1.5 py-0.5 rounded border border-emeraldAccent/20">LIVE 25 FPS</span>
+              </div>
+              <div class="relative flex-1 min-h-0 bg-black">
+                <canvas id="cam1-canvas" class="w-full h-full object-cover"></canvas>
+                <div id="cam1-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-yellow-500/50 p-2 rounded-xl flex items-center justify-between hidden">
+                  <div>
+                    <span class="text-[10px] text-gray-400 uppercase" data-i18n="plate_detected">Plaque Détectée</span>
+                    <div class="mt-0.5" id="cam1-plate-box"><span class="plate-badge">104822 119 16</span></div>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-[10px] text-gray-400" data-i18n="wilaya_label">Wilaya</span>
+                    <div class="text-xs font-semibold text-emeraldAccent font-mono" id="cam1-wilaya">Alger (16)</div>
+                  </div>
                 </div>
               </div>
             </div>
 
             <!-- CAM 2 -->
             <div onclick="inspectCamera(2)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
-              <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
-                <span class="w-1.5 h-1.5 rounded-full bg-cyanStream"></span>
-                <span data-i18n="cam2_name">CAM-02 : Borne Biométrique (RGB + 850nm NIR)</span>
-              </div>
-              <canvas id="cam2-canvas" class="w-full h-full object-cover"></canvas>
-              <div id="cam2-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-cyan-500/50 p-2 rounded-xl flex items-center justify-between hidden">
-                <div>
-                  <span class="text-[10px] text-gray-400 uppercase">ArcFace 512-D</span>
-                  <div class="text-xs font-bold text-white" id="cam2-driver-name">Amine Hadj</div>
-                  <div class="text-[10px] text-cyan-300 font-mono" id="cam2-driver-dist">Distance: 0.42 (Match)</div>
+              <div class="flex items-center justify-between px-2.5 py-1.5 bg-gray-900/90 border-b border-gray-800 text-[11px] text-gray-200 font-mono shrink-0">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-cyanStream"></span>
+                  <span data-i18n="cam2_name" class="font-semibold text-gray-200">CAM-02 : Borne Biométrique (RGB + 850nm NIR)</span>
                 </div>
-                <div class="text-right">
-                  <span class="text-[10px] text-gray-400">MiniFASNet</span>
-                  <div class="text-xs font-bold text-emeraldAccent flex items-center justify-end" id="cam2-liveness">
-                    <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> HUMAIN (98%)
+                <span class="text-[10px] text-cyan-400 font-mono uppercase bg-cyan-500/10 px-1.5 py-0.5 rounded border border-cyan-500/20">ArcFace + MiniFASNet</span>
+              </div>
+              <div class="relative flex-1 min-h-0 bg-black">
+                <canvas id="cam2-canvas" class="w-full h-full object-cover"></canvas>
+                <div id="cam2-overlay" class="absolute bottom-2 left-2 right-2 bg-black/85 backdrop-blur border border-cyan-500/50 p-2 rounded-xl flex items-center justify-between hidden">
+                  <div>
+                    <span class="text-[10px] text-gray-400 uppercase">ArcFace 512-D</span>
+                    <div class="text-xs font-bold text-white" id="cam2-driver-name">Amine Hadj</div>
+                    <div class="text-[10px] text-cyan-300 font-mono" id="cam2-driver-dist">Distance: 0.42 (Match)</div>
+                  </div>
+                  <div class="text-right">
+                    <span class="text-[10px] text-gray-400">MiniFASNet</span>
+                    <div class="text-xs font-bold text-emeraldAccent flex items-center justify-end" id="cam2-liveness">
+                      <i data-lucide="check-circle" class="w-3.5 h-3.5 mr-1"></i> HUMAIN (98%)
+                    </div>
                   </div>
                 </div>
               </div>
@@ -437,23 +447,32 @@
 
             <!-- CAM 3 -->
             <div onclick="inspectCamera(3)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
-              <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
-                <span class="w-1.5 h-1.5 rounded-full bg-teal-400"></span>
-                <span data-i18n="cam3_name">CAM-03 : Voie 2 (Sortie ALPR & Barrière)</span>
+              <div class="flex items-center justify-between px-2.5 py-1.5 bg-gray-900/90 border-b border-gray-800 text-[11px] text-gray-200 font-mono shrink-0">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-teal-400"></span>
+                  <span data-i18n="cam3_name" class="font-semibold text-gray-200">CAM-03 : Voie 2 (Sortie ALPR & Barrière)</span>
+                </div>
+                <div class="text-[10px] font-mono text-gray-300">
+                  <span data-i18n="arm_label">Lisse :</span> <span class="text-red-400 font-semibold" id="cam3-arm-text">BAISSÉE</span>
+                </div>
               </div>
-              <div class="absolute top-2 right-2 z-10 bg-black/70 backdrop-blur border border-gray-700 px-2 py-0.5 rounded-lg text-[11px] font-mono text-gray-300">
-                <span data-i18n="arm_label">Lisse :</span> <span class="text-red-400 font-semibold" id="cam3-arm-text">BAISSÉE</span>
+              <div class="relative flex-1 min-h-0 bg-black">
+                <canvas id="cam3-canvas" class="w-full h-full object-cover"></canvas>
               </div>
-              <canvas id="cam3-canvas" class="w-full h-full object-cover"></canvas>
             </div>
 
             <!-- CAM 4 -->
             <div onclick="inspectCamera(4)" class="relative bg-black rounded-xl overflow-hidden border border-gray-800 flex flex-col cursor-pointer group hover:border-cyanStream/50 transition">
-              <div class="absolute top-2 left-2 z-10 flex items-center space-x-1.5 bg-black/70 backdrop-blur px-2 py-0.5 rounded-lg text-[11px] text-gray-200 font-mono">
-                <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
-                <span data-i18n="cam4_name">CAM-04 : Zone A & B (Vue Aérienne)</span>
+              <div class="flex items-center justify-between px-2.5 py-1.5 bg-gray-900/90 border-b border-gray-800 text-[11px] text-gray-200 font-mono shrink-0">
+                <div class="flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+                  <span data-i18n="cam4_name" class="font-semibold text-gray-200">CAM-04 : Zone A & B (Vue Aérienne)</span>
+                </div>
+                <span class="text-[10px] text-purple-400 font-mono uppercase bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20">YOLOv8x-Crowd</span>
               </div>
-              <canvas id="cam4-canvas" class="w-full h-full object-cover"></canvas>
+              <div class="relative flex-1 min-h-0 bg-black">
+                <canvas id="cam4-canvas" class="w-full h-full object-cover"></canvas>
+              </div>
             </div>
           </div>
         </div>
@@ -983,7 +1002,7 @@
       <div class="flex items-center justify-between border-b border-surfaceBorder pb-2">
         <div class="flex items-center space-x-2">
           <i data-lucide="smartphone" class="w-4 h-4 text-cyan-400"></i>
-          <h3 class="font-bold text-xs text-white" data-i18n="mobile_modal_title">SmartPark Mobile (Chauffeur & Patrouille)</h3>
+          <h3 class="font-bold text-xs text-white" data-i18n="mobile_modal_title">Smart Park Mobile (Chauffeur & Patrouille)</h3>
         </div>
         <button onclick="closeMobilePreviewModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
       </div>
@@ -1007,7 +1026,7 @@
     // =======================================================
     const I18N = {
       fr: {
-        app_title: "SmartPark Vision AI",
+        app_title: "Smart Park",
         app_edition: "Édition Souveraine DZ",
         site_location: "Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)",
         pipeline_idle: "Pipeline IA: En Veille",
@@ -1097,10 +1116,10 @@
         rpt_occupancy: "Occupation Pic",
         rpt_compliance: "Conformité 25-11",
         btn_download_csv: "Exporter Journal CSV (Comptabilité & ANPDP)",
-        mobile_modal_title: "SmartPark Mobile (Chauffeur & Patrouille)"
+        mobile_modal_title: "Smart Park Mobile (Chauffeur & Patrouille)"
       },
       en: {
-        app_title: "SmartPark Vision AI",
+        app_title: "Smart Park",
         app_edition: "Sovereign DZ Edition",
         site_location: "Pilot Site: Algiers Central Parking (El-Biar) | Wilaya: 16 (Algiers)",
         pipeline_idle: "AI Pipeline: Standby",
@@ -1190,10 +1209,10 @@
         rpt_occupancy: "Peak Occupancy",
         rpt_compliance: "Law 25-11 Audit",
         btn_download_csv: "Export CSV Audit Log (Accounting & ANPDP)",
-        mobile_modal_title: "SmartPark Mobile (Driver & Patrol)"
+        mobile_modal_title: "Smart Park Mobile (Driver & Patrol)"
       },
       ar: {
-        app_title: "سمارت بارك فيجن AI",
+        app_title: "سمارت بارك",
         app_edition: "النسخة السيادية الجزائرية",
         site_location: "الموقع النموذجي: موقف الجزائر الوسطى (الأبيار) | ولاية: 16 (الجزائر)",
         pipeline_idle: "مسار الذكاء الاصطناعي: في وضع الاستعداد",
