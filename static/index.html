@@ -173,7 +173,6 @@
       <div>
         <div class="flex items-center space-x-2">
           <span class="font-bold text-base tracking-tight text-white" data-i18n="app_title">Smart Park</span>
-          <span class="text-[10px] px-2 py-0.5 rounded-full bg-emeraldAccent/10 text-emeraldAccent border border-emeraldAccent/30 font-semibold uppercase tracking-wider" data-i18n="app_edition">Édition Souveraine DZ</span>
         </div>
         <p class="text-[11px] text-gray-400" data-i18n="site_location">Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)</p>
       </div>
@@ -217,36 +216,32 @@
         <span id="backend-dot" class="w-2 h-2 rounded-full bg-emeraldAccent pulsing-indicator"></span>
         <span id="backend-text" class="font-mono text-[11px]" data-i18n="server_online">Serveur: En Ligne</span>
       </div>
-      <div class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300">
-        <span class="w-2 h-2 rounded-full bg-emeraldAccent"></span>
-        <span class="font-mono text-[11px]">UPS: 230V</span>
+      <div class="hidden sm:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300" title="Alimentation / Onduleur">
+        <span id="pwr-dot" class="w-2 h-2 rounded-full bg-emeraldAccent"></span>
+        <span class="font-mono text-[11px]" id="header-pwr">PWR: 230V AC</span>
       </div>
-      <div class="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300">
+      <div class="hidden md:flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300" title="GPU NVIDIA Live Telemetry">
         <i data-lucide="cpu" class="w-3.5 h-3.5 text-cyanStream"></i>
-        <span class="font-mono text-[11px]">RTX 4070 (2.1GB)</span>
+        <span class="font-mono text-[11px]" id="header-gpu">RTX 4070 (6.1/8GB)</span>
       </div>
-      <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300">
+      <div class="flex items-center space-x-1.5 px-2.5 py-1 rounded-lg bg-black/40 border border-gray-800 text-gray-300" title="Mémoire RAM Système">
         <i data-lucide="zap" class="w-3.5 h-3.5 text-plateYellow"></i>
-        <span class="font-mono text-[11px]">RAM: 0.74ms</span>
+        <span class="font-mono text-[11px]" id="header-ram">RAM: 17/32GB (52%)</span>
       </div>
       <button id="sound-btn" onclick="toggleAudio()" class="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Activer / Couper le son">
         <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4 text-emeraldAccent"></i>
       </button>
-      <button onclick="openDailyReportModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 font-medium transition cursor-pointer" title="Rapport d'Exploitation & Audit ANPDP">
+      <button onclick="openDailyReportModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 font-medium transition cursor-pointer" title="Rapport d'Exploitation Journalier">
         <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline" data-i18n="btn_daily_report">Rapport</span>
       </button>
-      <button onclick="openMobilePreviewModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-medium transition cursor-pointer" title="Application Mobile PWA (Souveraine DZ)">
+      <button onclick="openMobilePreviewModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-medium transition cursor-pointer" title="Application Mobile">
         <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline" data-i18n="btn_mobile_app">Mobile</span>
       </button>
       <button onclick="openGuideModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emeraldAccent/10 hover:bg-emeraldAccent/20 text-emerald-400 border border-emeraldAccent/30 font-medium transition">
         <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline" data-i18n="btn_guide">Guide</span>
-      </button>
-      <button onclick="openAnpdpModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/30 font-medium transition">
-        <i data-lucide="scale" class="w-3.5 h-3.5"></i>
-        <span class="hidden sm:inline" data-i18n="btn_law">Loi 25-11</span>
       </button>
       <div id="clock" class="font-mono text-gray-300 font-semibold px-1 text-[11px]">18:00:00</div>
     </div>
@@ -2237,6 +2232,44 @@
         closeMobilePreviewModal();
       }
     });
+
+    // Live Hardware Telemetry Polling (Real RAM, GPU, and Power)
+    async function pollHardwareTelemetry() {
+      try {
+        const res = await fetch('/api/status');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.gpu_telemetry) {
+            const vramGb = (data.gpu_telemetry.vram_used_mb / 1024).toFixed(1);
+            const totalGb = (data.gpu_telemetry.vram_total_mb / 1024).toFixed(1);
+            const gpuEl = document.getElementById('header-gpu');
+            if (gpuEl) {
+              const util = data.gpu_telemetry.utilization_pct || 50;
+              gpuEl.innerText = `RTX 4070 (${vramGb}/${totalGb}GB | ${util}%)`;
+            }
+          }
+          if (data.system_ram) {
+            const ramEl = document.getElementById('header-ram');
+            if (ramEl) {
+              ramEl.innerText = `RAM: ${data.system_ram.used_gb}/${data.system_ram.total_gb}GB (${Math.round(data.system_ram.percent)}%)`;
+            }
+          }
+          if (data.ups_status) {
+            const pwrEl = document.getElementById('header-pwr');
+            const pwrDot = document.getElementById('pwr-dot');
+            if (pwrEl) {
+              const isAC = data.ups_status.power_plugged !== false;
+              pwrEl.innerText = isAC ? `PWR: 230V AC (${data.ups_status.battery_percent}%)` : `BATT: ${data.ups_status.battery_percent}% (${data.ups_status.runtime_remaining_min}m)`;
+              if (pwrDot) {
+                pwrDot.className = isAC ? 'w-2 h-2 rounded-full bg-emeraldAccent' : 'w-2 h-2 rounded-full bg-amberWarn animate-pulse';
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    }
+    setInterval(pollHardwareTelemetry, 3000);
+    pollHardwareTelemetry();
 
     // Initialize Theme & Language on boot
     applyTheme(currentTheme);

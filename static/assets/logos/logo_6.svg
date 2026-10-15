@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g6_cyan" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="g6_gold" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#EF4444"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#090D16"/>
+  <g transform="translate(256, 256)">
+    <!-- Converging Perspective Road -->
+    <polygon points="-160,150 160,150 40,-40 -40,-40" fill="#131B2E"/>
+    <!-- Horizon Lightbar Arc -->
+    <path d="M-180 -10 C-100 -70, 100 -70, 180 -10" fill="none" stroke="url(#g6_cyan)" stroke-width="20" stroke-linecap="round"/>
+    <path d="M-140 30 C-70 -20, 70 -20, 140 30" fill="none" stroke="url(#g6_cyan)" stroke-width="14" stroke-linecap="round"/>
+    <!-- Dynamic Barrier Slash -->
+    <path d="M-120 70 L120 -30" stroke="url(#g6_gold)" stroke-width="22" stroke-linecap="round"/>
+    <!-- Center Beacon Point -->
+    <circle cx="0" cy="-40" r="14" fill="#FFFFFF"/>
+  </g>
+</svg>

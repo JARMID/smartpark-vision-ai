@@ -1104,7 +1104,7 @@
     };
   }
   // =========================================================================
-  // CAM 3 : VOIE 2 SORTIE (ALPR PERSPECTIVE & AUTOMATED TOLL BARRIER)
+  // CAM 3 : VOIE 2 SORTIE (ALPR PERSPECTIVE & DYNAMIC TOLL BARRIER)
   // =========================================================================
   function setupCam3() {
     const cvs = document.getElementById('cam3-canvas');
@@ -1114,10 +1114,25 @@
 
     let armAngle = 0; // 0 = straight up across lane (closed), 82 = rotated clockwise along curb (open)
     let targetAngle = 0;
-    let carX = 60; // Initial waiting position strictly behind stop line at X=205
-    let carRolling = false;
+
+    // Physical State Machine:
+    // 'APPROACHING' -> 'STOPPED' -> 'OPENING' -> 'DEPARTING' -> 'LANE_CLEAR'
+    let carState = 'STOPPED';
+    let carX = 60; // Stop position at X=60 (bumper X=178, stop line X=205, barrier X=220)
+    let carSpeed = 0.0;
+    let wheelAngle = 0.0;
+    let stopDwellFrames = 0;
+    let clearDwellFrames = 0;
+    let brakeDip = 0.0;
     let frameCount = 0;
-    const plateText = "08192 120 09";
+    let plateText = "08192 120 09";
+    const availablePlates = [
+      "08192 120 09",
+      "104822 119 16",
+      "04122 118 16",
+      "08412 00 16",
+      "03144 117 31"
+    ];
 
     function render() {
       frameCount++;
@@ -1127,24 +1142,82 @@
       const isEngineOn = window.isVehicleEngineRunning !== false;
 
       // Barrier Arm Interpolation
-      armAngle += (targetAngle - armAngle) * 0.10;
+      armAngle += (targetAngle - armAngle) * 0.09;
 
-      // Car Motion when cleared
-      if (carRolling) {
-        if (armAngle > 40) {
-          carX += 2.2;
-          if (carX > cvs.width + 120) {
-            carRolling = false;
-            targetAngle = 0;
-            setTimeout(() => {
-              carX = 60;
-              const armEl = document.getElementById('cam3-arm-text');
-              if (armEl) {
-                armEl.innerText = lang === 'ar' ? 'مغلق' : (lang === 'en' ? 'CLOSED' : 'BAISSÉE');
-                armEl.className = 'text-red-400 font-semibold';
-              }
-            }, 2000);
-          }
+      // Card Header Arm Status Indicator Sync
+      const armEl = document.getElementById('cam3-arm-text');
+      if (armEl) {
+        if (armAngle > 15) {
+          armEl.innerText = lang === 'ar' ? 'مفتوح' : (lang === 'en' ? 'OPEN' : 'LEVÉE (OUVERT)');
+          armEl.className = 'text-emeraldAccent font-semibold';
+        } else {
+          armEl.innerText = lang === 'ar' ? 'مغلق' : (lang === 'en' ? 'CLOSED' : 'BAISSÉE');
+          armEl.className = 'text-red-400 font-semibold';
+        }
+      }
+
+      // -------------------------------------------------------------
+      // Physical Vehicle Motion & Detection State Machine
+      // -------------------------------------------------------------
+      if (carState === 'APPROACHING') {
+        targetAngle = 0; // Barrier strictly lowered
+        const dist = 60 - carX;
+        if (dist > 0.8) {
+          // Smooth deceleration curve towards stop line
+          carSpeed = Math.min(2.8, Math.max(0.35, dist * 0.04));
+          carX += carSpeed;
+          wheelAngle += (carSpeed / 12.5) * Math.PI * 2;
+          brakeDip = Math.min(1.6, carSpeed * 0.45); // Forward braking pitch
+        } else {
+          // Complete full stop
+          carX = 60;
+          carSpeed = 0.0;
+          brakeDip = 0.0;
+          carState = 'STOPPED';
+          stopDwellFrames = 0;
+        }
+      } else if (carState === 'STOPPED') {
+        carSpeed = 0.0;
+        brakeDip = 0.0;
+        // Wheels do NOT spin when car is stopped!
+        stopDwellFrames++;
+        // Dwell at barrier for ~300 frames (5-6 seconds) before auto-departing
+        if (stopDwellFrames > 320) {
+          targetAngle = 82;
+          carState = 'OPENING';
+        }
+      } else if (carState === 'OPENING') {
+        carSpeed = 0.0;
+        targetAngle = 82;
+        // Wait for barrier arm to clear past 38 degrees before car rolls
+        if (armAngle > 38) {
+          carState = 'DEPARTING';
+          carSpeed = 0.6;
+        }
+      } else if (carState === 'DEPARTING') {
+        targetAngle = 82;
+        // Accelerate forward across departure loop
+        if (carSpeed < 3.6) carSpeed += 0.055;
+        carX += carSpeed;
+        wheelAngle += (carSpeed / 12.5) * Math.PI * 2;
+        brakeDip = -0.5; // Slight rear acceleration squat
+
+        if (carX > cvs.width + 120) {
+          carState = 'LANE_CLEAR';
+          clearDwellFrames = 0;
+          targetAngle = 0; // Smoothly lower barrier
+        }
+      } else if (carState === 'LANE_CLEAR') {
+        targetAngle = 0;
+        carSpeed = 0.0;
+        clearDwellFrames++;
+        if (clearDwellFrames > 90) { // 1.5 seconds clear
+          // Spawn next vehicle approach from offscreen left
+          carX = -130;
+          carSpeed = 2.8;
+          carState = 'APPROACHING';
+          const nextIdx = Math.floor(Math.random() * availablePlates.length);
+          plateText = availablePlates[nextIdx];
         }
       }
 
@@ -1228,8 +1301,8 @@
       }
 
       // 3. Embedded Inductive Ground Loops in Roadway
-      // Loop A: Approach Loop
-      const isLoopAOccupied = carX >= 40 && carX <= 190;
+      // Loop A: Approach Loop (at X=70..166)
+      const isLoopAOccupied = carState !== 'LANE_CLEAR' && carX >= -20 && carX <= 180;
       ctx.strokeStyle = isLoopAOccupied ? '#06B6D4' : (isLight ? '#64748B' : '#475569');
       ctx.lineWidth = 2;
       ctx.strokeRect(70, 118, 96, 96);
@@ -1241,8 +1314,8 @@
       const loopALabel = lang === 'ar' ? (isLoopAOccupied ? 'المستشعر أ: رصد المركبة' : 'المستشعر أ (انتظار)') : (lang === 'en' ? (isLoopAOccupied ? 'LOOP A: ACTIVE' : 'LOOP A (STANDBY)') : (isLoopAOccupied ? 'BOUCLE A : ACTIF' : 'BOUCLE A (ATTENTE)'));
       ctx.fillText(loopALabel, 75, 130);
 
-      // Loop B: Departure Loop
-      const isLoopBOccupied = carX >= 220 && carX <= 380;
+      // Loop B: Departure Loop (at X=260..356)
+      const isLoopBOccupied = carState !== 'LANE_CLEAR' && carX >= 210 && carX <= 420;
       ctx.strokeStyle = isLoopBOccupied ? '#10B981' : (isLight ? '#64748B' : '#475569');
       ctx.lineWidth = 2;
       ctx.strokeRect(260, 118, 96, 96);
@@ -1252,8 +1325,8 @@
       const loopBLabel = lang === 'ar' ? (isLoopBOccupied ? 'المستشعر ب: إخلاء المسلك' : 'المستشعر ب (مغادرة)') : (lang === 'en' ? (isLoopBOccupied ? 'LOOP B: CLEARED' : 'LOOP B (DEPARTURE)') : (isLoopBOccupied ? 'BOUCLE B : PASSAGE OK' : 'BOUCLE B (DEGAGEMENT)'));
       ctx.fillText(loopBLabel, 265, 130);
 
-      // 4. Optical Safety Photocell Beam
-      const isBeamBroken = carX >= 170 && carX <= 280;
+      // 4. Optical Safety Photocell Beam (at X = 215)
+      const isBeamBroken = carState !== 'LANE_CLEAR' && carX >= 165 && carX <= 285;
       ctx.fillStyle = '#F59E0B';
       ctx.fillRect(212, 88, 7, 12);
       ctx.fillRect(212, 244, 7, 12);
@@ -1307,7 +1380,7 @@
       ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.2;
       ctx.strokeRect(95, 19, 290, 26);
 
-      const isOpen = armAngle > 40;
+      const isOpen = armAngle > 35;
       ctx.textAlign = 'center';
       if (isOpen) {
         ctx.fillStyle = '#10B981';
@@ -1316,12 +1389,12 @@
         ctx.fillText(vmsHeader, 240, 31);
         ctx.fillStyle = '#34D399';
         ctx.font = '7px "JetBrains Mono", monospace';
-        const vmsSub = lang === 'ar' ? 'الدفع الإلكتروني CIB/SATIM مؤكد | رافقتكم السلامة' : (lang === 'en' ? 'SATIM 100 DZD PAYMENT CONFIRMED | SAFE TRAVELS' : 'PAIEMENT SATIM 100 DZD CONFIRME | BONNE ROUTE');
+        const vmsSub = lang === 'ar' ? 'الدفع الإلكتروني CIB/SATIM مؤكد | رافقتكم السلامة' : (lang === 'en' ? 'SATIM PAYMENT CONFIRMED | SAFE TRAVELS' : 'PAIEMENT SATIM CONFIRMÉ | BONNE ROUTE');
         ctx.fillText(vmsSub, 240, 41);
       } else {
         ctx.fillStyle = '#F59E0B';
         ctx.font = 'bold 8px "JetBrains Mono", monospace';
-        const vmsHeader = (I18N[lang] && I18N[lang].gantry_sign_closed) || "■ VOIE 2 : PEAGE AUTOMATIQUE | 100 DZD";
+        const vmsHeader = (I18N[lang] && I18N[lang].gantry_sign_closed) || "■ VOIE 2 : PEAGE AUTOMATIQUE";
         ctx.fillText(vmsHeader, 240, 31);
         ctx.fillStyle = '#FCD34D';
         ctx.font = '7px "JetBrains Mono", monospace';
@@ -1346,165 +1419,196 @@
 
       // 6. Photorealistic Moving Sedan (Exiting)
       const vy = 138;
-      const chassisVib = isEngineOn ? Math.sin(frameCount * 0.45) * 0.08 : 0.0;
+      // Idle chassis vibration ONLY when stopped or rolling with engine on
+      const chassisVib = (isEngineOn && carState === 'STOPPED') ? (Math.sin(frameCount * 0.45) * 0.08) : 0.0;
 
-      // Chassis Drop Shadow
-      ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.45)' : 'rgba(0, 0, 0, 0.75)';
-      ctx.beginPath();
-      ctx.ellipse(carX + 59, vy + 46, 64, 11, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Exhaust Heat Drift
-      if (isEngineOn) {
-        ctx.fillStyle = isLight ? 'rgba(100, 116, 139, 0.25)' : 'rgba(203, 213, 225, 0.20)';
-        for (let p = 0; p < 4; p++) {
-          const px = carX - 6 - ((frameCount * 1.5 + p * 12) % 36);
-          const py = vy + 38 + chassisVib - ((frameCount * 0.6 + p * 8) % 18);
-          const pr = 2 + (p * 1.2);
-          ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
-        }
-      }
-
-      // Sedan Lower Body
-      const carGrad = ctx.createLinearGradient(carX, vy + chassisVib, carX, vy + 44 + chassisVib);
-      if (isLight) {
-        carGrad.addColorStop(0, '#64748B');
-        carGrad.addColorStop(0.35, '#475569');
-        carGrad.addColorStop(0.7, '#334155');
-        carGrad.addColorStop(1, '#1E293B');
-      } else {
-        carGrad.addColorStop(0, '#475569');
-        carGrad.addColorStop(0.35, '#334155');
-        carGrad.addColorStop(0.7, '#1E293B');
-        carGrad.addColorStop(1, '#0F172A');
-      }
-      ctx.fillStyle = carGrad;
-      ctx.beginPath();
-      ctx.roundRect(carX, vy + 12 + chassisVib, 118, 32, 6);
-      ctx.fill();
-      ctx.strokeStyle = isLight ? '#94A3B8' : '#64748B'; ctx.lineWidth = 1; ctx.stroke();
-
-      // Cabin Glasshouse
-      const glassGrad = ctx.createLinearGradient(carX + 20, vy + chassisVib, carX + 90, vy + 14 + chassisVib);
-      if (isLight) {
-        glassGrad.addColorStop(0, '#38BDF8');
-        glassGrad.addColorStop(0.5, '#7DD3FC');
-        glassGrad.addColorStop(1, '#0284C7');
-      } else {
-        glassGrad.addColorStop(0, '#0369A1');
-        glassGrad.addColorStop(0.5, '#0284C7');
-        glassGrad.addColorStop(1, '#0F172A');
-      }
-      ctx.fillStyle = glassGrad;
-      ctx.beginPath();
-      ctx.moveTo(carX + 18, vy + 12 + chassisVib);
-      ctx.lineTo(carX + 38, vy - 2 + chassisVib);
-      ctx.lineTo(carX + 78, vy - 2 + chassisVib);
-      ctx.lineTo(carX + 98, vy + 12 + chassisVib);
-      ctx.closePath();
-      ctx.fill();
-      ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
-
-      // B-Pillar Divider
-      ctx.fillStyle = '#0F172A';
-      ctx.fillRect(carX + 58, vy - 1 + chassisVib, 4, 13);
-
-      // Driver Silhouette Inside Cabin
-      ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
-      ctx.beginPath(); ctx.arc(carX + 48, vy + 4 + chassisVib, 6.5, 0, Math.PI * 2); ctx.fill();
-      ctx.beginPath(); ctx.ellipse(carX + 48, vy + 12 + chassisVib, 9, 5, 0, 0, Math.PI); ctx.fill();
-
-      // Door Handles
-      ctx.fillStyle = '#CBD5E1';
-      ctx.fillRect(carX + 42, vy + 16 + chassisVib, 7, 2);
-      ctx.fillRect(carX + 68, vy + 16 + chassisVib, 7, 2);
-
-      // Rotating Alloy Wheels
-      [carX + 26, carX + 94].forEach(wx => {
-        const wy = vy + 42 + chassisVib;
-        ctx.fillStyle = '#020617';
-        ctx.beginPath(); ctx.arc(wx, wy, 12.5, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
-
-        ctx.strokeStyle = '#CBD5E1'; ctx.lineWidth = 1.2;
+      if (carState !== 'LANE_CLEAR') {
+        // Chassis Drop Shadow
+        ctx.fillStyle = isLight ? 'rgba(15, 23, 42, 0.45)' : 'rgba(0, 0, 0, 0.75)';
         ctx.beginPath();
-        const spinSpeed = carRolling ? (carX * 0.1) : (isEngineOn ? (frameCount * 0.05) : 0);
-        for (let s = 0; s < 5; s++) {
-          const a = spinSpeed + (s * Math.PI * 2) / 5;
-          ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(a) * 9, wy + Math.sin(a) * 9);
+        ctx.ellipse(carX + 59, vy + 46, 64, 11, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Exhaust Heat Drift (Only when engine is running)
+        if (isEngineOn) {
+          ctx.fillStyle = isLight ? 'rgba(100, 116, 139, 0.25)' : 'rgba(203, 213, 225, 0.20)';
+          for (let p = 0; p < 4; p++) {
+            const px = carX - 6 - ((frameCount * 1.5 + p * 12) % 36);
+            const py = vy + 38 + chassisVib + brakeDip - ((frameCount * 0.6 + p * 8) % 18);
+            const pr = 2 + (p * 1.2);
+            ctx.beginPath(); ctx.arc(px, py, pr, 0, Math.PI * 2); ctx.fill();
+          }
         }
-        ctx.stroke();
-      });
 
-      // Front Headlights & Volumetric Cone
-      if (isEngineOn) {
-        ctx.fillStyle = '#F8FAFC';
-        ctx.beginPath(); ctx.roundRect(carX + 114, vy + 16 + chassisVib, 4, 8, 2); ctx.fill();
-        ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1; ctx.stroke();
-
-        const beamLimit = isOpen ? (carX + 190) : Math.min(carX + 190, 204);
-        const lightBeam = ctx.createLinearGradient(carX + 118, vy + 20, beamLimit, vy + 20);
-        lightBeam.addColorStop(0, 'rgba(240, 249, 255, 0.45)');
-        lightBeam.addColorStop(0.4, 'rgba(56, 189, 248, 0.22)');
-        lightBeam.addColorStop(1, 'rgba(56, 189, 248, 0)');
-        ctx.fillStyle = lightBeam;
+        // Sedan Lower Body
+        const carGrad = ctx.createLinearGradient(carX, vy + chassisVib + brakeDip, carX, vy + 44 + chassisVib + brakeDip);
+        if (isLight) {
+          carGrad.addColorStop(0, '#64748B');
+          carGrad.addColorStop(0.35, '#475569');
+          carGrad.addColorStop(0.7, '#334155');
+          carGrad.addColorStop(1, '#1E293B');
+        } else {
+          carGrad.addColorStop(0, '#475569');
+          carGrad.addColorStop(0.35, '#334155');
+          carGrad.addColorStop(0.7, '#1E293B');
+          carGrad.addColorStop(1, '#0F172A');
+        }
+        ctx.fillStyle = carGrad;
         ctx.beginPath();
-        ctx.moveTo(carX + 118, vy + 16 + chassisVib);
-        ctx.lineTo(beamLimit, vy + 6);
-        ctx.lineTo(beamLimit, vy + 34);
-        ctx.lineTo(carX + 118, vy + 24 + chassisVib);
+        ctx.roundRect(carX, vy + 12 + chassisVib + brakeDip, 118, 32, 6);
+        ctx.fill();
+        ctx.strokeStyle = isLight ? '#94A3B8' : '#64748B'; ctx.lineWidth = 1; ctx.stroke();
+
+        // Cabin Glasshouse
+        const glassGrad = ctx.createLinearGradient(carX + 20, vy + chassisVib + brakeDip, carX + 90, vy + 14 + chassisVib + brakeDip);
+        if (isLight) {
+          glassGrad.addColorStop(0, '#38BDF8');
+          glassGrad.addColorStop(0.5, '#7DD3FC');
+          glassGrad.addColorStop(1, '#0284C7');
+        } else {
+          glassGrad.addColorStop(0, '#0369A1');
+          glassGrad.addColorStop(0.5, '#0284C7');
+          glassGrad.addColorStop(1, '#0F172A');
+        }
+        ctx.fillStyle = glassGrad;
+        ctx.beginPath();
+        ctx.moveTo(carX + 18, vy + 12 + chassisVib + brakeDip);
+        ctx.lineTo(carX + 38, vy - 2 + chassisVib + brakeDip);
+        ctx.lineTo(carX + 78, vy - 2 + chassisVib + brakeDip);
+        ctx.lineTo(carX + 98, vy + 12 + chassisVib + brakeDip);
         ctx.closePath();
         ctx.fill();
+        ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
+
+        // B-Pillar Divider
+        ctx.fillStyle = '#0F172A';
+        ctx.fillRect(carX + 58, vy - 1 + chassisVib + brakeDip, 4, 13);
+
+        // Driver Silhouette Inside Cabin
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.9)';
+        ctx.beginPath(); ctx.arc(carX + 48, vy + 4 + chassisVib + brakeDip, 6.5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.ellipse(carX + 48, vy + 12 + chassisVib + brakeDip, 9, 5, 0, 0, Math.PI); ctx.fill();
+
+        // Door Handles
+        ctx.fillStyle = '#CBD5E1';
+        ctx.fillRect(carX + 42, vy + 16 + chassisVib + brakeDip, 7, 2);
+        ctx.fillRect(carX + 68, vy + 16 + chassisVib + brakeDip, 7, 2);
+
+        // Rotating Alloy Wheels (Accurately tied to linear vehicle motion)
+        [carX + 26, carX + 94].forEach(wx => {
+          const wy = vy + 42 + chassisVib + brakeDip;
+          ctx.fillStyle = '#020617';
+          ctx.beginPath(); ctx.arc(wx, wy, 12.5, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#1E293B'; ctx.lineWidth = 1.5; ctx.stroke();
+
+          ctx.strokeStyle = '#CBD5E1'; ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          // Spokes rotate strictly with linear translation; stationary when stopped!
+          for (let s = 0; s < 5; s++) {
+            const a = wheelAngle + (s * Math.PI * 2) / 5;
+            ctx.moveTo(wx, wy); ctx.lineTo(wx + Math.cos(a) * 9, wy + Math.sin(a) * 9);
+          }
+          ctx.stroke();
+        });
+
+        // Front Headlights & Volumetric Cone
+        if (isEngineOn) {
+          ctx.fillStyle = '#F8FAFC';
+          ctx.beginPath(); ctx.roundRect(carX + 114, vy + 16 + chassisVib + brakeDip, 4, 8, 2); ctx.fill();
+          ctx.strokeStyle = '#38BDF8'; ctx.lineWidth = 1; ctx.stroke();
+
+          const beamLimit = isOpen ? (carX + 190) : Math.min(carX + 190, 204);
+          if (beamLimit > carX + 118) {
+            const lightBeam = ctx.createLinearGradient(carX + 118, vy + 20, beamLimit, vy + 20);
+            lightBeam.addColorStop(0, 'rgba(240, 249, 255, 0.45)');
+            lightBeam.addColorStop(0.4, 'rgba(56, 189, 248, 0.22)');
+            lightBeam.addColorStop(1, 'rgba(56, 189, 248, 0)');
+            ctx.fillStyle = lightBeam;
+            ctx.beginPath();
+            ctx.moveTo(carX + 118, vy + 16 + chassisVib + brakeDip);
+            ctx.lineTo(beamLimit, vy + 6);
+            ctx.lineTo(beamLimit, vy + 34);
+            ctx.lineTo(carX + 118, vy + 24 + chassisVib + brakeDip);
+            ctx.closePath();
+            ctx.fill();
+          }
+        } else {
+          ctx.fillStyle = '#475569';
+          ctx.beginPath(); ctx.roundRect(carX + 114, vy + 16 + chassisVib + brakeDip, 4, 8, 2); ctx.fill();
+        }
+
+        // Rear Taillights
+        ctx.fillStyle = isEngineOn ? '#EF4444' : '#7F1D1D';
+        ctx.beginPath(); ctx.roundRect(carX, vy + 16 + chassisVib + brakeDip, 4, 8, 2); ctx.fill();
+
+        // Front License Plate
+        ctx.fillStyle = '#000000';
+        ctx.fillRect(carX + 114, vy + 26 + chassisVib + brakeDip, 4, 10);
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(carX + 115, vy + 27 + chassisVib + brakeDip, 3, 8);
+
+        // -------------------------------------------------------------
+        // Complete AI Detection Overlay (Bounding Box, Speed, Status)
+        // -------------------------------------------------------------
+        const speedKmH = (carSpeed * 7.2).toFixed(1);
+        let tagColor = '#06B6D4';
+        let statusText = '';
+        let subText = '';
+
+        if (carState === 'APPROACHING') {
+          tagColor = '#06B6D4';
+          statusText = lang === 'ar' ? `رصد: يقترب (${speedKmH} كم/سا)` : (lang === 'en' ? `[AI] APPROACHING: ${speedKmH} km/h` : `[IA] EN APPROCHE : ${speedKmH} km/h`);
+          subText = lang === 'ar' ? 'حاجز مسلك 2: مغلق (مغلق)' : (lang === 'en' ? 'BARRIER: INTERLOCKED (LOWERED)' : 'BARRIÈRE : VERROUILLÉE (BAISSÉE)');
+        } else if (carState === 'STOPPED') {
+          tagColor = isEngineOn ? '#10B981' : '#F59E0B';
+          statusText = lang === 'ar' ? `رصد: متوقف (0.0 كم/سا) | ${plateText}` : (lang === 'en' ? `[AI] STOPPED: 0.0 km/h | ${plateText}` : `[IA] ARRÊTÉ : 0.0 km/h | ${plateText}`);
+          subText = lang === 'ar' ? (isEngineOn ? 'المحرك: يعمل (820 د/د) | بانتظار الفتح' : 'المحرك: متوقف (0 د/د)') : (lang === 'en' ? (isEngineOn ? 'ENGINE: IDLE (820 RPM) | CLEAR TO LIFT' : 'ENGINE: OFF (0 RPM)') : (isEngineOn ? 'MOTEUR : AU RALENTI (820 RPM)' : 'MOTEUR : ÉTEINT (0 RPM)'));
+        } else if (carState === 'OPENING') {
+          tagColor = '#34D399';
+          statusText = lang === 'ar' ? 'الحاجز يفتح | الاستعداد للانطلاق' : (lang === 'en' ? '[AI] BARRIER CLEARING | PREPARING' : '[IA] LEVÉE BARRIÈRE | DÉPART IMMINENT');
+          subText = lang === 'ar' ? 'المسلك مأمون | تصريح الخروج نشط' : (lang === 'en' ? 'LANE 2 CLEAR | TICKET VALIDATED' : 'VOIE 2 SÉCURISÉE | VALIDATION OK');
+        } else if (carState === 'DEPARTING') {
+          tagColor = '#10B981';
+          statusText = lang === 'ar' ? `مغادرة: انطلاق (${speedKmH} كم/سا)` : (lang === 'en' ? `[AI] DEPARTING: ${speedKmH} km/h` : `[IA] EN DÉPART : ${speedKmH} km/h`);
+          subText = lang === 'ar' ? 'إخلاء المسلك | رافقتكم السلامة' : (lang === 'en' ? 'LANE EVACUATION | SAFE TRAVELS' : 'ÉVACUATION SAS | BONNE ROUTE');
+        }
+
+        // AI Bounding Box
+        ctx.strokeStyle = tagColor;
+        ctx.lineWidth = 1.6;
+        ctx.strokeRect(carX - 4, vy - 6 + chassisVib + brakeDip, 126, 56);
+
+        // Motion & Status Header Badge
+        ctx.fillStyle = tagColor;
+        ctx.fillRect(carX - 4, vy - 20 + chassisVib + brakeDip, 126, 14);
+        ctx.fillStyle = '#020617';
+        ctx.font = 'bold 7px "JetBrains Mono", monospace';
+        ctx.fillText(statusText, carX - 1, vy - 10 + chassisVib + brakeDip);
+
+        // Sub-Telemetry Pill Below
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.94)';
+        ctx.fillRect(carX - 4, vy + 52 + chassisVib + brakeDip, 126, 12);
+        ctx.strokeStyle = tagColor;
+        ctx.lineWidth = 0.8;
+        ctx.strokeRect(carX - 4, vy + 52 + chassisVib + brakeDip, 126, 12);
+        ctx.fillStyle = tagColor;
+        ctx.font = 'bold 6.8px "JetBrains Mono", monospace';
+        ctx.fillText(subText, carX - 1, vy + 61 + chassisVib + brakeDip);
       } else {
-        ctx.fillStyle = '#475569';
-        ctx.beginPath(); ctx.roundRect(carX + 114, vy + 16 + chassisVib, 4, 8, 2); ctx.fill();
+        // Lane is Clear Notice
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(130, 150, 220, 24);
+        ctx.strokeStyle = '#10B981'; ctx.lineWidth = 1.2;
+        ctx.strokeRect(130, 150, 220, 24);
+        ctx.fillStyle = '#10B981';
+        ctx.font = 'bold 8px "JetBrains Mono", monospace';
+        ctx.textAlign = 'center';
+        const clearMsg = lang === 'ar' ? 'مسلك 2: شاغر | جاهز للمركبة القادمة' : (lang === 'en' ? 'LANE 2: CLEAR | READY FOR NEXT VEHICLE' : 'VOIE 2 : LIBRE | EN ATTENTE VÉHICULE');
+        ctx.fillText(clearMsg, 240, 165);
+        ctx.textAlign = 'left';
       }
-
-      // Rear Taillights
-      ctx.fillStyle = isEngineOn ? '#EF4444' : '#7F1D1D';
-      ctx.beginPath(); ctx.roundRect(carX, vy + 16 + chassisVib, 4, 8, 2); ctx.fill();
-
-      // Front License Plate
-      ctx.fillStyle = '#000000';
-      ctx.fillRect(carX + 114, vy + 26 + chassisVib, 4, 10);
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(carX + 115, vy + 27 + chassisVib, 3, 8);
-
-      // Stable AI Vision Bounding Box (Only surrounds the vehicle)
-      ctx.strokeStyle = isEngineOn ? '#06B6D4' : '#F59E0B';
-      ctx.lineWidth = 1.6;
-      ctx.strokeRect(carX - 4, vy - 6, 126, 56);
-
-      // ALPR Identification Badge
-      ctx.fillStyle = isEngineOn ? 'rgba(6, 182, 212, 0.92)' : 'rgba(245, 158, 11, 0.92)';
-      ctx.fillRect(carX - 4, vy - 18, 126, 12);
-      ctx.fillStyle = '#000000';
-      ctx.font = 'bold 7.5px "JetBrains Mono", monospace';
-      const exitTag = lang === 'ar' ? 'خروج' : (lang === 'en' ? 'EXIT' : 'SORTIE');
-      ctx.fillText(`${exitTag} : ${plateText} | 98.4%`, carX - 1, vy - 9);
-
-      // Real-Time Optical Engine Telemetry Pill (Fitting neatly under chassis)
-      const enginePillW = 126;
-      ctx.fillStyle = isEngineOn ? 'rgba(5, 150, 105, 0.95)' : 'rgba(217, 119, 6, 0.95)';
-      ctx.fillRect(carX - 4, vy + 52, enginePillW, 11);
-      ctx.strokeStyle = isEngineOn ? '#34D399' : '#FCD34D';
-      ctx.lineWidth = 0.8;
-      ctx.strokeRect(carX - 4, vy + 52, enginePillW, 11);
-
-      ctx.fillStyle = '#FFFFFF';
-      ctx.font = 'bold 6.8px "JetBrains Mono", monospace';
-      let engineTelemetryText = '';
-      if (lang === 'ar') {
-        engineTelemetryText = isEngineOn ? 'المحرك: يعمل (820 د/د)' : 'المحرك: متوقف (0 د/د)';
-      } else if (lang === 'en') {
-        engineTelemetryText = isEngineOn ? '[AI] RUNNING (820 RPM)' : '[AI] ENGINE: OFF (0 RPM)';
-      } else {
-        engineTelemetryText = isEngineOn ? '[IA] EN MARCHE (820 RPM)' : '[IA] ÉTEINT (0 RPM)';
-      }
-      ctx.fillText(engineTelemetryText, carX - 1, vy + 60.5);
 
       // 7. Automatic Barrier Gate Cabinet & Articulated Boom Arm
-      // Cabinet is positioned on the bottom safety curb at X = 220
       const barrierX = 220, barrierY = 196;
       const pivotX = barrierX + 9, pivotY = barrierY + 12;
 
@@ -1517,12 +1621,12 @@
       ctx.strokeRect(barrierX, barrierY, 18, 48);
 
       // Flashing Strobe Beacon on Barrier Top
-      const isMoving = Math.abs(armAngle) > 4 && Math.abs(armAngle) < 78;
-      const beaconColor = isMoving ? (Math.floor(frameCount / 4) % 2 === 0 ? '#F59E0B' : '#EF4444') : (isOpen ? '#10B981' : '#EF4444');
+      const isMovingArm = Math.abs(armAngle) > 4 && Math.abs(armAngle) < 78;
+      const beaconColor = isMovingArm ? (Math.floor(frameCount / 4) % 2 === 0 ? '#F59E0B' : '#EF4444') : (isOpen ? '#10B981' : '#EF4444');
       ctx.fillStyle = beaconColor;
       ctx.beginPath(); ctx.arc(pivotX, barrierY - 3, 4, Math.PI, 0); ctx.fill();
 
-      // Articulated Boom Arm (Vertical when closed, swings clockwise towards departure zone when open)
+      // Articulated Boom Arm
       ctx.save();
       ctx.translate(pivotX, pivotY);
       ctx.rotate((armAngle * Math.PI) / 180);
@@ -1550,7 +1654,11 @@
         ctx.fill();
       }
 
-      // Embedded Dynamic LED Warning Strip
+      // Tip Red LED Warning Light
+      ctx.fillStyle = isOpen ? '#10B981' : '#EF4444';
+      ctx.beginPath(); ctx.arc(0, -106, 3, 0, Math.PI * 2); ctx.fill();
+
+      // Under-Arm Red/Green Integrated Safety Strip
       ctx.strokeStyle = isOpen ? '#10B981' : '#EF4444';
       ctx.lineWidth = 2;
       ctx.beginPath();
@@ -1571,7 +1679,9 @@
     return {
       openBarrier: () => {
         targetAngle = 82;
-        carRolling = true;
+        if (carState === 'STOPPED' || carState === 'APPROACHING') {
+          carState = 'OPENING';
+        }
         const armEl = document.getElementById('cam3-arm-text');
         if (armEl) {
           const lang = window.currentLang || 'fr';

@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g9_rgb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+    <linearGradient id="g9_nir" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F43F5E"/>
+      <stop offset="100%" stop-color="#9333EA"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0D0F1D"/>
+  <g transform="translate(256, 256)">
+    <!-- RGB Channel Aperture Ring -->
+    <circle cx="-45" cy="0" r="110" fill="none" stroke="url(#g9_rgb)" stroke-width="26" opacity="0.85"/>
+    <!-- NIR Channel Aperture Ring -->
+    <circle cx="45" cy="0" r="110" fill="none" stroke="url(#g9_nir)" stroke-width="26" opacity="0.85"/>
+    <!-- Overlapping Intersection Lens Core -->
+    <ellipse cx="0" cy="0" rx="45" ry="85" fill="rgba(255,255,255,0.15)"/>
+    <!-- Focused Pupil & Biometric Crosshair -->
+    <circle cx="0" cy="0" r="24" fill="#FFFFFF"/>
+    <circle cx="0" cy="0" r="10" fill="#0D0F1D"/>
+    <!-- Crosshair Ticks -->
+    <line x1="-70" y1="0" x2="-35" y2="0" stroke="#FFFFFF" stroke-width="6"/>
+    <line x1="35" y1="0" x2="70" y2="0" stroke="#FFFFFF" stroke-width="6"/>
+    <line x1="0" y1="-70" x2="0" y2="-35" stroke="#FFFFFF" stroke-width="6"/>
+    <line x1="0" y1="35" x2="0" y2="70" stroke="#FFFFFF" stroke-width="6"/>
+  </g>
+</svg>

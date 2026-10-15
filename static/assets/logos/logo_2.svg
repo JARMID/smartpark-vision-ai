@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g2_iso" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="50%" stop-color="#2563EB"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+    <linearGradient id="g2_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#10B981"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#060913"/>
+  <g transform="translate(256, 256)">
+    <!-- Isometric Cube / Stall Floor -->
+    <path d="M0 -150 L140 -70 L140 90 L0 170 L-140 90 L-140 -70 Z" fill="rgba(37, 99, 235, 0.12)" stroke="url(#g2_iso)" stroke-width="14" stroke-linejoin="round"/>
+    <!-- Internal Spatial Axes -->
+    <path d="M0 170 L0 -10 M-140 -70 L0 -10 M140 -70 L0 -10" stroke="rgba(56, 189, 248, 0.4)" stroke-width="8" stroke-dasharray="12 8"/>
+    <!-- Stall Yellow Marking Floor Angle -->
+    <path d="M-80 20 L0 66 L80 20" fill="none" stroke="#F59E0B" stroke-width="12" stroke-linecap="round"/>
+    <!-- Floating AI Sensor Eye / Aperture Ring -->
+    <circle cx="0" cy="-30" r="54" fill="#0B132B" stroke="url(#g2_cyan)" stroke-width="12"/>
+    <circle cx="0" cy="-30" r="26" fill="#00F2FE"/>
+    <circle cx="6" cy="-36" r="8" fill="#FFFFFF"/>
+    <!-- 4 Radar Perception Arcs -->
+    <path d="M-90 -90 C-40 -140, 40 -140, 90 -90" fill="none" stroke="#10B981" stroke-width="8" stroke-linecap="round"/>
+    <path d="M-115 -115 C-55 -175, 55 -175, 115 -115" fill="none" stroke="rgba(16, 185, 129, 0.5)" stroke-width="6" stroke-linecap="round"/>
+  </g>
+</svg>

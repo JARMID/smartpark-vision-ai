@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g5_teal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2DD4BF"/>
+      <stop offset="100%" stop-color="#0F766E"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#040D1A"/>
+  <g transform="translate(256, 256)">
+    <!-- Target Reticle Outer Ring -->
+    <circle cx="0" cy="0" r="160" fill="none" stroke="rgba(45, 212, 191, 0.25)" stroke-width="4"/>
+    <circle cx="0" cy="0" r="110" fill="none" stroke="rgba(45, 212, 191, 0.45)" stroke-width="6" stroke-dasharray="8 12"/>
+    <circle cx="0" cy="0" r="60" fill="none" stroke="#2DD4BF" stroke-width="8"/>
+    <!-- Crosshairs -->
+    <line x1="-180" y1="0" x2="180" y2="0" stroke="rgba(45, 212, 191, 0.35)" stroke-width="3"/>
+    <line x1="0" y1="-180" x2="0" y2="180" stroke="rgba(45, 212, 191, 0.35)" stroke-width="3"/>
+    <!-- Precision Corner Ticks -->
+    <path d="M-140 -110 L-140 -140 L-110 -140" fill="none" stroke="#2DD4BF" stroke-width="6"/>
+    <path d="M140 -110 L140 -140 L110 -140" fill="none" stroke="#2DD4BF" stroke-width="6"/>
+    <path d="M-140 110 L-140 140 L-110 140" fill="none" stroke="#2DD4BF" stroke-width="6"/>
+    <path d="M140 110 L140 140 L110 140" fill="none" stroke="#2DD4BF" stroke-width="6"/>
+    <!-- Vehicle Center Diamond -->
+    <polygon points="0,-24 24,0 0,24 -24,0" fill="#2DD4BF"/>
+    <circle cx="0" cy="0" r="6" fill="#040D1A"/>
+  </g>
+</svg>

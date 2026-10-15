@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g4_blue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8"/>
+      <stop offset="100%" stop-color="#2563EB"/>
+    </linearGradient>
+    <linearGradient id="g4_mint" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0A0F1D"/>
+  <g transform="translate(180, 130)">
+    <!-- Upright Parking Stem Loop -->
+    <path d="M30 260 L30 50 C30 -10, 110 -10, 110 50 L110 260 C110 320, 30 320, 30 260 Z" 
+          fill="none" stroke="url(#g4_blue)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Sweeping Infinity Parking Loop (Letter P Head) -->
+    <path d="M30 110 C80 50, 190 50, 190 125 C190 200, 80 200, 30 140" 
+          fill="none" stroke="url(#g4_mint)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Pulse Center Core -->
+    <circle cx="110" cy="125" r="16" fill="#FFFFFF"/>
+  </g>
+</svg>

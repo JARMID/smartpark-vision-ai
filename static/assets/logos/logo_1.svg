@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g1_cyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#0284C7"/>
+    </linearGradient>
+    <linearGradient id="g1_emerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+    <filter id="glow1" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feComposite in="SourceGraphic" in2="blur" operator="over"/>
+    </filter>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#0B1120"/>
+  <!-- Decorative Grid Background Subdued -->
+  <path d="M64 160h384M64 256h384M64 352h384M160 64v384M256 64v384M352 64v384" stroke="rgba(255,255,255,0.03)" stroke-width="2"/>
+  <g transform="translate(40, 20)">
+    <!-- Letter S / Access Loop in Cyan -->
+    <path d="M140 180 C140 130, 210 110, 260 110 L300 110 C340 110, 360 135, 360 165 C360 210, 280 220, 240 240 C190 265, 140 285, 140 340 C140 395, 195 420, 255 420 L310 420" 
+          fill="none" stroke="url(#g1_cyan)" stroke-width="36" stroke-linecap="round" stroke-linejoin="round" filter="url(#glow1)"/>
+    <!-- Letter P / Lift Gate in Emerald -->
+    <path d="M220 110 L220 420" fill="none" stroke="url(#g1_emerald)" stroke-width="36" stroke-linecap="round"/>
+    <path d="M220 110 C290 110, 370 120, 370 190 C370 260, 290 270, 220 270" fill="none" stroke="url(#g1_emerald)" stroke-width="36" stroke-linecap="round"/>
+    <!-- Dynamic Forward Arrow Chevron -->
+    <path d="M330 270 L380 270 L340 230" fill="none" stroke="#F8FAFC" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- Glowing Status Node -->
+    <circle cx="370" cy="190" r="14" fill="#38BDF8"/>
+  </g>
+</svg>

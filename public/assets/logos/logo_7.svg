@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <linearGradient id="g7_hex" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#065F46"/>
+    </linearGradient>
+    <linearGradient id="g7_core" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399"/>
+      <stop offset="100%" stop-color="#059669"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="96" fill="#051015"/>
+  <g transform="translate(256, 256)">
+    <!-- Outer Heavy Hexagon -->
+    <polygon points="0,-165 142,-83 142,83 0,165 -142,83 -142,-83" fill="#081C24" stroke="url(#g7_hex)" stroke-width="18" stroke-linejoin="round"/>
+    <!-- 6 Corner Satellite Sensor Dots -->
+    <circle cx="0" cy="-165" r="10" fill="#34D399"/>
+    <circle cx="142" cy="-83" r="10" fill="#34D399"/>
+    <circle cx="142" cy="83" r="10" fill="#34D399"/>
+    <circle cx="0" cy="165" r="10" fill="#34D399"/>
+    <circle cx="-142" cy="83" r="10" fill="#34D399"/>
+    <circle cx="-142" cy="-83" r="10" fill="#34D399"/>
+    <!-- Stylized Monogram P in Center -->
+    <path d="M-40 90 L-40 -90 L15 -90 C55 -90, 75 -70, 75 -35 C75 0, 55 20, 15 20 L-40 20" 
+          fill="none" stroke="#FFFFFF" stroke-width="26" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+</svg>
