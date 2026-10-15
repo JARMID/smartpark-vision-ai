@@ -12,7 +12,7 @@ echo   [1] Lancer l'Ecosysteme Complet (Serveur + Web + Poste Operateur)
 echo   [2] Lancer le Poste Operateur Bureau (Caisse, Tickets ESC/POS, Modbus)
 echo   [3] Lancer l'Application Mobile/Chauffeur (Application Windows Native)
 echo   [4] Ouvrir le Centre de Controle Web (Navigateur)
-echo   [5] Executer le Diagnostic Complet des Sous-Systemes (94 Tests Unitaires)
+echo   [5] Executer le Diagnostic Complet des Sous-Systemes (97 Tests Unitaires)
 echo   [6] Quitter
 echo.
 echo ===============================================================================
