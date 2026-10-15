@@ -120,7 +120,32 @@ async def run_ui_verification():
         await page.screenshot(path="tests/screenshot_3d_day.png")
         print("Captured 3D Digital Twin Day Mode screenshot: tests/screenshot_3d_day.png")
 
-        # 9. Check for Console Errors
+        # 9. Test Daily Operational & ANPDP Compliance Report Modal
+        print("Testing Daily Operational Report Modal...")
+        await page.click("button:has-text('Daily Report'), button:has-text('Rapport')")
+        await asyncio.sleep(1.0)
+        is_report_visible = await page.is_visible("#report-modal")
+        assert is_report_visible, "Expected #report-modal to be visible!"
+        turnover_text = await page.inner_text("#rpt-turnover-val")
+        print(f"Daily Report Turnover: {turnover_text}")
+        assert "DZD" in turnover_text, "Expected DZD in turnover value"
+        await page.screenshot(path="tests/screenshot_daily_report_modal.png")
+        print("Captured Daily Report Modal screenshot: tests/screenshot_daily_report_modal.png")
+        await page.click("button[onclick='closeDailyReportModal()']")
+        await asyncio.sleep(0.5)
+
+        # 10. Test Mobile App Preview Modal
+        print("Testing Mobile App Preview Modal...")
+        await page.click("button:has-text('Mobile')")
+        await asyncio.sleep(1.0)
+        is_mobile_visible = await page.is_visible("#mobile-modal")
+        assert is_mobile_visible, "Expected #mobile-modal to be visible!"
+        await page.screenshot(path="tests/screenshot_mobile_app_modal.png")
+        print("Captured Mobile App Preview screenshot: tests/screenshot_mobile_app_modal.png")
+        await page.click("button[onclick='closeMobilePreviewModal()']")
+        await asyncio.sleep(0.5)
+
+        # 11. Check for Console Errors
         print("\n=== Console Errors Report ===")
         filtered_errors = [e for e in console_errors if "favicon" not in e.lower() and "ws" not in e.lower()]
         if filtered_errors:
@@ -131,7 +156,7 @@ async def run_ui_verification():
             print("Zero critical JavaScript / WebGL console errors detected!")
 
         await browser.close()
-        print("\n[SUCCESS] UI verification completed with full Day/Night, Trilingual, Engine State, and CCTV validation!")
+        print("\n[SUCCESS] UI verification completed with full Day/Night, Trilingual, Engine State, Daily Report, and Mobile Preview validation!")
 
 if __name__ == "__main__":
     asyncio.run(run_ui_verification())

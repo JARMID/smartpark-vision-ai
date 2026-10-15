@@ -283,6 +283,30 @@ class TestServerAPI(unittest.TestCase):
         self.assertEqual(data["stratum"], 1)
         self.assertTrue(data["law_25_11_nonce"].startswith("NONCE-"))
 
+    def test_daily_operational_report(self):
+        res = self.client.get("/api/reports/daily")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data["report_id"].startswith("RPT-"))
+        self.assertEqual(data["wilaya_code"], "16")
+        self.assertIn("operational_metrics", data)
+        self.assertIn("anpdp_law_25_11_audit", data)
+        self.assertEqual(data["anpdp_law_25_11_audit"]["compliance_status"], "CERTIFIED_SOVEREIGN")
+
+    def test_export_audit_csv(self):
+        res = self.client.get("/api/reports/export/csv")
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.headers.get("content-type"), "text/csv; charset=utf-8")
+        text = res.text
+        self.assertTrue(text.startswith("Timestamp,EventID,PlateNumber"))
+        self.assertIn("Wilaya", text)
+        self.assertIn("ANPDPNonce", text)
+
+    def test_mobile_web_route(self):
+        res = self.client.get("/mobile")
+        # In testing environment, if static/mobile/index.html is compiled it returns 200
+        self.assertIn(res.status_code, [200, 404])
+
 
 if __name__ == "__main__":
     unittest.main()

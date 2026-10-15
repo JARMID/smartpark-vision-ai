@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import '../models/parking_slot.dart';
 
@@ -8,10 +9,12 @@ class SmartParkApiService {
   final bool isMock;
 
   SmartParkApiService({
-    this.baseUrl = 'http://127.0.0.1:8080',
+    String? baseUrl,
     this.client,
     this.isMock = false,
-  });
+  }) : baseUrl = (baseUrl != null && baseUrl.isNotEmpty)
+            ? baseUrl
+            : (kIsWeb ? Uri.base.origin : 'http://127.0.0.1:8080');
 
   Future<List<ParkingSlot>> fetchSlots() async {
     if (isMock) return _getMockSlots();

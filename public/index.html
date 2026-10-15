@@ -232,6 +232,14 @@
       <button id="sound-btn" onclick="toggleAudio()" class="p-1.5 rounded-lg bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700 transition" title="Activer / Couper le son">
         <i data-lucide="volume-2" id="sound-icon" class="w-4 h-4 text-emeraldAccent"></i>
       </button>
+      <button onclick="openDailyReportModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-teal-500/10 hover:bg-teal-500/20 text-teal-300 border border-teal-500/30 font-medium transition cursor-pointer" title="Rapport d'Exploitation & Audit ANPDP">
+        <i data-lucide="bar-chart-3" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline" data-i18n="btn_daily_report">Rapport</span>
+      </button>
+      <button onclick="openMobilePreviewModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-medium transition cursor-pointer" title="Application Mobile PWA (Souveraine DZ)">
+        <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline" data-i18n="btn_mobile_app">Mobile</span>
+      </button>
       <button onclick="openGuideModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emeraldAccent/10 hover:bg-emeraldAccent/20 text-emerald-400 border border-emeraldAccent/30 font-medium transition">
         <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline" data-i18n="btn_guide">Guide</span>
@@ -898,6 +906,100 @@
     </div>
   </div>
 
+  <!-- DAILY OPERATIONAL REPORT & AUDIT MODAL -->
+  <div id="report-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel rounded-2xl border border-teal-500/40 max-w-2xl w-full p-5 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+      <div class="flex items-center justify-between border-b border-surfaceBorder pb-3">
+        <div class="flex items-center space-x-2.5">
+          <div class="w-8 h-8 rounded-xl bg-teal-500/20 border border-teal-500/40 flex items-center justify-center text-teal-400">
+            <i data-lucide="bar-chart-3" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-bold text-sm text-white" data-i18n="report_modal_title">Rapport d'Exploitation & Registre d'Audit ANPDP</h3>
+            <p class="text-xs text-gray-400" id="report-facility-info">Parking Central Alger (El-Biar) | Wilaya: 16 (Alger)</p>
+          </div>
+        </div>
+        <button onclick="closeDailyReportModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+
+      <!-- Live Operational Cards -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+        <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
+          <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_turnover">Recette Totale</span>
+          <div class="text-base font-bold text-emeraldAccent font-mono mt-0.5" id="rpt-turnover-val">8 400 DZD</div>
+          <span class="text-[9px] text-gray-500">CIB 62% | Cash 38%</span>
+        </div>
+        <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
+          <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_movements">Mouvements Jour</span>
+          <div class="text-base font-bold text-cyanStream font-mono mt-0.5" id="rpt-movements-val">42 Véhicules</div>
+          <span class="text-[9px] text-gray-500">28 Entrées / 14 Sorties</span>
+        </div>
+        <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
+          <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_occupancy">Occupation Pic</span>
+          <div class="text-base font-bold text-amberWarn font-mono mt-0.5" id="rpt-occupancy-val">50.0% (7/14)</div>
+          <span class="text-[9px] text-gray-500">7 Stalles Libres</span>
+        </div>
+        <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
+          <span class="text-[10px] text-gray-400 uppercase font-mono" data-i18n="rpt_compliance">Conformité 25-11</span>
+          <div class="text-base font-bold text-teal-300 font-mono mt-0.5" id="rpt-compliance-val">100% Homologué</div>
+          <span class="text-[9px] text-gray-500">86 Purges (24h)</span>
+        </div>
+      </div>
+
+      <!-- ANPDP Cryptographic Audit & Incident Summary -->
+      <div class="bg-black/40 p-3 rounded-xl border border-gray-800 space-y-2 text-xs">
+        <div class="flex items-center justify-between border-b border-gray-800 pb-1.5">
+          <span class="font-semibold text-gray-300 flex items-center">
+            <i data-lucide="shield-check" class="w-4 h-4 mr-1 text-emeraldAccent"></i> Registre d'Audit et Sécurité Physique
+          </span>
+          <span class="font-mono text-[10px] text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded">Réf: ANPDP-DZ-2026-AUT-16-0941</span>
+        </div>
+        <div class="grid grid-cols-3 gap-2 text-[11px] text-gray-400">
+          <div>• Fraudes Photo Déjouées : <strong class="text-white">1</strong></div>
+          <div>• Véhicules Volés Signalés : <strong class="text-white">1</strong></div>
+          <div>• Clones Anti-Passback : <strong class="text-white">1</strong></div>
+        </div>
+        <p class="text-[10px] text-gray-400 leading-relaxed font-mono">
+          Horloge souveraine certifiée (Stratum 1) | Chiffrement ChaCha20-Poly1305 + Empreintes ArcFace 512-D non-réversibles.
+        </p>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-surfaceBorder text-xs">
+        <div class="flex items-center space-x-2">
+          <a href="/api/reports/export/csv" download class="flex items-center space-x-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-medium transition cursor-pointer">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span data-i18n="btn_download_csv">Exporter Journal CSV (Comptabilité & ANPDP)</span>
+          </a>
+        </div>
+        <button onclick="closeDailyReportModal()" class="px-3.5 py-1.5 bg-gray-800 hover:bg-gray-700 text-white rounded-lg font-medium transition" data-i18n="btn_close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MOBILE APP PREVIEW MODAL -->
+  <div id="mobile-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="glass-panel rounded-2xl border border-cyan-500/40 max-w-sm w-full p-4 shadow-2xl space-y-3">
+      <div class="flex items-center justify-between border-b border-surfaceBorder pb-2">
+        <div class="flex items-center space-x-2">
+          <i data-lucide="smartphone" class="w-4 h-4 text-cyan-400"></i>
+          <h3 class="font-bold text-xs text-white" data-i18n="mobile_modal_title">SmartPark Mobile (Chauffeur & Patrouille)</h3>
+        </div>
+        <button onclick="closeMobilePreviewModal()" class="text-gray-400 hover:text-white"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <!-- Phone Bezel Frame -->
+      <div class="relative w-full h-[480px] bg-black rounded-2xl border-4 border-gray-700 overflow-hidden shadow-inner flex flex-col">
+        <iframe id="mobile-iframe" src="/mobile/" class="w-full h-full border-0 bg-gray-950"></iframe>
+      </div>
+      <div class="flex items-center justify-between text-xs pt-1">
+        <a href="/mobile/" target="_blank" class="text-cyan-400 hover:underline flex items-center text-[11px] font-mono">
+          <i data-lucide="external-link" class="w-3 h-3 mr-1"></i> Ouvrir en plein écran
+        </a>
+        <button onclick="closeMobilePreviewModal()" class="px-2.5 py-1 bg-gray-800 hover:bg-gray-700 text-white rounded-lg text-xs" data-i18n="btn_close">Fermer</button>
+      </div>
+    </div>
+  </div>
+
   <!-- JAVASCRIPT ENGINE -->
   <script>
     // =======================================================
@@ -986,7 +1088,16 @@
         arm_open: "LEVÉE (OUVERT)",
         engine_running: "Moteur : EN MARCHE (820 RPM)",
         engine_off: "Moteur : ÉTEINT (0 RPM)",
-        engine_toggle_tip: "Basculer l'état du moteur (En marche / Éteint) [M]"
+        engine_toggle_tip: "Basculer l'état du moteur (En marche / Éteint) [M]",
+        btn_daily_report: "Rapport",
+        btn_mobile_app: "Mobile",
+        report_modal_title: "Rapport d'Exploitation & Registre d'Audit ANPDP",
+        rpt_turnover: "Recette Totale",
+        rpt_movements: "Mouvements Jour",
+        rpt_occupancy: "Occupation Pic",
+        rpt_compliance: "Conformité 25-11",
+        btn_download_csv: "Exporter Journal CSV (Comptabilité & ANPDP)",
+        mobile_modal_title: "SmartPark Mobile (Chauffeur & Patrouille)"
       },
       en: {
         app_title: "SmartPark Vision AI",
@@ -1070,7 +1181,16 @@
         arm_open: "OPEN",
         engine_running: "Engine: RUNNING (820 RPM)",
         engine_off: "Engine: OFF (0 RPM)",
-        engine_toggle_tip: "Toggle Vehicle Engine State (Running / Off) [M]"
+        engine_toggle_tip: "Toggle Vehicle Engine State (Running / Off) [M]",
+        btn_daily_report: "Daily Report",
+        btn_mobile_app: "Mobile",
+        report_modal_title: "Daily Operations & ANPDP Audit Register",
+        rpt_turnover: "Total Turnover",
+        rpt_movements: "Daily Movements",
+        rpt_occupancy: "Peak Occupancy",
+        rpt_compliance: "Law 25-11 Audit",
+        btn_download_csv: "Export CSV Audit Log (Accounting & ANPDP)",
+        mobile_modal_title: "SmartPark Mobile (Driver & Patrol)"
       },
       ar: {
         app_title: "سمارت بارك فيجن AI",
@@ -1154,7 +1274,16 @@
         arm_open: "مفتوح",
         engine_running: "المحرك: يعمل (820 د/د)",
         engine_off: "المحرك: متوقف (0 د/د)",
-        engine_toggle_tip: "تبديل حالة المحرك (تشغيل / إيقاف) [M]"
+        engine_toggle_tip: "تبديل حالة المحرك (تشغيل / إيقاف) [M]",
+        btn_daily_report: "التقرير والرقابة",
+        btn_mobile_app: "الهاتف",
+        report_modal_title: "تقرير الاستغلال وسجل المطابقة ANPDP",
+        rpt_turnover: "الإيراد الإجمالي",
+        rpt_movements: "حركة المركبات",
+        rpt_occupancy: "ذروة الإشغال",
+        rpt_compliance: "مطابقة القانون 25-11",
+        btn_download_csv: "تصدير سجل العمليات CSV (المحاسبة والرقابة)",
+        mobile_modal_title: "سمارت بارك موبايل (السائق والدوريات)"
       }
     };
     window.I18N = I18N;
@@ -1896,6 +2025,28 @@
     function openAnpdpModal() { document.getElementById('anpdp-modal').classList.remove('hidden'); }
     function closeAnpdpModal() { document.getElementById('anpdp-modal').classList.add('hidden'); }
 
+    async function openDailyReportModal() {
+      try {
+        const res = await fetch('/api/reports/daily');
+        if (res.ok) {
+          const data = await res.json();
+          if (data.operational_metrics) {
+            document.getElementById('rpt-turnover-val').innerText = `${Math.round(data.operational_metrics.turnover_dzd).toLocaleString()} DZD`;
+            document.getElementById('rpt-movements-val').innerText = `${data.operational_metrics.total_movements_today} Véhicules`;
+            document.getElementById('rpt-occupancy-val').innerText = `${data.operational_metrics.occupancy_rate_percent}% (${data.operational_metrics.occupied_slots}/${data.operational_metrics.total_slots})`;
+            if (data.anpdp_law_25_11_audit) {
+              document.getElementById('rpt-compliance-val').innerText = `${data.anpdp_law_25_11_audit.embeddings_purged_today} Purges`;
+            }
+          }
+        }
+      } catch (e) {}
+      document.getElementById('report-modal').classList.remove('hidden');
+    }
+    function closeDailyReportModal() { document.getElementById('report-modal').classList.add('hidden'); }
+
+    function openMobilePreviewModal() { document.getElementById('mobile-modal').classList.remove('hidden'); }
+    function closeMobilePreviewModal() { document.getElementById('mobile-modal').classList.add('hidden'); }
+
     function openTicketModal() {
       document.getElementById('ticket-time').innerText = (window.currentLang === 'ar' ? 'الوقت: ' : 'Heure : ') + new Date().toLocaleTimeString('fr-DZ');
       document.getElementById('ticket-modal').classList.remove('hidden');
@@ -2063,6 +2214,8 @@
         closeChargilyModal();
         closeGuardDrawer();
         closeCameraModal();
+        closeDailyReportModal();
+        closeMobilePreviewModal();
       }
     });
 
