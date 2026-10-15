@@ -2,8 +2,13 @@ import asyncio
 import sys
 from playwright.async_api import async_playwright
 
+import os
+
 async def run_ui_verification():
     console_errors = []
+    port = os.environ.get("PORT", "8088")
+    if len(sys.argv) > 1:
+        port = sys.argv[1]
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -14,8 +19,8 @@ async def run_ui_verification():
         page.on("console", lambda msg: console_errors.append(f"[{msg.type}] {msg.text}") if msg.type in ["error"] else None)
         page.on("pageerror", lambda err: console_errors.append(f"[pageerror] {err}"))
 
-        print("Navigating to http://127.0.0.1:8080/...")
-        await page.goto("http://127.0.0.1:8080/", wait_until="networkidle")
+        print(f"Navigating to http://127.0.0.1:{port}/...")
+        await page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
         await asyncio.sleep(1.0)
 
         # 1. Switch to CCTV View

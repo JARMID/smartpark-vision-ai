@@ -15,7 +15,7 @@ sys.path.insert(0, ROOT_DIR)
 
 
 def main():
-    port = 8080
+    port = int(os.environ.get("PORT", "8088"))
     host = "127.0.0.1"
     url = f"http://{host}:{port}"
 

@@ -1,0 +1,79 @@
+# SmartPark Vision AI - Edge Camera and Hardware Appliance Configuration
+# Sovereign Algerian Access Platform (Law 18-07 & Law 25-11 Compliant)
+
+appliance:
+  site_id: "dz-alg-elbiar-01"
+  site_name: "Parking Alger-Centre (El-Biar)"
+  wilaya_code: 16
+  simulation_mode: true
+  retention_days: 30
+  auto_purge_interval_hours: 6
+  database_path: "edge_buffer.db"
+  snapshot_directory: "snapshots"
+
+hardware:
+  modbus_host: "192.168.10.200"
+  modbus_port: 502
+  relay_pulse_duration_seconds: 4.5
+  enable_loopback: true
+
+cameras:
+  - id: "cam_01"
+    name: "CAM-01 : Voie 1 (Entree ALPR)"
+    role: "plate_entry"
+    lane_id: "lane_1"
+    rtsp_url: "rtsp://admin:admin@192.168.10.101:554/Streaming/Channels/101"
+    transport: "tcp"
+    resolution: "1920x1080"
+    fps: 25.0
+    roi_box: [0.45, 0.20, 0.90, 0.80]
+    onvif:
+      ip: "192.168.10.101"
+      port: 80
+      username: "admin"
+      password: "admin_secure_pass"
+
+  - id: "cam_02"
+    name: "CAM-02 : Borne Biometrique (RGB + 850nm NIR)"
+    role: "face_entry"
+    lane_id: "lane_1"
+    rtsp_url: "rtsp://admin:admin@192.168.10.102:554/Streaming/Channels/101"
+    transport: "tcp"
+    resolution: "1920x1080"
+    fps: 25.0
+    roi_box: [0.15, 0.25, 0.85, 0.75]
+    onvif:
+      ip: "192.168.10.102"
+      port: 80
+      username: "admin"
+      password: "admin_secure_pass"
+
+  - id: "cam_03"
+    name: "CAM-03 : Voie 2 (Sortie ALPR & Barriere)"
+    role: "plate_exit"
+    lane_id: "lane_2"
+    rtsp_url: "rtsp://admin:admin@192.168.10.103:554/Streaming/Channels/101"
+    transport: "tcp"
+    resolution: "1920x1080"
+    fps: 25.0
+    roi_box: [0.40, 0.25, 0.88, 0.75]
+    onvif:
+      ip: "192.168.10.103"
+      port: 80
+      username: "admin"
+      password: "admin_secure_pass"
+
+  - id: "cam_04"
+    name: "CAM-04 : Zone A & B (Vue Aerienne)"
+    role: "deck_overhead"
+    lane_id: "deck_ab"
+    rtsp_url: "rtsp://admin:admin@192.168.10.104:554/Streaming/Channels/101"
+    transport: "tcp"
+    resolution: "1920x1080"
+    fps: 25.0
+    roi_box: [0.05, 0.05, 0.95, 0.95]
+    onvif:
+      ip: "192.168.10.104"
+      port: 80
+      username: "admin"
+      password: "admin_secure_pass"

@@ -243,7 +243,48 @@ class TestServerAPI(unittest.TestCase):
         })
         self.assertEqual(res_bad.status_code, 401)
 
+    def test_wilaya_geocode_endpoint(self):
+        # Known Wilaya 16 (Alger)
+        res_alger = self.client.get("/api/external/wilaya-geocode/16")
+        self.assertEqual(res_alger.status_code, 200)
+        data = res_alger.json()
+        self.assertTrue(data["found"])
+        self.assertEqual(data["name_fr"], "Alger")
+        self.assertEqual(data["name_ar"], "الجزائر")
+        self.assertAlmostEqual(data["lat"], 36.7538, places=3)
+
+        # Unknown Wilaya
+        res_unknown = self.client.get("/api/external/wilaya-geocode/99")
+        self.assertEqual(res_unknown.status_code, 200)
+        self.assertFalse(res_unknown.json()["found"])
+
+    def test_weather_lighting_endpoint(self):
+        res = self.client.get("/api/external/weather-lighting")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertIn("location", data)
+        self.assertIn("lighting_mode", data)
+        self.assertIn(data["lighting_mode"], ["DAY", "NIGHT"])
+        self.assertIn("ambient_lux", data)
+
+    def test_currency_rates_endpoint(self):
+        res = self.client.get("/api/external/currency-rates")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["base_currency"], "DZD")
+        self.assertIn("EUR", data["rates"])
+        self.assertIn("USD", data["rates"])
+        self.assertGreater(data["rates"]["EUR"], 100.0)
+
+    def test_ntp_audit_sync_endpoint(self):
+        res = self.client.get("/api/external/ntp-audit-sync")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["stratum"], 1)
+        self.assertTrue(data["law_25_11_nonce"].startswith("NONCE-"))
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

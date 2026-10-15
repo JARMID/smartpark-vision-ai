@@ -21,3 +21,9 @@ graphify-out/
 
 .vercel
 *.bak*
+
+mobile/.dart_tool/
+mobile/.flutter-plugins*
+mobile/.pub-cache/
+mobile/.pub/
+mobile/build/

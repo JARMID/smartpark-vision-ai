@@ -171,6 +171,19 @@ class SqliteBufferQueue:
         row = cursor.fetchone()
         return dict(row) if row else None
 
+    def purge_events_older_than(self, days: int = 30) -> int:
+        """Purge events older than retention days complying with Law 25-11."""
+        cutoff = time.time() - (days * 86400)
+        with self.conn:
+            cursor = self.conn.execute(
+                "DELETE FROM event_queue WHERE created_at < ?",
+                (cutoff,)
+            )
+            deleted = cursor.rowcount
+            if deleted > 0:
+                self.conn.execute("VACUUM;")
+            return deleted
+
     def close(self):
         """Close SQLite database connection."""
         self.conn.close()
