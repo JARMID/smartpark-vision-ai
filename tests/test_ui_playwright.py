@@ -72,19 +72,55 @@ async def run_ui_verification():
         await page.click("button[onclick='closeCameraModal()']")
         await asyncio.sleep(0.5)
 
-        # 6. Trigger Scenario 1 (VIP Entry) in English
+        # 6. Test Vehicle Engine Detection Toggle (Click and Hotkey M)
+        print("Testing Vehicle Engine State Toggle...")
+        # Switch back to CCTV tab
+        await page.click("#tab-btn-cctv")
+        await asyncio.sleep(0.5)
+
+        initial_engine = await page.evaluate("() => window.isVehicleEngineRunning")
+        print(f"Initial engine running state: {initial_engine}")
+        assert initial_engine is True, "Expected initial engine state to be True"
+
+        # Click engine toggle button
+        print("Clicking #engine-toggle-btn to stop engine...")
+        await page.click("#engine-toggle-btn")
+        await asyncio.sleep(0.5)
+        engine_after_click = await page.evaluate("() => window.isVehicleEngineRunning")
+        print(f"Engine state after click: {engine_after_click}")
+        assert engine_after_click is False, "Expected engine state to be False after click"
+
+        # Capture CAM-01 and CAM-03 with engine off
+        await page.locator("#cam1-canvas").screenshot(path="tests/screenshot_cam1_engine_off.png")
+        await page.locator("#cam3-canvas").screenshot(path="tests/screenshot_cam3_engine_off.png")
+        print("Captured CAM-01 and CAM-03 (engine off) screenshots")
+
+        # Press 'm' hotkey to toggle engine back on
+        print("Pressing key 'm' to restart engine...")
+        await page.keyboard.press("m")
+        await asyncio.sleep(0.5)
+        engine_after_hotkey = await page.evaluate("() => window.isVehicleEngineRunning")
+        print(f"Engine state after hotkey 'm': {engine_after_hotkey}")
+        assert engine_after_hotkey is True, "Expected engine state to be True after hotkey 'm'"
+
+        # Capture CAM-01 and CAM-03 with engine on (calibrated barrier position)
+        await page.locator("#cam1-canvas").screenshot(path="tests/screenshot_cam1_engine_on.png")
+        await page.locator("#cam3-canvas").screenshot(path="tests/screenshot_cam3_engine_on.png")
+        print("Captured CAM-01 and CAM-03 (engine on) screenshots")
+
+        # 7. Trigger Scenario 1 (VIP Entry) in English
         print("Triggering Scenario 1 (VIP Entry)...")
         await page.click("button:has-text('[1] VIP')")
         await asyncio.sleep(2.0)
 
-        # 7. Switch to 3D View to test Day mode 3D
+        # 8. Switch to 3D View to test Day mode 3D
         print("Switching to 3D Digital Twin tab in Day Mode...")
         await page.click("#tab-btn-3d")
         await asyncio.sleep(1.0)
         await page.screenshot(path="tests/screenshot_3d_day.png")
         print("Captured 3D Digital Twin Day Mode screenshot: tests/screenshot_3d_day.png")
 
-        # 8. Check for Console Errors
+        # 9. Check for Console Errors
         print("\n=== Console Errors Report ===")
         filtered_errors = [e for e in console_errors if "favicon" not in e.lower() and "ws" not in e.lower()]
         if filtered_errors:
@@ -95,7 +131,7 @@ async def run_ui_verification():
             print("Zero critical JavaScript / WebGL console errors detected!")
 
         await browser.close()
-        print("\n[SUCCESS] UI verification completed with full Day/Night, Trilingual, and CCTV validation!")
+        print("\n[SUCCESS] UI verification completed with full Day/Night, Trilingual, Engine State, and CCTV validation!")
 
 if __name__ == "__main__":
     asyncio.run(run_ui_verification())

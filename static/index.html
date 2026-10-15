@@ -376,6 +376,11 @@
                 <i data-lucide="video" class="w-4 h-4 mr-1.5 text-cyanStream"></i> <span data-i18n="cctv_header">Flux Vidéo CCTV Temps Réel (NVDEC 25 FPS)</span>
               </span>
               <span class="text-[10px] bg-cyanStream/10 text-cyanStream border border-cyanStream/30 px-1.5 py-0.5 rounded font-mono">WebRTC Sub-300ms</span>
+              <button id="engine-toggle-btn" onclick="toggleVehicleEngine()" class="flex items-center space-x-1.5 px-2.5 py-0.5 rounded-lg text-xs font-mono border border-emerald-500/40 bg-emerald-950/40 text-emerald-400 hover:bg-emerald-900/50 transition cursor-pointer" title="[M] Basculer l'état du moteur (En marche / Éteint)">
+                <span id="engine-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                <span id="engine-status-text" data-i18n="engine_running">Moteur : EN MARCHE (820 RPM)</span>
+                <span class="text-[9px] px-1 py-0.2 rounded bg-white/10 text-gray-300 border border-white/20 font-bold ml-1">M</span>
+              </button>
             </div>
             <div class="text-[11px] text-gray-400 font-mono" data-i18n="cctv_tip">Cliquez sur une caméra pour l'agrandir</div>
           </div>
@@ -978,7 +983,10 @@
         cam_opt: "Optique :",
         cam_cpl: "Filtre Polarisant CPL Actif",
         arm_closed: "BAISSÉE",
-        arm_open: "LEVÉE (OUVERT)"
+        arm_open: "LEVÉE (OUVERT)",
+        engine_running: "Moteur : EN MARCHE (820 RPM)",
+        engine_off: "Moteur : ÉTEINT (0 RPM)",
+        engine_toggle_tip: "Basculer l'état du moteur (En marche / Éteint) [M]"
       },
       en: {
         app_title: "SmartPark Vision AI",
@@ -1059,7 +1067,10 @@
         cam_opt: "Optics:",
         cam_cpl: "Active CPL Polarizing Filter",
         arm_closed: "CLOSED",
-        arm_open: "OPEN"
+        arm_open: "OPEN",
+        engine_running: "Engine: RUNNING (820 RPM)",
+        engine_off: "Engine: OFF (0 RPM)",
+        engine_toggle_tip: "Toggle Vehicle Engine State (Running / Off) [M]"
       },
       ar: {
         app_title: "سمارت بارك فيجن AI",
@@ -1140,7 +1151,10 @@
         cam_opt: "البصريات:",
         cam_cpl: "مرشح استقطاب CPL نشط",
         arm_closed: "مغلق",
-        arm_open: "مفتوح"
+        arm_open: "مفتوح",
+        engine_running: "المحرك: يعمل (820 د/د)",
+        engine_off: "المحرك: متوقف (0 د/د)",
+        engine_toggle_tip: "تبديل حالة المحرك (تشغيل / إيقاف) [M]"
       }
     };
     window.I18N = I18N;
@@ -1214,6 +1228,10 @@
         armEl.innerText = isClosed
           ? ((I18N[lang] && I18N[lang].arm_closed) || (lang === 'ar' ? 'مغلق' : (lang === 'en' ? 'CLOSED' : 'BAISSÉE')))
           : ((I18N[lang] && I18N[lang].arm_open) || (lang === 'ar' ? 'مفتوح' : (lang === 'en' ? 'OPEN' : 'LEVÉE (OUVERT)')));
+      }
+
+      if (window.setVehicleEngineState) {
+        window.setVehicleEngineState(window.isVehicleEngineRunning !== false);
       }
 
       renderStalls(currentStalls);
@@ -2031,6 +2049,13 @@
         triggerScenario('visitor_payment_exit');
       } else if (e.key === '7') {
         triggerScenario('duplicate_plate_fraud');
+      } else if (e.key === 'm' || e.key === 'M') {
+        const activeTag = document.activeElement ? document.activeElement.tagName.toLowerCase() : '';
+        if (activeTag !== 'input' && activeTag !== 'textarea') {
+          if (window.toggleVehicleEngine) {
+            window.toggleVehicleEngine();
+          }
+        }
       } else if (e.key === 'Escape') {
         closeGuideModal();
         closeAnpdpModal();
