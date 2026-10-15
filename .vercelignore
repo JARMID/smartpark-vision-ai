@@ -1,0 +1,29 @@
+# Development and test files
+/tests/
+/desktop/
+/docs/
+/graphify-out/
+/config/
+
+# Mobile flutter source repository (compiled web build is in /public/mobile/)
+/mobile/
+
+# Static duplicate directory (public/ is served by Vercel CDN)
+/static/
+
+# Local database files
+*.db
+*.db-shm
+*.db-wal
+edge_buffer.db*
+smartpark_demo.db*
+
+# Shell scripts and services
+*.bat
+*.sh
+*.service
+docker-compose*.yml
+Dockerfile*
+verify_edge_deployment.py
+edge_daemon.py
+run_demo.py
