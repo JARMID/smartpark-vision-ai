@@ -58,17 +58,17 @@ class CarFinderScreen extends StatelessWidget {
                           const SizedBox(height: 4),
                           Text(
                             vehicle.slotNumber,
-                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF0284C7)),
+                            style: const TextStyle(fontSize: 28, fontWeight: FontWeight.w900, color: Color(0xFF00F2FE)),
                           ),
                         ],
                       ),
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: const Color(0xFF0284C7).withValues(alpha: 0.15),
+                          color: const Color(0xFF00F2FE).withValues(alpha: 0.15),
                           shape: BoxShape.circle,
                         ),
-                        child: const Icon(Icons.directions_car, color: Color(0xFF0284C7), size: 30),
+                        child: const Icon(Icons.directions_car, color: Color(0xFF00F2FE), size: 30),
                       ),
                     ],
                   ),
@@ -130,7 +130,7 @@ class CarFinderScreen extends StatelessWidget {
                         ),
                         Text(
                           'Guidage piéton direct dans le parking',
-                          style: TextStyle(color: Colors.white38, fontSize: 10.5),
+                          style: TextStyle(color: Color(0xFF94A3B8), fontSize: 10.5),
                         ),
                       ],
                     ),

@@ -105,14 +105,14 @@ class StallGridWidget extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isSelected
-                ? const Color(0xFF0284C7)
+                ? const Color(0xFF00F2FE)
                 : (isVip ? const Color(0xFF8B5CF6) : Theme.of(context).dividerColor),
             width: isSelected ? 2.5 : 1.2,
           ),
           boxShadow: isSelected
               ? [
                   BoxShadow(
-                    color: const Color(0xFF0284C7).withValues(alpha: 0.25),
+                    color: const Color(0xFF00F2FE).withValues(alpha: 0.25),
                     blurRadius: 8,
                     offset: const Offset(0, 2),
                   ),

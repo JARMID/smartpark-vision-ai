@@ -184,20 +184,22 @@ def get_desktop_ui_html() -> str:
 <html lang="fr" data-theme="dark" dir="ltr">
 <head>
   <meta charset="UTF-8">
-  <title>SmartPark Vision AI - Poste Opérateur et Caisse</title>
+  <title>Smart Park - Poste Opérateur et Caisse</title>
   <style>
     :root {
-      --bg-primary: #0B1120;
-      --bg-surface: #1E293B;
-      --bg-surface-elevated: #334155;
-      --border-color: #334155;
+      --bg-primary: #080C14;
+      --bg-surface: #0D131F;
+      --bg-surface-elevated: #161F30;
+      --border-color: #1A2436;
       --text-main: #F8FAFC;
       --text-muted: #94A3B8;
-      --accent-blue: #0284C7;
-      --accent-blue-hover: #0369A1;
+      --accent-cyan: #00F2FE;
+      --accent-blue: #38BDF8;
+      --accent-blue-hover: #0284C7;
       --accent-green: #10B981;
-      --accent-red: #EF4444;
-      --accent-amber: #F59E0B;
+      --accent-mint: #00F5A0;
+      --accent-red: #F43F5E;
+      --accent-amber: #FB923C;
       --font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
     }
 
@@ -208,9 +210,11 @@ def get_desktop_ui_html() -> str:
       --border-color: #CBD5E1;
       --text-main: #0F172A;
       --text-muted: #64748B;
+      --accent-cyan: #0284C7;
       --accent-blue: #0284C7;
       --accent-blue-hover: #0369A1;
       --accent-green: #059669;
+      --accent-mint: #10B981;
       --accent-red: #DC2626;
       --accent-amber: #D97706;
     }
@@ -304,12 +308,13 @@ def get_desktop_ui_html() -> str:
       font-size: 14px;
       align-items: center;
       justify-content: space-between;
-      animation: strobe 1s infinite alternate;
+      will-change: opacity;
+      animation: strobe-composited 1s infinite alternate ease-in-out;
       flex-shrink: 0;
     }
-    @keyframes strobe {
-      from { background-color: #DC2626; }
-      to { background-color: #7F1D1D; }
+    @keyframes strobe-composited {
+      from { opacity: 1.0; }
+      to { opacity: 0.65; }
     }
 
     /* Main Grid Layout */
@@ -564,8 +569,15 @@ def get_desktop_ui_html() -> str:
   <!-- Top Header -->
   <header>
     <div class="brand-section">
-      <div class="brand-badge">SMARTPARK</div>
-      <div class="brand-title" id="txtTitle">Poste Opérateur &amp; Caisse Dédié</div>
+      <div class="brand-badge" style="background: linear-gradient(135deg, #00F2FE, #0284C7); color: #080C14; font-weight: 800; display: flex; align-items: center; gap: 6px;">
+        <svg width="18" height="18" viewBox="0 0 512 512" fill="none">
+          <rect x="150" y="110" width="50" height="290" rx="25" fill="#080C14"/>
+          <path d="M180 110 L310 110 C375 110, 410 145, 410 200 C410 255, 375 275, 310 275 L180 275" stroke="#080C14" stroke-width="36" stroke-linecap="round"/>
+          <line x1="180" y1="270" x2="390" y2="120" stroke="#10B981" stroke-width="32" stroke-linecap="round"/>
+        </svg>
+        <span>SMART PARK</span>
+      </div>
+      <div class="brand-title" id="txtTitle">Smart Park &bull; Poste Opérateur et Caisse</div>
       <div class="hotkey-indicator">[BOOTH-01]</div>
     </div>
     <div class="header-pills">

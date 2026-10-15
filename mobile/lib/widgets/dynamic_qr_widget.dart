@@ -12,7 +12,7 @@ class DynamicQrWidget extends StatelessWidget {
     required this.payload,
     required this.secondsRemaining,
     this.size = 220,
-    this.primaryColor = const Color(0xFF0284C7),
+    this.primaryColor = const Color(0xFF00F2FE),
   });
 
   @override

@@ -19,42 +19,21 @@ class SmartParkMobileApp extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         return MaterialApp(
-          title: 'Smart Park Mobile',
+          title: 'Smart Park',
           debugShowCheckedModeBanner: false,
           themeMode: controller.themeMode,
           locale: controller.locale,
           theme: ThemeData(
             useMaterial3: true,
-            brightness: Brightness.light,
-            colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF0284C7),
-              brightness: Brightness.light,
-            ),
-            scaffoldBackgroundColor: const Color(0xFFF8FAFC),
-            cardColor: Colors.white,
-            appBarTheme: const AppBarTheme(
-              backgroundColor: Colors.white,
-              elevation: 0,
-              centerTitle: false,
-              titleTextStyle: TextStyle(
-                color: Color(0xFF0F172A),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-              iconTheme: IconThemeData(color: Color(0xFF0F172A)),
-            ),
-          ),
-          darkTheme: ThemeData(
-            useMaterial3: true,
             brightness: Brightness.dark,
             colorScheme: ColorScheme.fromSeed(
-              seedColor: const Color(0xFF0284C7),
+              seedColor: const Color(0xFF00F2FE),
               brightness: Brightness.dark,
             ),
-            scaffoldBackgroundColor: const Color(0xFF0B1120),
-            cardColor: const Color(0xFF1E293B),
+            scaffoldBackgroundColor: const Color(0xFF080C14),
+            cardColor: const Color(0xFF0D131F),
             appBarTheme: const AppBarTheme(
-              backgroundColor: Color(0xFF0F172A),
+              backgroundColor: Color(0xFF0D131F),
               elevation: 0,
               centerTitle: false,
               titleTextStyle: TextStyle(
@@ -62,7 +41,28 @@ class SmartParkMobileApp extends StatelessWidget {
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
-              iconTheme: IconThemeData(color: Color(0xFFF8FAFC)),
+              iconTheme: IconThemeData(color: Color(0xFF00F2FE)),
+            ),
+          ),
+          darkTheme: ThemeData(
+            useMaterial3: true,
+            brightness: Brightness.dark,
+            colorScheme: ColorScheme.fromSeed(
+              seedColor: const Color(0xFF00F2FE),
+              brightness: Brightness.dark,
+            ),
+            scaffoldBackgroundColor: const Color(0xFF080C14),
+            cardColor: const Color(0xFF0D131F),
+            appBarTheme: const AppBarTheme(
+              backgroundColor: Color(0xFF0D131F),
+              elevation: 0,
+              centerTitle: false,
+              titleTextStyle: TextStyle(
+                color: Color(0xFFF8FAFC),
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+              iconTheme: IconThemeData(color: Color(0xFF00F2FE)),
             ),
           ),
           home: HomeShell(controller: controller),

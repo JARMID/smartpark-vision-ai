@@ -15,13 +15,12 @@ sys.path.insert(0, ROOT_DIR)
 
 
 def main():
-    port = int(os.environ.get("PORT", "8088"))
+    port = int(os.environ.get("PORT", "8080"))
     host = "127.0.0.1"
     url = f"http://{host}:{port}"
 
     print("=" * 80)
-    print("  Smart Park - Centre de Contrôle et Démo Interactive")
-    print("  Conforme Loi 18-07 & Loi 25-11 (République Algérienne Démocratique et Populaire)")
+    print("  Smart Park - Centre de Contrôle & Station Opérateur")
     print("=" * 80)
     print(f"[*] Serveur Souverain Démarré sur : {url}")
     print("[*] Stockage Local & RAM FAISS   : Actifs (<0.8ms recherche)")

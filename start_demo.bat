@@ -1,12 +1,11 @@
 @echo off
 setlocal enabledelayedexpansion
 
-title SmartPark Vision AI - Sovereign Control Center Launcher
-color 0A
+title Smart Park - Control Center & Operator Launcher
+color 0B
 
 echo ===============================================================================
-echo   SmartPark Vision AI - Centre de Controle Souverain (Algerie)
-echo   Conforme Loi 18-07 et Loi 25-11 (ANPDP) - Zero Transfert Etranger
+echo   Smart Park - Centre de Controle et Station Operateur
 echo ===============================================================================
 echo.
 

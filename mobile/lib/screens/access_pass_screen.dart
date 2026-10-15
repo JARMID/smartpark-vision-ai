@@ -35,16 +35,18 @@ class AccessPassScreen extends StatelessWidget {
                     decoration: BoxDecoration(
                       gradient: pass.isVip
                           ? const LinearGradient(
-                              colors: [Color(0xFF1E293B), Color(0xFF0F172A)],
+                              colors: [Color(0xFF0D131F), Color(0xFF161F30)],
                               begin: Alignment.topLeft,
                               end: Alignment.bottomRight,
                             )
                           : const LinearGradient(
-                              colors: [Color(0xFF0284C7), Color(0xFF0369A1)],
+                              colors: [Color(0xFF080C14), Color(0xFF0D131F)],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
                       borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: pass.isVip ? const Color(0xFFF59E0B) : Colors.transparent,
+                        color: pass.isVip ? const Color(0xFF10B981) : const Color(0xFF00F2FE).withValues(alpha: 0.5),
                         width: 1.5,
                       ),
                       boxShadow: [
@@ -122,7 +124,7 @@ class AccessPassScreen extends StatelessWidget {
                             const SizedBox(width: 8),
                             Text(
                               pass.passId,
-                              style: const TextStyle(color: Colors.white54, fontSize: 11, fontFamily: 'monospace'),
+                              style: const TextStyle(color: Color(0xFF94A3B8), fontSize: 11, fontFamily: 'monospace'),
                             ),
                           ],
                         ),
@@ -151,7 +153,7 @@ class AccessPassScreen extends StatelessWidget {
                     ),
                     child: const Row(
                       children: [
-                        Icon(Icons.shield_outlined, color: Color(0xFF0284C7), size: 20),
+                        Icon(Icons.shield_outlined, color: Color(0xFF00F2FE), size: 20),
                         SizedBox(width: 10),
                         Expanded(
                           child: Text(
@@ -190,7 +192,7 @@ class AccessPassScreen extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.nfc, color: Color(0xFF0284C7)),
+            Icon(Icons.nfc, color: Color(0xFF00F2FE)),
             SizedBox(width: 8),
             Text('Contact NFC Détecté'),
           ],

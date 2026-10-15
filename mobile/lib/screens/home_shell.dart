@@ -37,8 +37,9 @@ class _HomeShellState extends State<HomeShell> {
         currentIndex: _currentIndex,
         onTap: (index) => setState(() => _currentIndex = index),
         type: BottomNavigationBarType.fixed,
-        selectedItemColor: const Color(0xFF0284C7),
-        unselectedItemColor: Colors.grey,
+        backgroundColor: const Color(0xFF0D131F),
+        selectedItemColor: const Color(0xFF00F2FE),
+        unselectedItemColor: const Color(0xFF64748B),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.local_parking),

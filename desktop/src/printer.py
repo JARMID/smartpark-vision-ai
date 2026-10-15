@@ -201,10 +201,10 @@ class ThermalTicketEngine:
         return f"""<svg width="340" height="490" viewBox="0 0 340 490" xmlns="http://www.w3.org/2000/svg">
   <rect width="340" height="490" fill="#FFFDF8" rx="8" stroke="#E2E8F0" stroke-width="2"/>
   <rect x="15" y="15" width="310" height="460" fill="none" stroke="#CBD5E1" stroke-dasharray="4,4"/>
-  <text x="170" y="45" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" text-anchor="middle" fill="#0F172A">SMARTPARK VISION AI</text>
-  <text x="170" y="62" font-family="'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#64748B">ALGER CENTRE - REPUBLIQUE ALGERIENNE</text>
+  <text x="170" y="45" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" text-anchor="middle" fill="#080C14">SMART PARK</text>
+  <text x="170" y="62" font-family="'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#64748B">ALGER CENTRE</text>
   <line x1="25" y1="75" x2="315" y2="75" stroke="#E2E8F0" stroke-width="1.5"/>
-  <text x="170" y="96" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#0284C7">TICKET DE STATIONNEMENT</text>
+  <text x="170" y="96" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#10B981">TICKET DE STATIONNEMENT</text>
   <text x="35" y="125" font-family="monospace" font-size="11" fill="#475569">Ticket: <tspan font-weight="700" fill="#0F172A">{ticket.ticket_id}</tspan></text>
   <text x="35" y="145" font-family="monospace" font-size="11" fill="#475569">Entrée: <tspan font-weight="700" fill="#0F172A">{ticket.entry_time.strftime('%Y-%m-%d %H:%M:%S')}</tspan></text>
   <text x="35" y="165" font-family="monospace" font-size="11" fill="#475569">Voie:   <tspan font-weight="700" fill="#0F172A">{ticket.lane_id}</tspan> | Zone: <tspan font-weight="700" fill="#0F172A">{ticket.zone_name}</tspan></text>
@@ -220,8 +220,8 @@ class ThermalTicketEngine:
   <text x="35" y="358" font-family="'Segoe UI', sans-serif" font-size="10.5" fill="#475569">Tarif standard: <tspan font-weight="700">100 DZD / heure</tspan></text>
   <text x="35" y="375" font-family="'Segoe UI', sans-serif" font-size="10.5" fill="#475569">Franchise de grace: <tspan font-weight="700">15 minutes</tspan></text>
   <text x="35" y="392" font-family="'Segoe UI', sans-serif" font-size="10" fill="#94A3B8">Paiement especes, Carte CIB ou EDAHABIA</text>
-  <rect x="25" y="410" width="290" height="30" fill="#EFF6FF" rx="4"/>
-  <text x="170" y="428" font-family="'Segoe UI', sans-serif" font-size="9.5" font-weight="600" text-anchor="middle" fill="#1D4ED8">Conforme aux Lois 18-07 &amp; 25-11 (Protection Donnees)</text>
+  <rect x="25" y="410" width="290" height="30" fill="#F0FDF4" rx="4" stroke="#BBF7D0"/>
+  <text x="170" y="428" font-family="'Segoe UI', sans-serif" font-size="9.5" font-weight="600" text-anchor="middle" fill="#15803D">Stationnement Securise par Vision IA</text>
   <text x="170" y="460" font-family="'Segoe UI', sans-serif" font-size="9" text-anchor="middle" fill="#64748B">Conservez ce ticket pour la validation de sortie</text>
 </svg>"""
 

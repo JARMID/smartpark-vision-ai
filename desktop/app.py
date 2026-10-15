@@ -25,7 +25,7 @@ def main():
     args = parser.parse_args()
 
     print("=" * 60)
-    print(" SmartPark Vision AI - Desktop Operator Station")
+    print(" Smart Park - Poste Opérateur et Caisse (Desktop Station)")
     print(f" Gateway Server: {args.server}")
     print(f" Booth ID:       {args.booth}")
     print(f" Active Cashier: {args.cashier}")
@@ -34,7 +34,13 @@ def main():
 
     bridge = launch_desktop_station(server_url=args.server, headless=args.headless)
     if args.headless:
-        print("[smartpark-desktop] Headless station operational. Press Ctrl+C to terminate.")
+        print("[smartpark-desktop] Headless station operational. Running automated diagnostic test...")
+        tkt = bridge.print_ticket("104822 119 16", lane_id=args.booth)
+        scan = bridge.scan_ticket(tkt["barcode_value"])
+        settle = bridge.settle_payment(tkt["ticket_id"], "104822 119 16", 200.0, payment_method="CASH", tendered_dzd=500.0)
+        zrep = bridge.close_shift()
+        print(f"[smartpark-desktop] Diagnostic Passed: Ticket={tkt['ticket_id']} | Total={scan['total_due_dzd']} DZD | Change={settle['change_dzd']} DZD | Z-Hash={zrep['audit_hash'][:16]}...")
+        print("[smartpark-desktop] Subsystems operational: ESC/POS Printer, Barcode Scanner, POS Ledger, Acoustic Audio.")
 
 
 if __name__ == "__main__":

@@ -97,11 +97,11 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
           });
         }
       },
-      selectedColor: const Color(0xFF0284C7).withValues(alpha: 0.2),
+      selectedColor: const Color(0xFF00F2FE).withValues(alpha: 0.2),
       labelStyle: TextStyle(
         fontSize: 12,
         fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-        color: isSelected ? const Color(0xFF0284C7) : null,
+        color: isSelected ? const Color(0xFF00F2FE) : null,
       ),
     );
   }
