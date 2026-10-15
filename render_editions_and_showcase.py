@@ -1,0 +1,489 @@
+import os
+import asyncio
+from playwright.async_api import async_playwright
+
+SHOWCASE_HTML = """<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Smart Park - Logo 1: 5 Editions Showcase</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #060911;
+      color: #F8FAFC;
+      font-family: 'Space Grotesk', -apple-system, BlinkMacSystemFont, sans-serif;
+      padding: 40px 24px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(0, 242, 254, 0.1);
+      border: 1px solid rgba(0, 242, 254, 0.3);
+      color: #00F2FE;
+      padding: 6px 14px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+    }
+    .title {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #FFFFFF 0%, #00F2FE 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .subtitle {
+      font-size: 15px;
+      color: #94A3B8;
+      max-width: 700px;
+      margin: 0 auto;
+      line-height: 1.5;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 20px;
+      margin-bottom: 48px;
+    }
+    @media (max-width: 1200px) {
+      .grid { grid-template-columns: repeat(3, 1fr); }
+    }
+    @media (max-width: 768px) {
+      .grid { grid-template-columns: 1fr; }
+    }
+    .card {
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transition: all 0.2s ease;
+      backdrop-filter: blur(12px);
+    }
+    .card:hover {
+      border-color: rgba(0, 242, 254, 0.4);
+      transform: translateY(-4px);
+      box-shadow: 0 16px 32px -8px rgba(0, 242, 254, 0.15);
+    }
+    .card-badge {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: rgba(0, 0, 0, 0.6);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #38BDF8;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+    .logo-frame {
+      width: 100%;
+      aspect-ratio: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-top: 18px;
+      margin-bottom: 18px;
+    }
+    .logo-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+      filter: drop-shadow(0 8px 16px rgba(0,0,0,0.5));
+    }
+    .card-title {
+      font-size: 16px;
+      font-weight: 700;
+      color: #FFFFFF;
+      margin-bottom: 4px;
+    }
+    .card-sub {
+      font-size: 12px;
+      color: #00F2FE;
+      font-weight: 500;
+      margin-bottom: 10px;
+    }
+    .card-desc {
+      font-size: 12px;
+      color: #94A3B8;
+      line-height: 1.45;
+      margin-bottom: 16px;
+      flex-grow: 1;
+    }
+    .swatches {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      padding-top: 12px;
+      border-top: 1px solid rgba(255, 255, 255, 0.06);
+    }
+    .swatch {
+      width: 18px;
+      height: 18px;
+      border-radius: 5px;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+    .swatch-label {
+      font-size: 10px;
+      color: #64748B;
+      font-family: 'JetBrains Mono', monospace;
+      margin-left: auto;
+    }
+
+    /* Graphic Chart Section */
+    .section-title {
+      font-size: 24px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      text-align: center;
+    }
+    .section-sub {
+      font-size: 14px;
+      color: #94A3B8;
+      text-align: center;
+      margin-bottom: 28px;
+    }
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    @media (max-width: 900px) {
+      .charts-grid { grid-template-columns: 1fr; }
+    }
+    .chart-card {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 20px;
+      padding: 24px;
+      position: relative;
+    }
+    .chart-card.recommended {
+      border-color: #00F2FE;
+      box-shadow: 0 0 24px rgba(0, 242, 254, 0.15);
+    }
+    .chart-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 12px;
+    }
+    .chart-name {
+      font-size: 18px;
+      font-weight: 700;
+    }
+    .chart-tag {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .tag-rec { background: rgba(0, 242, 254, 0.15); color: #00F2FE; border: 1px solid #00F2FE; }
+    .tag-alt { background: rgba(255, 255, 255, 0.05); color: #94A3B8; }
+    .chart-desc {
+      font-size: 13px;
+      color: #94A3B8;
+      line-height: 1.5;
+      margin-bottom: 16px;
+    }
+    .palette-strip {
+      display: flex;
+      height: 48px;
+      border-radius: 12px;
+      overflow: hidden;
+      margin-bottom: 16px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .palette-col {
+      flex: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      padding-bottom: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 9px;
+      font-weight: 600;
+      text-shadow: 0 1px 2px rgba(0,0,0,0.8);
+    }
+    .chart-breakdown {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      font-size: 12px;
+    }
+    .breakdown-item {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px 12px;
+      border-radius: 8px;
+      display: flex;
+      justify-content: space-between;
+      color: #94A3B8;
+    }
+    .breakdown-val {
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      color: #F8FAFC;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <div class="badge">Concept Refinement &bull; Logo 1</div>
+      <h1 class="title">The Quantum Gate: 5 Refined Editions</h1>
+      <p class="subtitle">
+        Architectural 'P' Monogram + Kinetic Automated Barrier Arm + Smart Vision AI.
+        Engineered with mathematical precision, dynamic lift physics, and high-tech color harmony.
+      </p>
+    </div>
+
+    <!-- 5 Editions Grid -->
+    <div class="grid">
+      <!-- Edition 1 -->
+      <div class="card">
+        <span class="card-badge">EDITION 01</span>
+        <div class="logo-frame">
+          <img src="edition_1.svg" alt="Edition 1">
+        </div>
+        <div class="card-title">The Dynamic Lift</div>
+        <div class="card-sub">Kinetic Rising Barrier + Pedestal P</div>
+        <div class="card-desc">
+          Solid gate pedestal upright with a 38&deg; rising barrier boom framing the open access passage. Ghosted resting beam indicates automatic motion.
+        </div>
+        <div class="swatches">
+          <div class="swatch" style="background: #00F2FE;"></div>
+          <div class="swatch" style="background: #0284C7;"></div>
+          <div class="swatch" style="background: #10B981;"></div>
+          <div class="swatch" style="background: #FFFFFF;"></div>
+          <span class="swatch-label">CYAN / MINT</span>
+        </div>
+      </div>
+
+      <!-- Edition 2 -->
+      <div class="card">
+        <span class="card-badge">EDITION 02</span>
+        <div class="logo-frame">
+          <img src="edition_2.svg" alt="Edition 2">
+        </div>
+        <div class="card-title">Continuous Ribbon</div>
+        <div class="card-sub">Unbroken Flow Loop</div>
+        <div class="card-desc">
+          Continuous geometric ribbon sweeping up from the lane, through the arch, projecting upward into the future. Represents frictionless continuous flow.
+        </div>
+        <div class="swatches">
+          <div class="swatch" style="background: #00F2FE;"></div>
+          <div class="swatch" style="background: #38BDF8;"></div>
+          <div class="swatch" style="background: #059669;"></div>
+          <div class="swatch" style="background: #00F5A0;"></div>
+          <span class="swatch-label">AEROSPACE</span>
+        </div>
+      </div>
+
+      <!-- Edition 3 -->
+      <div class="card">
+        <span class="card-badge">EDITION 03</span>
+        <div class="logo-frame">
+          <img src="edition_3.svg" alt="Edition 3">
+        </div>
+        <div class="card-title">Cyber Monolith</div>
+        <div class="card-sub">Chamfered Housing + Laser Arm</div>
+        <div class="card-desc">
+          Heavy industrial barrier housing with optical camera slits and a sharp 42&deg; electric laser barrier blade slicing open. High-assurance institutional vibe.
+        </div>
+        <div class="swatches">
+          <div class="swatch" style="background: #1E293B;"></div>
+          <div class="swatch" style="background: #38BDF8;"></div>
+          <div class="swatch" style="background: #00F5A0;"></div>
+          <div class="swatch" style="background: #FFFFFF;"></div>
+          <span class="swatch-label">OBSIDIAN / LASER</span>
+        </div>
+      </div>
+
+      <!-- Edition 4 -->
+      <div class="card">
+        <span class="card-badge">EDITION 04</span>
+        <div class="logo-frame">
+          <img src="edition_4.svg" alt="Edition 4">
+        </div>
+        <div class="card-title">HexaGate AI</div>
+        <div class="card-sub">Isometric IoT Matrix + Gull-Wing</div>
+        <div class="card-desc">
+          Isometric hexagonal portal with a central optical computer vision eye and an upward gull-wing barrier facet. Precision CAD analytics styling.
+        </div>
+        <div class="swatches">
+          <div class="swatch" style="background: #00F2FE;"></div>
+          <div class="swatch" style="background: #10B981;"></div>
+          <div class="swatch" style="background: #6366F1;"></div>
+          <div class="swatch" style="background: #FFFFFF;"></div>
+          <span class="swatch-label">HEXA / VISION</span>
+        </div>
+      </div>
+
+      <!-- Edition 5 -->
+      <div class="card">
+        <span class="card-badge">EDITION 05</span>
+        <div class="logo-frame">
+          <img src="edition_5.svg" alt="Edition 5">
+        </div>
+        <div class="card-title">Dual-Track Velocity</div>
+        <div class="card-sub">Speed Blades + Sweeping Boom</div>
+        <div class="card-desc">
+          Parallel aerodynamic tracks representing dual sensor loops and optical cameras. Outer blade lifts in an athletic 45&deg; curve with forward chevron tracking.
+        </div>
+        <div class="swatches">
+          <div class="swatch" style="background: #00F2FE;"></div>
+          <div class="swatch" style="background: #38BDF8;"></div>
+          <div class="swatch" style="background: #00F5A0;"></div>
+          <div class="swatch" style="background: #E2E8F0;"></div>
+          <span class="swatch-label">SPEED / CAD</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Graphic Chart Research Section -->
+    <div class="section-title">Graphic Chart & Brand Color Palette Research</div>
+    <div class="section-sub">
+      Direct comparison of modern color harmony replacing the dated "Blue & Yellow" scheme.
+      Analyzed against global benchmarks in autonomous mobility, industrial surveillance, and AI vision.
+    </div>
+
+    <div class="charts-grid">
+      <!-- Chart A: Recommended -->
+      <div class="chart-card recommended">
+        <div class="chart-header">
+          <div class="chart-name">Chart A: Cyber Obsidian & Mint</div>
+          <span class="chart-tag tag-rec">Recommended</span>
+        </div>
+        <div class="chart-desc">
+          Inspired by Tesla Autopilot and Verkada Vision AI. Deep carbon canvas with high-contrast electric cyan and precision mint. Zero muddy yellow.
+        </div>
+        <div class="palette-strip">
+          <div class="palette-col" style="background: #080C14; color: #fff;">#080C14</div>
+          <div class="palette-col" style="background: #00F2FE; color: #000;">#00F2FE</div>
+          <div class="palette-col" style="background: #10B981; color: #000;">#10B981</div>
+          <div class="palette-col" style="background: #F43F5E; color: #fff;">#F43F5E</div>
+          <div class="palette-col" style="background: #FFFFFF; color: #000;">#FFFFFF</div>
+        </div>
+        <div class="chart-breakdown">
+          <div class="breakdown-item"><span>Canvas</span><span class="breakdown-val">Obsidian Slate</span></div>
+          <div class="breakdown-item"><span>Primary</span><span class="breakdown-val">Electric Cyan</span></div>
+          <div class="breakdown-item"><span>Gate Open</span><span class="breakdown-val">Precision Mint</span></div>
+          <div class="breakdown-item"><span>Alerts</span><span class="breakdown-val">Crisp Coral</span></div>
+        </div>
+      </div>
+
+      <!-- Chart B -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-name">Chart B: Aerospace Cobalt & Ice</div>
+          <span class="chart-tag tag-alt">Aerospace Modern</span>
+        </div>
+        <div class="chart-desc">
+          High-assurance aerospace control room styling. Crisp cobalt blue with cold ice silver and titanium white. Replaces yellow with clean coral alerts.
+        </div>
+        <div class="palette-strip">
+          <div class="palette-col" style="background: #0B1120; color: #fff;">#0B1120</div>
+          <div class="palette-col" style="background: #2563EB; color: #fff;">#2563EB</div>
+          <div class="palette-col" style="background: #38BDF8; color: #000;">#38BDF8</div>
+          <div class="palette-col" style="background: #10B981; color: #000;">#10B981</div>
+          <div class="palette-col" style="background: #F8FAFC; color: #000;">#F8FAFC</div>
+        </div>
+        <div class="chart-breakdown">
+          <div class="breakdown-item"><span>Canvas</span><span class="breakdown-val">Deep Navy</span></div>
+          <div class="breakdown-item"><span>Primary</span><span class="breakdown-val">Electric Cobalt</span></div>
+          <div class="breakdown-item"><span>Secondary</span><span class="breakdown-val">Ice Blue</span></div>
+          <div class="breakdown-item"><span>Accent</span><span class="breakdown-val">Titanium</span></div>
+        </div>
+      </div>
+
+      <!-- Chart C -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div class="chart-name">Chart C: Spatial Platinum & Emerald</div>
+          <span class="chart-tag tag-alt">Luxury Minimal</span>
+        </div>
+        <div class="chart-desc">
+          Apple Vision & Polestar aesthetic. True void black glass, pure platinum typography, and glowing emerald green for active mobility access.
+        </div>
+        <div class="palette-strip">
+          <div class="palette-col" style="background: #000000; color: #fff;">#000000</div>
+          <div class="palette-col" style="background: #18181B; color: #fff;">#18181B</div>
+          <div class="palette-col" style="background: #00F5A0; color: #000;">#00F5A0</div>
+          <div class="palette-col" style="background: #94A3B8; color: #000;">#94A3B8</div>
+          <div class="palette-col" style="background: #FFFFFF; color: #000;">#FFFFFF</div>
+        </div>
+        <div class="chart-breakdown">
+          <div class="breakdown-item"><span>Canvas</span><span class="breakdown-val">Void Black</span></div>
+          <div class="breakdown-item"><span>Panels</span><span class="breakdown-val">Frosted Carbon</span></div>
+          <div class="breakdown-item"><span>Primary</span><span class="breakdown-val">Pure Platinum</span></div>
+          <div class="breakdown-item"><span>Active</span><span class="breakdown-val">Cyber Mint</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
+"""
+
+with open("public/assets/logos/editions/showcase_editions.html", "w", encoding="utf-8") as f:
+    f.write(SHOWCASE_HTML)
+with open("static/assets/logos/editions/showcase_editions.html", "w", encoding="utf-8") as f:
+    f.write(SHOWCASE_HTML)
+
+print("Saved showcase_editions.html")
+
+async def render():
+    async with async_playwright() as p:
+        browser = await p.chromium.launch()
+        page = await browser.new_page(viewport={"width": 1440, "height": 950})
+        
+        # Render individual edition PNGs
+        artifact_dir = r"C:\Users\hp\.gemini\antigravity\brain\99aa7469-6c3c-4636-ae9e-1781c68925c2"
+        for i in range(1, 6):
+            ed_svg = os.path.abspath(f"public/assets/logos/editions/edition_{i}.svg")
+            p_page = await browser.new_page(viewport={"width": 512, "height": 512})
+            await p_page.goto(f"file:///{ed_svg.replace(os.sep, '/')}")
+            png_path = f"public/assets/logos/editions/edition_{i}.png"
+            await p_page.screenshot(path=png_path)
+            # Copy to artifact
+            art_png = os.path.join(artifact_dir, f"edition_{i}.png")
+            await p_page.screenshot(path=art_png)
+            await p_page.close()
+            print(f"Rendered edition_{i}.png")
+
+        # Render Showcase Gallery
+        showcase_file = os.path.abspath("public/assets/logos/editions/showcase_editions.html")
+        await page.goto(f"file:///{showcase_file.replace(os.sep, '/')}")
+        await page.wait_for_timeout(1000)
+        showcase_png = "public/assets/logos/editions/showcase_editions.png"
+        await page.screenshot(path=showcase_png, full_page=True)
+        art_showcase = os.path.join(artifact_dir, "showcase_editions.png")
+        await page.screenshot(path=art_showcase, full_page=True)
+        print("Rendered showcase_editions.png")
+
+        await browser.close()
+
+asyncio.run(render())
