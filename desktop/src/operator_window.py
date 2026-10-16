@@ -223,7 +223,7 @@ class DesktopBridgeApi:
             f"RENDU     : {tx.get('change_dzd', 0.0):.2f} DZD",
             "=" * 32,
             "    MERCI DE VOTRE VISITE   ",
-            "   SMART PARK - SOUVERAIN   ",
+            "     SMART PARK - ALGER     ",
             "=" * 32,
         ]
         receipt_text = "\n".join(receipt_lines)
@@ -924,7 +924,7 @@ def get_desktop_ui_html() -> str:
       <span class="hotkey-indicator">P = Encaisser</span>
       <span class="hotkey-indicator">Esc = Alerte</span>
     </div>
-    <div>Smart Park v2.0 - Station d'Exploitation Souveraine</div>
+    <div>Smart Park v2.0 - Station Opérateur et Caisse</div>
   </footer>
 
   <script>

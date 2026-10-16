@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/parking_slot.dart';
 import '../state/parking_controller.dart';
 import '../widgets/stall_grid_widget.dart';
+import '../widgets/smart_park_logo.dart';
 
 class DeckMapScreen extends StatefulWidget {
   final ParkingController controller;
@@ -26,6 +27,10 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
 
     return Scaffold(
       appBar: AppBar(
+        leading: const Padding(
+          padding: EdgeInsets.all(10.0),
+          child: SmartParkLogo(size: 28),
+        ),
         title: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

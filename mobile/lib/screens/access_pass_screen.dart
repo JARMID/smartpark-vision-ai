@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../state/parking_controller.dart';
 import '../widgets/dynamic_qr_widget.dart';
+import '../widgets/smart_park_logo.dart';
 
 class AccessPassScreen extends StatelessWidget {
   final ParkingController controller;
@@ -63,14 +64,20 @@ class AccessPassScreen extends StatelessWidget {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            const Text(
-                              'SMART PARK PASS',
-                              style: TextStyle(
-                                color: Colors.white70,
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 1.5,
-                              ),
+                            const Row(
+                              children: [
+                                SmartParkLogo(size: 20),
+                                SizedBox(width: 8),
+                                Text(
+                                  'SMART PARK PASS',
+                                  style: TextStyle(
+                                    color: Colors.white70,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 1.5,
+                                  ),
+                                ),
+                              ],
                             ),
                             if (pass.isVip)
                               Container(

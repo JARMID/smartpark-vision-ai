@@ -172,7 +172,7 @@ class ThermalTicketEngine:
         lines = [
             "==========================================",
             f"       {self.facility_name}",
-            "     STATIONNEMENT AUTOMATISE SOUVERAIN   ",
+            "       STATIONNEMENT AUTOMATISE ALGER     ",
             f"   {self.rc_nif}",
             "==========================================",
             "         TICKET D'ENTREE / PASS           ",
@@ -209,9 +209,16 @@ class ThermalTicketEngine:
 
         return f"""<svg width="340" height="490" viewBox="0 0 340 490" xmlns="http://www.w3.org/2000/svg">
   <rect width="340" height="490" fill="#FFFDF8" rx="8" stroke="#E2E8F0" stroke-width="2"/>
-  <rect x="15" y="15" width="310" height="460" fill="none" stroke="#CBD5E1" stroke-dasharray="4,4"/>
-  <text x="170" y="45" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" text-anchor="middle" fill="#080C14">SMART PARK</text>
-  <text x="170" y="62" font-family="'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#64748B">ALGER CENTRE</text>
+  <g transform="translate(68, 30) scale(0.065)">
+    <rect x="150" y="110" width="50" height="290" rx="25" fill="#0284C7"/>
+    <path d="M180 110 L310 110 C375 110, 410 145, 410 200 C410 255, 375 275, 310 275 L180 275" fill="none" stroke="#0284C7" stroke-width="32" stroke-linecap="round"/>
+    <line x1="180" y1="270" x2="390" y2="120" stroke="#10B981" stroke-width="26" stroke-linecap="round"/>
+    <circle cx="180" cy="270" r="28" fill="#0B1120" stroke="#0284C7" stroke-width="5"/>
+    <circle cx="180" cy="270" r="14" fill="#10B981"/>
+    <circle cx="390" cy="120" r="9" fill="#10B981"/>
+  </g>
+  <text x="185" y="47" font-family="'Segoe UI', Roboto, sans-serif" font-size="14" font-weight="800" text-anchor="middle" fill="#080C14">SMART PARK</text>
+  <text x="185" y="64" font-family="'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#64748B">ALGER CENTRE</text>
   <line x1="25" y1="75" x2="315" y2="75" stroke="#E2E8F0" stroke-width="1.5"/>
   <text x="170" y="96" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#10B981">TICKET DE STATIONNEMENT</text>
   <text x="35" y="125" font-family="monospace" font-size="11" fill="#475569">Ticket: <tspan font-weight="700" fill="#0F172A">{safe_ticket_id}</tspan></text>
