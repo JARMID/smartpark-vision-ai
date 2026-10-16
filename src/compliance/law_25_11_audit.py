@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Algerian Law 18-07 & Law 25-11 Compliance Engine.
+Smart Park - Algerian Law 18-07 & Law 25-11 Compliance Engine.
 Enforces strict domestic data sovereignty, automated 30-day rolling purge routines,
 formal Data Protection Impact Assessment (DPIA) generation, and the statutory 5-day
 ANPDP breach notification countdown triage workflow.

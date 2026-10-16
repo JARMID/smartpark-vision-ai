@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SmartPark Vision AI - Standalone Physical Edge Appliance Daemon.
+Smart Park - Standalone Physical Edge Appliance Daemon.
 Runs natively on on-premise industrial gateways (NVIDIA Jetson, Advantech IPC).
 Manages physical RTSP streams, executes sub-250ms offline decisions,
 and pulses physical barrier relays over RS-485 / Modbus.
@@ -100,7 +100,7 @@ class EdgeApplianceDaemon:
         self.stream_manager.start_all()
 
         logger.info("=======================================================")
-        logger.info(" SmartPark Vision AI - Edge Daemon Running 24/7        ")
+        logger.info(" Smart Park - Edge Daemon Running 24/7        ")
         logger.info(" Sovereign Edge Node Active (Algerian Law 25-11 Ready) ")
         logger.info(" Sub-250ms Offline Verification Ready                  ")
         logger.info("=======================================================")
@@ -137,7 +137,7 @@ class EdgeApplianceDaemon:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SmartPark Vision AI - Edge Camera Daemon")
+    parser = argparse.ArgumentParser(description="Smart Park - Edge Camera Daemon")
     parser.add_argument(
         "--config",
         default="config/cameras.json",

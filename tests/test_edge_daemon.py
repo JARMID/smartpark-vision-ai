@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Edge Camera Daemon & Hardware Bridge Test Suite.
+Smart Park - Edge Camera Daemon & Hardware Bridge Test Suite.
 Verifies camera channel configuration, low-latency streaming pipeline,
 barrier override actuation, and Law 25-11 30-day log purge compliance.
 """

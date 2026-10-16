@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Edge Multi-Channel Stream Manager.
+Smart Park - Edge Multi-Channel Stream Manager.
 Orchestrates multi-camera RTSP ingestion across entry lanes, biometric driver kiosks,
 exit gates, and parking decks, interfacing directly with the local GateOrchestrator.
 """

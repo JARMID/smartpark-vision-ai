@@ -1,7 +1,7 @@
 @echo off
-title SmartPark Vision AI - Mode Autonome Navigateur
+title Smart Park - Mode Autonome Navigateur
 echo ===============================================================================
-echo   SmartPark Vision AI - Lancement Mode Autonome Navigateur
+echo   Smart Park - Lancement Mode Autonome Navigateur
 echo   Ce mode execute toute la simulation interactive directement dans le navigateur
 echo   sans necessiter d'installation Python ou de serveur de base de donnees.
 echo ===============================================================================

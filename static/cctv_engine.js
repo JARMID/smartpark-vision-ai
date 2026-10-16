@@ -1,5 +1,5 @@
 /**
- * SmartPark Vision AI - High-Fidelity CCTV Rendering Engine (V3.2 Sovereign DZ)
+ * Smart Park - High-Fidelity CCTV Rendering Engine (V3.2 Sovereign DZ)
  * Real-Time Canvas Pipeline with Complete Day/Night & Trilingual Support
  * 
  * CAM-01: Voie 1 Entry ALPR (High-Angle Architectural Perspective)

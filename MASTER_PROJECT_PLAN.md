@@ -1,9 +1,9 @@
-# SmartPark Vision AI: Master Project Plan and Engineering Specification (V2.0)
+# Smart Park: Master Project Plan and Engineering Specification (V2.0)
 ## Sovereign Algerian Parking & Security Perception Architecture
 
 ## 1. Executive Summary and Project Identity
 
-* **Project Title:** SmartPark Vision AI (Algeria Sovereign Commercial Edition)
+* **Project Title:** Smart Park (Algeria Sovereign Commercial Edition)
 * **Target Environment:** Commercial parking lots, corporate towers, shopping centres, transport hubs, and secure residential compounds in Algeria (Algiers, Oran, Constantine, Sétif, Blida).
 * **Core Function:** Real-time AI video perception for automated vehicle barrier clearance, Automatic License Plate Recognition (ALPR) calibrated for Algerian plate formats, driver and pedestrian facial verification, live parking stall occupancy tracking, and security monitoring.
 * **Architecture Pattern:** Sovereign hybrid edge-cloud. High-frequency video decoding, neural inference, anti-spoofing, and 1:N vector matching execute locally on an on-premise industrial edge computer in sub-200ms; telemetry, historical logs, and compliance registers operate on a self-hosted Supabase instance deployed on domestic Algerian infrastructure (Algérie Télécom, Icosnet, or on-premise data center). Ambiguous edge cases route to an on-premise local Vision Language Model (Qwen2.5-VL-3B-Instruct) on the edge GPU, guaranteeing zero cross-border biometric transfers.
@@ -251,7 +251,7 @@ flowchart TD
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│ [LOGO] SmartPark Vision AI │ Site: Alger Centre (El-Biar) │ 🟢 UPS: ON-LINE (230V) │ 🟢 ALL ONLINE │
+│ [LOGO] Smart Park │ Site: Alger Centre (El-Biar) │ 🟢 UPS: ON-LINE (230V) │ 🟢 ALL ONLINE │
 ├──────────────────────────────────────────────────────┬───────────────────────────────────────┤
 │ LIVE CAMERA MATRIX (WebRTC Streams)                  │ REAL-TIME EVENT STREAM (Ticker)       │
 │ ┌─────────────────────────┬────────────────────────┐ │ ┌───────────────────────────────────┐ │

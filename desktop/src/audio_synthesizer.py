@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Audio Threat Synthesizer and Notification Chimes.
+Smart Park - Audio Threat Synthesizer and Notification Chimes.
 Provides non-blocking audible alarms for blacklisted plates, anti-spoof detections,
 plate cloning conflicts, cashier settlements, and barrier releases.
 """

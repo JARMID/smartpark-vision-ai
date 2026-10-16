@@ -1,9 +1,9 @@
-# SmartPark Vision AI: Master Implementation Blueprint
+# Smart Park: Master Implementation Blueprint
 ## Complete System Architecture, Tool Inventory, and Deployment Plan
 
 ## 1. Executive Summary and Deployment Profiles
 
-SmartPark Vision AI is an on-premise, sovereign computer vision and parking access platform engineered for the Algerian regulatory and physical infrastructure. The platform provides automated license plate recognition (ALPR), multi-spectral facial verification with anti-spoofing, parking stall occupancy monitoring, and pre-exit QR payments.
+Smart Park is an on-premise, sovereign computer vision and parking access platform engineered for the Algerian regulatory and physical infrastructure. The platform provides automated license plate recognition (ALPR), multi-spectral facial verification with anti-spoofing, parking stall occupancy monitoring, and pre-exit QR payments.
 
 The architecture is designed to support two distinct physical hardware configurations:
 
@@ -265,7 +265,7 @@ The interface uses high-contrast industrial styling designed for long shifts:
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│ [LOGO] SmartPark Vision AI │ Site: Alger Centre (El-Biar) │ 🟢 UPS: ON-LINE (230V) │ 🟢 ALL ONLINE │
+│ [LOGO] Smart Park │ Site: Alger Centre (El-Biar) │ 🟢 UPS: ON-LINE (230V) │ 🟢 ALL ONLINE │
 ├──────────────────────────────────────────────────────┬───────────────────────────────────────┤
 │ LIVE CAMERA MATRIX (WebRTC Sub-300ms)                │ REAL-TIME EVENT STREAM (Ticker)       │
 │ ┌─────────────────────────┬────────────────────────┐ │ ┌───────────────────────────────────┐ │

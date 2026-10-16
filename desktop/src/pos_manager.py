@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Cashier Point of Sale (POS) and Shift Ledger.
+Smart Park - Cashier Point of Sale (POS) and Shift Ledger.
 Manages booth cash drawer floats, ticket settlements, receipt numbering,
 card terminal transaction logging, and daily closing Z-Reports.
 """

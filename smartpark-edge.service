@@ -1,5 +1,5 @@
 [Unit]
-Description=SmartPark Vision AI - Edge Camera Ingestion and Barrier Gate Engine
+Description=Smart Park - Edge Camera Ingestion and Barrier Gate Engine
 After=network.target network-online.target
 Wants=network-online.target
 

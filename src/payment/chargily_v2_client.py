@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Chargily Pay V2 Domestic Payment Rails Client.
+Smart Park - Chargily Pay V2 Domestic Payment Rails Client.
 Facilitates automated Pay-on-Foot / Pre-Exit QR settlements for Algerian CIB
 and Algérie Poste EDAHABIA cards via SATIM gateway with HMAC SHA-256 signature verification.
 """

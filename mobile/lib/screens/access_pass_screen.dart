@@ -64,7 +64,7 @@ class AccessPassScreen extends StatelessWidget {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             const Text(
-                              'SMARTPARK PASS',
+                              'SMART PARK PASS',
                               style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 12,

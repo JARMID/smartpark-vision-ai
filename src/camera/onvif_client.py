@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - ONVIF Camera Client & Device Discovery.
+Smart Park - ONVIF Camera Client & Device Discovery.
 Interacts with ONVIF Profile S/T compliant IP cameras for RTSP URI resolution,
 snapshot extraction, digital I/O alarm input monitoring, and network discovery.
 """

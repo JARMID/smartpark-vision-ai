@@ -1,4 +1,4 @@
-# Guide de Démonstration Client - SmartPark Vision AI
+# Guide de Démonstration Client - Smart Park
 **Plateforme Souveraine de Vidéosurpveillance, ALPR et Contrôle d'Accès Biométrique**  
 *Conforme Loi 18-07 et Loi 25-11 (République Algérienne Démocratique et Populaire)*
 
@@ -6,7 +6,7 @@
 
 ## 1. Résumé Exécutif pour la Direction
 
-SmartPark Vision AI est une solution d'accès et de vidéosurveillance intelligente conçue spécifiquement pour le marché algérien. Contrairement aux solutions étrangères qui transmettent les flux vidéo et les données biométriques vers des serveurs cloud situés à l'étranger, SmartPark Vision AI fonctionne selon un principe de souveraineté absolue :
+Smart Park est une solution d'accès et de vidéosurveillance intelligente conçue spécifiquement pour le marché algérien. Contrairement aux solutions étrangères qui transmettent les flux vidéo et les données biométriques vers des serveurs cloud situés à l'étranger, Smart Park fonctionne selon un principe de souveraineté absolue :
 1. **Zéro transfert transfrontalier :** Conforme à l'Article 44 de la Loi 18-07 et aux dispositions de la Loi 25-11 du 24 juillet 2025. Toutes les données biométriques restent hébergées sur le site ou dans un centre de données national.
 2. **Décision barrière en moins de 250 millisecondes :** La comparaison vectorielle s'exécute en mémoire vive locale (RAM FAISS) en 0.74 milliseconde. Une coupure de connexion Internet ne bloque jamais l'entrée ou la sortie des véhicules.
 3. **Moteur ALPR algérien natif :** Reconnaissance optique calibrée pour les plaques minéralogiques algériennes, incluant les séries récentes à six chiffres (wilayas 16, 31, 09) et les cartes grises provisoires au code temporaire 00.
@@ -116,7 +116,7 @@ Une barre de raccourcis située en haut de l'écran permet de lancer immédiatem
 ## 4. Conformité Réglementaire ANPDP (Loi 18-07 et Loi 25-11)
 
 Cliquez sur le bouton **Loi 25-11** dans la barre supérieure de l'interface pour afficher le dossier juridique complet :
-* **Stockage souverain :** L'Article 44 de la Loi 18-07 interdit formellement le transfert de données à caractère personnel vers des pays étrangers sans autorisation préalable. SmartPark Vision AI garantit un traitement local sur site ou hébergé chez un opérateur de télécommunication public algérien.
+* **Stockage souverain :** L'Article 44 de la Loi 18-07 interdit formellement le transfert de données à caractère personnel vers des pays étrangers sans autorisation préalable. Smart Park garantit un traitement local sur site ou hébergé chez un opérateur de télécommunication public algérien.
 * **AIPD / DPIA obligatoire :** L'article 21-1 introduit par la Loi 25-11 impose une analyse d'impact préalable pour tout traitement biométrique. Le système utilise des vecteurs numériques 512-D normalisés qui ne permettent aucune reconstruction photographique inverse.
 * **Registre de traitement :** Le système intègre nativement les quatre catégories légales avec des durées de rétention calibrées (30 jours glissants pour les plaques et photos d'accès, archivage fiscal d'un an pour les horodatages comptables).
 * **Gestion des incidents de sécurité :** Module de notification d'incident sous 5 jours calendrier auprès de l'ANPDP conformément aux nouvelles exigences de la Loi 25-11.

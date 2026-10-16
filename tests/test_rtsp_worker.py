@@ -1,5 +1,5 @@
 """
-Unit Tests for SmartPark Vision AI - Camera RTSP Worker & Stream Manager.
+Unit Tests for Smart Park - Camera RTSP Worker & Stream Manager.
 Verifies thread safety, buffer flushing, ROI cropping, motion detection, and gate integration.
 """
 

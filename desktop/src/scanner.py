@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Barcode and QR Ticket Scanner Decoder.
+Smart Park - Barcode and QR Ticket Scanner Decoder.
 Handles USB HID barcode scanner inputs, serial COM port events, ticket validation,
 parking duration calculation, and tariff computation.
 """

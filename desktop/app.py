@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Desktop Operator Workstation Entrypoint.
+Smart Park - Desktop Operator Workstation Entrypoint.
 Runs the standalone desktop client for security booth guards and cashiers.
 """
 

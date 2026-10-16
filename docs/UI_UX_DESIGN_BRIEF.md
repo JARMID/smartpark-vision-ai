@@ -1,9 +1,9 @@
 # UI/UX Design Brief and Interface Specifications (V2.0)
-## SmartPark Vision AI Command Center (Sovereign Edition)
+## Smart Park Command Center (Sovereign Edition)
 
 ## 1. Design Philosophy and Visual Language
 
-The SmartPark Vision AI interface serves security operators, parking attendants, and facility administrators who monitor high-throughput environments over extended shifts. The visual language emphasizes rapid information hierarchy, zero visual fatigue, high contrast status indicators, and keyboard-driven ergonomics.
+The Smart Park interface serves security operators, parking attendants, and facility administrators who monitor high-throughput environments over extended shifts. The visual language emphasizes rapid information hierarchy, zero visual fatigue, high contrast status indicators, and keyboard-driven ergonomics.
 
 ### 1.1 Color Palette (Dark Mode Industrial Palette)
 * **Background Primary:** `#090D16` (Deep Obsidian Canvas)
@@ -33,7 +33,7 @@ The SmartPark Vision AI interface serves security operators, parking attendants,
 
 ```
 ┌──────────────────────────────────────────────────────────────────────────────────────────────┐
-│ [LOGO] SmartPark Vision AI │ Site: Alger Centre (El-Biar) │ 🟢 UPS: ON-LINE (230V) │ 🟢 ALL ONLINE │
+│ [LOGO] Smart Park │ Site: Alger Centre (El-Biar) │ 🟢 UPS: ON-LINE (230V) │ 🟢 ALL ONLINE │
 ├──────────────────────────────────────────────────────┬───────────────────────────────────────┤
 │ LIVE CAMERA MATRIX (WebRTC Streams)                  │ REAL-TIME EVENT STREAM (Ticker)       │
 │ ┌─────────────────────────┬────────────────────────┐ │ ┌───────────────────────────────────┐ │

@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Desktop Operator Workstation Application.
+Smart Park - Desktop Operator Workstation Application.
 Runs on Windows Edge WebView2 or cross-platform webview shell.
 Provides 4-channel CCTV grid, emergency Spacebar barrier override,
 threat HUD siren alerts, biometric triage modal, cashier POS,
@@ -844,7 +844,7 @@ def get_desktop_ui_html() -> str:
       <span class="hotkey-indicator">P = Encaisser</span>
       <span class="hotkey-indicator">Esc = Alerte</span>
     </div>
-    <div>SmartPark Vision AI v2.0 - Station d'Exploitation Souveraine</div>
+    <div>Smart Park v2.0 - Station d'Exploitation Souveraine</div>
   </footer>
 
   <script>
@@ -1201,7 +1201,7 @@ def launch_desktop_station(server_url: str = "http://127.0.0.1:8080", headless: 
     try:
         import webview
         window = webview.create_window(
-            title="SmartPark Vision AI - Operator Workstation & POS",
+            title="Smart Park - Operator Workstation & POS",
             html=html_content,
             js_api=bridge_api,
             width=1380,

@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-SmartPark Vision AI - Edge Hardware & Anti-Passback Field Validation Utility.
+Smart Park - Edge Hardware & Anti-Passback Field Validation Utility.
 Automated commissioning tool for on-premise industrial gateways (Jetson Orin, Advantech IPC).
 Tests camera manifests, SQLite WAL persistence, Modbus barrier relays, and APB fraud prevention.
 """

@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# SmartPark Vision AI - Linux / macOS Launcher
+# Smart Park - Linux / macOS Launcher
 
 set -e
 
 echo "==============================================================================="
-echo "  SmartPark Vision AI - Centre de Contrôle Souverain (Algérie)"
+echo "  Smart Park - Centre de Contrôle Souverain (Algérie)"
 echo "  Conforme Loi 18-07 & Loi 25-11 (ANPDP) - Zéro Transfert Étranger"
 echo "==============================================================================="
 echo ""

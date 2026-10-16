@@ -1,9 +1,9 @@
 # Technical Requirements Document (TRD)
-## SmartPark Vision AI: Architecture and Engineering Specification (V2.0)
+## Smart Park: Architecture and Engineering Specification (V2.0)
 
 ## 1. System Architecture Overview
 
-SmartPark Vision AI adopts a decentralized, sovereign hybrid edge-cloud architecture. High-frequency video decoding, neural inference, anti-spoofing, vector search, and barrier actuation execute locally on the on-premise edge gateway, while configuration management, reporting, long-term storage, and compliance registers operate on a self-hosted Supabase instance deployed on domestic Algerian sovereign infrastructure.
+Smart Park adopts a decentralized, sovereign hybrid edge-cloud architecture. High-frequency video decoding, neural inference, anti-spoofing, vector search, and barrier actuation execute locally on the on-premise edge gateway, while configuration management, reporting, long-term storage, and compliance registers operate on a self-hosted Supabase instance deployed on domestic Algerian sovereign infrastructure.
 
 ```
                     ON-PREMISE EDGE GATEWAY (Per Facility)

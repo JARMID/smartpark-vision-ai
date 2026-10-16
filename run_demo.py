@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Sovereign Demo Runner.
+Smart Park - Sovereign Demo Runner.
 Launches the interactive Web Command Center on port 8080.
 Run this script to demonstrate the complete AI parking and surveillance system.
 """

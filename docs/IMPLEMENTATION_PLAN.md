@@ -1,5 +1,5 @@
 # Implementation Plan and Execution Roadmap (V2.0)
-## SmartPark Vision AI (Algeria Commercial Production Edition)
+## Smart Park (Algeria Commercial Production Edition)
 
 ## 1. Project Phasing and Realistic Timeline
 

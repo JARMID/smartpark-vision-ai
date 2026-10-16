@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Edge Camera Daemon & Hardware Firmware Bridge.
+Smart Park - Edge Camera Daemon & Hardware Firmware Bridge.
 Executes autonomous multi-camera RTSP ingestion, zero-latency circular buffer capture,
 on-device ALPR & biometric liveness inference, Modbus PLC gate actuation,
 and automated 30-day rolling log maintenance complying with Algerian Law 25-11.
@@ -233,7 +233,7 @@ class EdgeDaemonService:
 # =============================================================================
 def create_edge_app(daemon: EdgeDaemonService) -> FastAPI:
     app = FastAPI(
-        title="SmartPark Vision AI - Edge Camera Daemon",
+        title="Smart Park - Edge Camera Daemon",
         description="Low-latency edge appliance API for camera streaming, ALPR trigger, and barrier actuation.",
         version="4.0.0"
     )
@@ -300,7 +300,7 @@ def create_edge_app(daemon: EdgeDaemonService) -> FastAPI:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="SmartPark Vision AI - Edge Camera Daemon")
+    parser = argparse.ArgumentParser(description="Smart Park - Edge Camera Daemon")
     parser.add_argument("--config", default="config/cameras.yaml", help="Path to camera YAML configuration")
     parser.add_argument("--host", default="127.0.0.1", help="Edge API host")
     parser.add_argument("--port", type=int, default=8082, help="Edge API port")

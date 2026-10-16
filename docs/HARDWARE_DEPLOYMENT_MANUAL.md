@@ -1,6 +1,6 @@
-# SmartPark Vision AI - Physical Hardware & Camera Deployment Manual
+# Smart Park - Physical Hardware & Camera Deployment Manual
 
-This manual provides the engineering specifications, physical wiring schematics, optical geometry, and software installation steps required to deploy **SmartPark Vision AI** on physical access control gates and commercial IP cameras.
+This manual provides the engineering specifications, physical wiring schematics, optical geometry, and software installation steps required to deploy **Smart Park** on physical access control gates and commercial IP cameras.
 
 ---
 

@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Unit Tests for Desktop Operator Station.
+Smart Park - Unit Tests for Desktop Operator Station.
 Tests Thermal Ticket Printing, Barcode Scanning, Audio Synthesizer,
 POS Ledger, and Desktop Bridge API.
 """

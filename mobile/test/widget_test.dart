@@ -23,7 +23,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Pass d'Accès Sans Contact"), findsOneWidget);
-    expect(find.text('SMARTPARK PASS'), findsOneWidget);
+    expect(find.text('SMART PARK PASS'), findsOneWidget);
     expect(find.text('Amine Hadj'), findsOneWidget);
 
     // Switch to Car Finder tab

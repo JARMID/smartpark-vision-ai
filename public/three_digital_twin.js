@@ -1,5 +1,5 @@
 /**
- * SmartPark Vision AI - 3D WebGL Digital Twin Engine (Three.js)
+ * Smart Park - 3D WebGL Digital Twin Engine (Three.js)
  * High-performance spatial simulation of the parking facility.
  * Designed for modular embedding, clean API control, and AI model refinement.
  */

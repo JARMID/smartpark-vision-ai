@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Camera and Ingestion Module.
+Smart Park - Camera and Ingestion Module.
 Contains RTSP stream ingestion workers, ONVIF discovery, and multi-channel edge management.
 """
 

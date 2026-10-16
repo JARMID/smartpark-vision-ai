@@ -1,16 +1,16 @@
 # Product Requirements Document (PRD)
-## SmartPark Vision AI (Algeria Sovereign Commercial Edition)
+## Smart Park (Algeria Sovereign Commercial Edition)
 
 ## 1. Document Control and Overview
 
-* **Project Name:** SmartPark Vision AI (Algeria)
+* **Project Name:** Smart Park (Algeria)
 * **Status:** Revised Planning Specification (V2.0)
 * **Regulatory Baseline:** Algerian Law 18-07 and Amendment Law 25-11 (24 July 2025)
 * **Target Release:** 60 to 90 Days Deployment Lifecycle
 * **Primary Markets:** Commercial parking garages, corporate business parks, shopping centers, residential complexes, and transport hubs in Algeria (Algiers, Oran, Constantine, Sétif, Blida).
 
 ### 1.1 Executive Vision
-SmartPark Vision AI is an enterprise-grade camera and parking facility management platform that automates vehicle access, parking occupancy tracking, driver verification, and facility security. The system operates on a sovereign, offline-first hybrid architecture designed specifically for the Algerian infrastructure and regulatory environment.
+Smart Park is an enterprise-grade camera and parking facility management platform that automates vehicle access, parking occupancy tracking, driver verification, and facility security. The system operates on a sovereign, offline-first hybrid architecture designed specifically for the Algerian infrastructure and regulatory environment.
 
 ---
 

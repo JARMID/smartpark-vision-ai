@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Industrial RTSP Camera Stream Worker.
+Smart Park - Industrial RTSP Camera Stream Worker.
 Handles real IP camera RTSP/H.264/H.265 stream ingestion, zero-lag circular frame buffers,
 automatic network watchdog with exponential backoff reconnects, and ROI cropping.
 """

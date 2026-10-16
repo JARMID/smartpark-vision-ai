@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Thermal Ticket Printer Engine and Barcode Generator.
+Smart Park - Thermal Ticket Printer Engine and Barcode Generator.
 Supports ESC/POS binary command synthesis, EAN-13 / Code-128 barcode encoding,
 ticket layout formatting, visual ticket rendering, and hardware printer dispatching.
 """

@@ -1,5 +1,5 @@
 """
-API and Integration Tests for SmartPark Vision AI FastAPI Server.
+API and Integration Tests for Smart Park FastAPI Server.
 Verifies REST endpoints, simulation scenarios, and ANPDP Law 25-11 compliance exports.
 """
 

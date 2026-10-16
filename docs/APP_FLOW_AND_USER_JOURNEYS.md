@@ -1,5 +1,5 @@
 # Application Flows and User Journeys (V2.0)
-## SmartPark Vision AI (Algeria Sovereign Edition)
+## Smart Park (Algeria Sovereign Edition)
 
 ## 1. Primary Operational Workflows
 

@@ -1,5 +1,5 @@
 """
-SmartPark Vision AI - Core Edge Gate Orchestrator.
+Smart Park - Core Edge Gate Orchestrator.
 Coordinates the Algerian License Plate Parser, Anti-Spoofing Gate, In-Memory FAISS Vector Index,
 Local SQLite Write-Ahead Queue, and Modbus Barrier Gate Relay.
 """
@@ -358,7 +358,7 @@ class GateOrchestrator:
 
 
 if __name__ == "__main__":
-    print("SmartPark Vision AI - Local Edge Orchestrator Initialized.")
+    print("Smart Park - Local Edge Orchestrator Initialized.")
     orchestrator = GateOrchestrator(simulation_mode=True)
     res = orchestrator.process_arrival(
         camera_id="cam-01",
