@@ -12,6 +12,7 @@ import sqlite3
 import threading
 import time
 from typing import Dict, List, Optional, Any, Tuple
+import uuid
 
 
 class DesktopDatabase:
@@ -141,7 +142,7 @@ class DesktopDatabase:
                 return dict(row)
 
             now = datetime.now()
-            shift_id = f"SHIFT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000:04d}"
+            shift_id = f"SHIFT-{now.strftime('%Y%m%d%H%M%S')}-{uuid.uuid4().hex[:6].upper()}"
             now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
             float_dzd = round(float(opening_float_dzd), 2)
 
@@ -185,8 +186,8 @@ class DesktopDatabase:
     ) -> Dict[str, Any]:
         """Record financial settlement and update active shift running balances."""
         now = datetime.now()
-        tx_id = f"TX-{now.strftime('%Y%m%d%H%M%S')}-{int(now.timestamp() * 1000) % 1000:03d}"
-        receipt_num = f"REC-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000:04d}"
+        tx_id = f"TX-{now.strftime('%Y%m%d%H%M%S')}-{int(now.timestamp() * 1000) % 1000:03d}-{uuid.uuid4().hex[:4].upper()}"
+        receipt_num = f"REC-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000:04d}-{uuid.uuid4().hex[:4].upper()}"
         now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
 
         due_dzd = round(float(amount_due_dzd), 2)
@@ -316,7 +317,7 @@ class DesktopDatabase:
     ) -> Dict[str, Any]:
         """Issue an active parking ticket and persist to local SQLite store."""
         now = datetime.now()
-        ticket_id = f"TKT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 100000:05d}"
+        ticket_id = f"TKT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 100000:05d}-{uuid.uuid4().hex[:4].upper()}"
         now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # Generate GS1 13-digit barcode with check digit
