@@ -9,6 +9,7 @@ import hashlib
 import json
 import os
 import sqlite3
+import threading
 import time
 from typing import Dict, List, Optional, Any, Tuple
 
@@ -27,12 +28,13 @@ class DesktopDatabase:
             db_path = os.path.join(data_dir, "desktop_station.db")
 
         self.db_path = db_path
+        self._lock = threading.Lock()
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_schema()
 
     def _init_schema(self):
-        with self.conn:
+        with self._lock, self.conn:
             self.conn.execute("PRAGMA journal_mode=WAL;")
             self.conn.execute("PRAGMA synchronous=NORMAL;")
 
@@ -125,46 +127,48 @@ class DesktopDatabase:
         opening_float_dzd: float = 5000.0,
     ) -> Dict[str, Any]:
         """Fetch currently open shift for booth or initialize a new one."""
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM cashier_shifts
-            WHERE booth_id = ? AND status = 'OPEN'
-            ORDER BY created_at DESC LIMIT 1
-            """,
-            (booth_id,),
-        )
-        row = cursor.fetchone()
-        if row:
-            return dict(row)
-
-        now = datetime.now()
-        shift_id = f"SHIFT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000:04d}"
-        now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
-
-        with self.conn:
-            self.conn.execute(
+        with self._lock:
+            cursor = self.conn.execute(
                 """
-                INSERT INTO cashier_shifts (
-                    shift_id, booth_id, cashier_id, cashier_name,
-                    opened_at, opening_float_dzd, status, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, 'OPEN', ?)
+                SELECT * FROM cashier_shifts
+                WHERE booth_id = ? AND status = 'OPEN'
+                ORDER BY created_at DESC LIMIT 1
                 """,
-                (shift_id, booth_id, cashier_id, cashier_name, now_iso, opening_float_dzd, time.time()),
+                (booth_id,),
             )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
 
-        return {
-            "shift_id": shift_id,
-            "booth_id": booth_id,
-            "cashier_id": cashier_id,
-            "cashier_name": cashier_name,
-            "opened_at": now_iso,
-            "opening_float_dzd": opening_float_dzd,
-            "total_cash_in_dzd": 0.0,
-            "total_card_in_dzd": 0.0,
-            "total_change_dzd": 0.0,
-            "transaction_count": 0,
-            "status": "OPEN",
-        }
+            now = datetime.now()
+            shift_id = f"SHIFT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000:04d}"
+            now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
+            float_dzd = round(float(opening_float_dzd), 2)
+
+            with self.conn:
+                self.conn.execute(
+                    """
+                    INSERT INTO cashier_shifts (
+                        shift_id, booth_id, cashier_id, cashier_name,
+                        opened_at, opening_float_dzd, status, created_at
+                    ) VALUES (?, ?, ?, ?, ?, ?, 'OPEN', ?)
+                    """,
+                    (shift_id, booth_id, cashier_id, cashier_name, now_iso, float_dzd, time.time()),
+                )
+
+            return {
+                "shift_id": shift_id,
+                "booth_id": booth_id,
+                "cashier_id": cashier_id,
+                "cashier_name": cashier_name,
+                "opened_at": now_iso,
+                "opening_float_dzd": float_dzd,
+                "total_cash_in_dzd": 0.0,
+                "total_card_in_dzd": 0.0,
+                "total_change_dzd": 0.0,
+                "transaction_count": 0,
+                "status": "OPEN",
+            }
 
     def record_transaction(
         self,
@@ -185,7 +189,11 @@ class DesktopDatabase:
         receipt_num = f"REC-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 10000:04d}"
         now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        with self.conn:
+        due_dzd = round(float(amount_due_dzd), 2)
+        tendered_dzd = round(float(amount_tendered_dzd), 2)
+        chg_dzd = round(float(change_dzd), 2)
+
+        with self._lock, self.conn:
             # 1. Insert transaction row
             self.conn.execute(
                 """
@@ -197,26 +205,26 @@ class DesktopDatabase:
                 """,
                 (
                     tx_id, shift_id, ticket_id, plate_number, entry_time, exit_time,
-                    duration_minutes, amount_due_dzd, amount_tendered_dzd, change_dzd,
+                    duration_minutes, due_dzd, tendered_dzd, chg_dzd,
                     payment_method, receipt_num, time.time()
                 ),
             )
 
             # 2. Update shift aggregates
             is_cash = payment_method.upper() == "CASH"
-            cash_inc = amount_due_dzd if is_cash else 0.0
-            card_inc = amount_due_dzd if not is_cash else 0.0
+            cash_inc = due_dzd if is_cash else 0.0
+            card_inc = due_dzd if not is_cash else 0.0
 
             self.conn.execute(
                 """
                 UPDATE cashier_shifts
-                SET total_cash_in_dzd = total_cash_in_dzd + ?,
-                    total_card_in_dzd = total_card_in_dzd + ?,
-                    total_change_dzd = total_change_dzd + ?,
+                SET total_cash_in_dzd = round(total_cash_in_dzd + ?, 2),
+                    total_card_in_dzd = round(total_card_in_dzd + ?, 2),
+                    total_change_dzd = round(total_change_dzd + ?, 2),
                     transaction_count = transaction_count + 1
                 WHERE shift_id = ?
                 """,
-                (cash_inc, card_inc, change_dzd if is_cash else 0.0, shift_id),
+                (cash_inc, card_inc, chg_dzd if is_cash else 0.0, shift_id),
             )
 
             # 3. Mark ticket paid if present locally
@@ -235,9 +243,9 @@ class DesktopDatabase:
             "shift_id": shift_id,
             "ticket_id": ticket_id,
             "plate_number": plate_number,
-            "amount_due_dzd": amount_due_dzd,
-            "amount_tendered_dzd": amount_tendered_dzd,
-            "change_dzd": change_dzd,
+            "amount_due_dzd": due_dzd,
+            "amount_tendered_dzd": tendered_dzd,
+            "change_dzd": chg_dzd,
             "payment_method": payment_method,
             "timestamp": now_iso,
         }
@@ -247,36 +255,38 @@ class DesktopDatabase:
         now = datetime.now()
         now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        cursor = self.conn.execute("SELECT * FROM cashier_shifts WHERE shift_id = ?", (shift_id,))
-        shift = cursor.fetchone()
-        if not shift:
-            raise ValueError(f"Shift {shift_id} not found.")
+        with self._lock:
+            cursor = self.conn.execute("SELECT * FROM cashier_shifts WHERE shift_id = ?", (shift_id,))
+            shift = cursor.fetchone()
+            if not shift:
+                raise ValueError(f"Shift {shift_id} not found.")
 
-        shift_dict = dict(shift)
-        expected_cash_drawer = (
-            shift_dict["opening_float_dzd"]
-            + shift_dict["total_cash_in_dzd"]
-        )
-
-        # Audit hash across shift financial fields
-        audit_raw = (
-            f"{shift_id}|{shift_dict['booth_id']}|{shift_dict['cashier_id']}|"
-            f"{shift_dict['opened_at']}|{now_iso}|{shift_dict['total_cash_in_dzd']}|"
-            f"{shift_dict['total_card_in_dzd']}|{shift_dict['transaction_count']}"
-        )
-        z_hash = f"SHA256-{hashlib.sha256(audit_raw.encode('utf-8')).hexdigest().upper()}"
-
-        with self.conn:
-            self.conn.execute(
-                """
-                UPDATE cashier_shifts
-                SET status = 'CLOSED',
-                    closed_at = ?,
-                    z_report_hash = ?
-                WHERE shift_id = ?
-                """,
-                (now_iso, z_hash, shift_id),
+            shift_dict = dict(shift)
+            expected_cash_drawer = round(
+                shift_dict["opening_float_dzd"]
+                + shift_dict["total_cash_in_dzd"],
+                2,
             )
+
+            # Audit hash across shift financial fields
+            audit_raw = (
+                f"{shift_id}|{shift_dict['booth_id']}|{shift_dict['cashier_id']}|"
+                f"{shift_dict['opened_at']}|{now_iso}|{shift_dict['total_cash_in_dzd']}|"
+                f"{shift_dict['total_card_in_dzd']}|{shift_dict['transaction_count']}"
+            )
+            z_hash = f"SHA256-{hashlib.sha256(audit_raw.encode('utf-8')).hexdigest().upper()}"
+
+            with self.conn:
+                self.conn.execute(
+                    """
+                    UPDATE cashier_shifts
+                    SET status = 'CLOSED',
+                        closed_at = ?,
+                        z_report_hash = ?
+                    WHERE shift_id = ?
+                    """,
+                    (now_iso, z_hash, shift_id),
+                )
 
         return {
             "shift_id": shift_id,
@@ -285,10 +295,10 @@ class DesktopDatabase:
             "cashier_name": shift_dict["cashier_name"],
             "opened_at": shift_dict["opened_at"],
             "closed_at": now_iso,
-            "opening_float_dzd": shift_dict["opening_float_dzd"],
-            "total_cash_in_dzd": shift_dict["total_cash_in_dzd"],
-            "total_card_in_dzd": shift_dict["total_card_in_dzd"],
-            "total_collected_dzd": shift_dict["total_cash_in_dzd"] + shift_dict["total_card_in_dzd"],
+            "opening_float_dzd": round(shift_dict["opening_float_dzd"], 2),
+            "total_cash_in_dzd": round(shift_dict["total_cash_in_dzd"], 2),
+            "total_card_in_dzd": round(shift_dict["total_card_in_dzd"], 2),
+            "total_collected_dzd": round(shift_dict["total_cash_in_dzd"] + shift_dict["total_card_in_dzd"], 2),
             "expected_drawer_cash_dzd": expected_cash_drawer,
             "transaction_count": shift_dict["transaction_count"],
             "audit_hash": z_hash,
@@ -316,7 +326,7 @@ class DesktopDatabase:
         checksum = self._calculate_ean13_checksum(raw12)
         barcode_value = f"{raw12}{checksum}"
 
-        with self.conn:
+        with self._lock, self.conn:
             self.conn.execute(
                 """
                 INSERT INTO local_tickets (
@@ -324,7 +334,7 @@ class DesktopDatabase:
                     zone_name, barcode_value, status, tariff_due_dzd, created_at
                 ) VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?)
                 """,
-                (ticket_id, plate_number, now_iso, lane_id, zone_name, barcode_value, tariff_due_dzd, time.time()),
+                (ticket_id, plate_number, now_iso, lane_id, zone_name, barcode_value, round(float(tariff_due_dzd), 2), time.time()),
             )
 
         return {
@@ -335,21 +345,22 @@ class DesktopDatabase:
             "zone_name": zone_name,
             "barcode_value": barcode_value,
             "status": "ACTIVE",
-            "tariff_due_dzd": tariff_due_dzd,
+            "tariff_due_dzd": round(float(tariff_due_dzd), 2),
         }
 
     def find_ticket_by_barcode(self, barcode_str: str) -> Optional[Dict[str, Any]]:
         """Look up ticket by 13-digit EAN barcode or ticket ID."""
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM local_tickets
-            WHERE barcode_value = ? OR ticket_id = ?
-            ORDER BY created_at DESC LIMIT 1
-            """,
-            (barcode_str.strip(), barcode_str.strip()),
-        )
-        row = cursor.fetchone()
-        return dict(row) if row else None
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM local_tickets
+                WHERE barcode_value = ? OR ticket_id = ?
+                ORDER BY created_at DESC LIMIT 1
+                """,
+                (barcode_str.strip(), barcode_str.strip()),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
 
     # --- Barrier Audit Logging ---
 
@@ -363,7 +374,7 @@ class DesktopDatabase:
     ):
         """Record barrier relay actuation into immutable local audit trail."""
         now_iso = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        with self.conn:
+        with self._lock, self.conn:
             self.conn.execute(
                 """
                 INSERT INTO barrier_audit_log (
@@ -375,36 +386,39 @@ class DesktopDatabase:
             )
 
     def get_recent_transactions(self, limit: int = 15) -> List[Dict[str, Any]]:
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM pos_transactions
-            ORDER BY created_at DESC LIMIT ?
-            """,
-            (limit,),
-        )
-        return [dict(r) for r in cursor.fetchall()]
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM pos_transactions
+                ORDER BY created_at DESC LIMIT ?
+                """,
+                (limit,),
+            )
+            return [dict(r) for r in cursor.fetchall()]
 
     def get_transaction_by_id(self, tx_id: str) -> Optional[Dict[str, Any]]:
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM pos_transactions
-            WHERE id = ? OR receipt_number = ?
-            LIMIT 1
-            """,
-            (tx_id, tx_id),
-        )
-        row = cursor.fetchone()
-        return dict(row) if row else None
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM pos_transactions
+                WHERE id = ? OR receipt_number = ?
+                LIMIT 1
+                """,
+                (tx_id, tx_id),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
 
     def get_recent_barrier_logs(self, limit: int = 15) -> List[Dict[str, Any]]:
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM barrier_audit_log
-            ORDER BY created_at DESC LIMIT ?
-            """,
-            (limit,),
-        )
-        return [dict(r) for r in cursor.fetchall()]
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM barrier_audit_log
+                ORDER BY created_at DESC LIMIT ?
+                """,
+                (limit,),
+            )
+            return [dict(r) for r in cursor.fetchall()]
 
     @staticmethod
     def _calculate_ean13_checksum(raw12: str) -> int:
@@ -417,4 +431,5 @@ class DesktopDatabase:
         return 0 if remainder == 0 else 10 - remainder
 
     def close(self):
-        self.conn.close()
+        with self._lock:
+            self.conn.close()

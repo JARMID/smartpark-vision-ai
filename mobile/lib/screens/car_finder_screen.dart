@@ -53,7 +53,7 @@ class CarFinderScreen extends StatelessWidget {
                         children: [
                           const Text(
                             'EMPLACEMENT ACTUEL',
-                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Colors.grey),
+                            style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFF94A3B8)),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -86,17 +86,19 @@ class CarFinderScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Visual Walking Guidance Canvas / Map Compass
-            Container(
-              height: 220,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: const Color(0xFF0F172A),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: const Color(0xFF334155)),
-              ),
-              child: Stack(
-                alignment: Alignment.center,
+            // Visual Walking Guidance Canvas / Map Compass with accessibility
+            Semantics(
+              label: 'Boussole de guidage piéton: cap vers l\'emplacement ${vehicle.slotNumber}, allée ${vehicle.sectionName}, distance restante environ 45 mètres.',
+              child: Container(
+                height: 220,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF0F172A),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: const Color(0xFF334155)),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
                 children: [
                   // Compass Ring
                   Container(
@@ -138,6 +140,7 @@ class CarFinderScreen extends StatelessWidget {
                 ],
               ),
             ),
+          ),
 
             const SizedBox(height: 24),
 
@@ -180,7 +183,7 @@ class CarFinderScreen extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(label, style: const TextStyle(fontSize: 13, color: Colors.grey)),
+        Text(label, style: const TextStyle(fontSize: 13, color: Color(0xFF94A3B8))),
         const SizedBox(width: 8),
         Expanded(
           child: Text(

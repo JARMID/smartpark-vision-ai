@@ -177,56 +177,60 @@ class _PatrolScannerScreenState extends State<PatrolScannerScreen> {
 
                   const SizedBox(height: 20),
 
-                  // Status Card
+                  // Status Card with LiveRegion Accessibility
                   if (status != null) ...[
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: status['is_alert'] == true
-                            ? Colors.red.withValues(alpha: 0.12)
-                            : Colors.green.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: status['is_alert'] == true ? Colors.red : Colors.green,
-                        ),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                status['status'] as String,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 15,
-                                  color: status['is_alert'] == true ? Colors.red : Colors.green,
-                                ),
-                              ),
-                              Text('Place: ${status['slot']}'),
-                            ],
+                    Semantics(
+                      liveRegion: true,
+                      label: "Résultat du contrôle: ${status['status']}, place ${status['slot']}. ${status['message']}",
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: status['is_alert'] == true
+                              ? Colors.red.withValues(alpha: 0.12)
+                              : Colors.green.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: status['is_alert'] == true ? Colors.red : Colors.green,
                           ),
-                          const SizedBox(height: 6),
-                          Text(status['message'] as String, style: const TextStyle(fontSize: 13)),
-                          if (status['is_alert'] == true) ...[
-                            const SizedBox(height: 12),
-                            ElevatedButton.icon(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.red,
-                                foregroundColor: Colors.white,
-                              ),
-                              icon: const Icon(Icons.receipt_long),
-                              label: const Text('Émettre Avis de Verbalisation / Fourrière'),
-                              onPressed: () {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(content: Text('Avis d\'infraction transmis à la régie.')),
-                                );
-                              },
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  status['status'] as String,
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                    color: status['is_alert'] == true ? Colors.red : Colors.green,
+                                  ),
+                                ),
+                                Text('Place: ${status['slot']}'),
+                              ],
                             ),
+                            const SizedBox(height: 6),
+                            Text(status['message'] as String, style: const TextStyle(fontSize: 13)),
+                            if (status['is_alert'] == true) ...[
+                              const SizedBox(height: 12),
+                              ElevatedButton.icon(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.receipt_long),
+                                label: const Text('Émettre Avis de Verbalisation / Fourrière'),
+                                onPressed: () {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(content: Text('Avis d\'infraction transmis à la régie.')),
+                                  );
+                                },
+                              ),
+                            ],
                           ],
-                        ],
+                        ),
                       ),
                     ),
                   ],

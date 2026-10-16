@@ -266,8 +266,13 @@ def create_edge_app(daemon: EdgeDaemonService) -> FastAPI:
 
     @app.post("/api/edge/barrier/override")
     def barrier_override(req: BarrierOverrideRequest):
+        if req.gate_id not in (1, 2):
+            raise HTTPException(
+                status_code=400,
+                detail=f"Identifiant de barrière invalide: {req.gate_id}. Seules les voies 1 et 2 sont configurées."
+            )
         success = False
-        duration_ms = int(req.duration_seconds * 1000)
+        duration_ms = max(250, min(1500, int(req.duration_seconds * 1000)))
         if req.action.lower() == "open":
             res = daemon.orchestrator.barrier_controller.trigger_barrier_open(
                 channel=req.gate_id,
@@ -283,7 +288,7 @@ def create_edge_app(daemon: EdgeDaemonService) -> FastAPI:
             )
             success = res.success
         else:
-            raise HTTPException(status_code=400, detail=f"Invalid action: {req.action}")
+            raise HTTPException(status_code=400, detail=f"Action non reconnue: {req.action}")
 
         # Record manual security audit event
         daemon.orchestrator.buffer_queue.enqueue_event(

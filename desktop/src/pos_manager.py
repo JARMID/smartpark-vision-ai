@@ -77,15 +77,26 @@ class CashierPosManager:
             )
 
     def open_shift(self, cashier_id: str, opening_float_dzd: float = 5000.0) -> ShiftSummary:
-        """Open a new cashier working shift."""
-        shift_id = f"SHIFT-{datetime.now().strftime('%Y%m%d')}-{cashier_id}"
+        """Open a new cashier working shift and ensure persistence in SQLite."""
+        db_shift = self.db.get_or_open_shift(
+            booth_id=self.booth_id,
+            cashier_id=cashier_id,
+            opening_float_dzd=opening_float_dzd,
+        )
+        opened_dt = datetime.now()
+        if db_shift and "opened_at" in db_shift:
+            try:
+                opened_dt = datetime.strptime(db_shift["opened_at"], "%Y-%m-%d %H:%M:%S")
+            except Exception:
+                pass
+
         self.active_shift = ShiftSummary(
-            shift_id=shift_id,
+            shift_id=db_shift["shift_id"] if db_shift else f"SHIFT-{datetime.now().strftime('%Y%m%d')}-{cashier_id}",
             cashier_id=cashier_id,
             booth_id=self.booth_id,
-            opened_at=datetime.now(),
+            opened_at=opened_dt,
             closed_at=None,
-            opening_float_dzd=opening_float_dzd,
+            opening_float_dzd=round(float(opening_float_dzd), 2),
             total_cash_collected_dzd=0.0,
             total_card_collected_dzd=0.0,
             total_exemptions_dzd=0.0,
@@ -110,8 +121,9 @@ class CashierPosManager:
         now = datetime.now()
         tx_id = f"TX-{now.strftime('%Y%m%d')}-{self._tx_counter}"
 
-        tender = tendered_dzd if tendered_dzd is not None else amount_dzd
-        change = max(0.0, tender - amount_dzd) if payment_method == "CASH" else 0.0
+        amount_dzd = round(float(amount_dzd), 2)
+        tender = round(float(tendered_dzd if tendered_dzd is not None else amount_dzd), 2)
+        change = round(max(0.0, tender - amount_dzd) if payment_method == "CASH" else 0.0, 2)
 
         tx = TransactionRecord(
             transaction_id=tx_id,
@@ -131,11 +143,11 @@ class CashierPosManager:
         self.active_shift.tickets_settled_count += 1
 
         if payment_method == "CASH":
-            self.active_shift.total_cash_collected_dzd += amount_dzd
+            self.active_shift.total_cash_collected_dzd = round(self.active_shift.total_cash_collected_dzd + amount_dzd, 2)
         elif payment_method in ("CIB_TERMINAL", "EDAHABIA_TERMINAL"):
-            self.active_shift.total_card_collected_dzd += amount_dzd
+            self.active_shift.total_card_collected_dzd = round(self.active_shift.total_card_collected_dzd + amount_dzd, 2)
         elif payment_method == "VIP_EXEMPT":
-            self.active_shift.total_exemptions_dzd += amount_dzd
+            self.active_shift.total_exemptions_dzd = round(self.active_shift.total_exemptions_dzd + amount_dzd, 2)
 
         # Persist transaction to SQLite
         try:
@@ -151,8 +163,9 @@ class CashierPosManager:
                 change_dzd=change,
                 payment_method=payment_method,
             )
-        except Exception:
-            pass
+        except Exception as err:
+            import logging
+            logging.getLogger("smartpark.pos").error(f"Failed to record transaction to db: {err}")
 
         return tx
 
@@ -163,8 +176,8 @@ class CashierPosManager:
 
         now = datetime.now()
         self.active_shift.closed_at = now
-        closing_drawer_cash = self.active_shift.opening_float_dzd + self.active_shift.total_cash_collected_dzd
-        total_revenue = self.active_shift.total_cash_collected_dzd + self.active_shift.total_card_collected_dzd
+        closing_drawer_cash = round(self.active_shift.opening_float_dzd + self.active_shift.total_cash_collected_dzd, 2)
+        total_revenue = round(self.active_shift.total_cash_collected_dzd + self.active_shift.total_card_collected_dzd, 2)
 
         # Generate cryptographic audit hash
         audit_payload = (
@@ -176,8 +189,9 @@ class CashierPosManager:
         # Update SQLite
         try:
             self.db.close_shift(self.active_shift.shift_id)
-        except Exception:
-            pass
+        except Exception as err:
+            import logging
+            logging.getLogger("smartpark.pos").error(f"Failed to close shift in db: {err}")
 
         z_report = {
             "report_title": "RAPPORT Z DE CLOTURE DE CAISSE",

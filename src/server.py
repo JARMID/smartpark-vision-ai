@@ -37,6 +37,7 @@ DB_PATH = os.environ.get("SMARTPARK_DB_PATH", default_db)
 orchestrator = GateOrchestrator(db_path=DB_PATH, simulation_mode=True)
 compliance_engine = Law2511ComplianceEngine()
 chargily_client = ChargilyV2PaymentClient()
+PROCESSED_WEBHOOK_IDS = set()
 
 # Initialize Multi-Channel Camera Stream Manager
 edge_stream_manager = EdgeStreamManager(orchestrator=orchestrator, auto_start=False)
@@ -918,6 +919,14 @@ async def chargily_webhook(request: Request):
 
     checkout_id = payload_data.get("id", "ch_unknown")
     plate_number = payload_data.get("metadata", {}).get("plate_number", "08192 120 09")
+
+    if checkout_id in PROCESSED_WEBHOOK_IDS:
+        conf = chargily_client.process_payment_confirmation(checkout_id, plate_number)
+        conf["idempotent_replay"] = True
+        conf["barrier_opened"] = False
+        return conf
+
+    PROCESSED_WEBHOOK_IDS.add(checkout_id)
     conf = chargily_client.process_payment_confirmation(checkout_id, plate_number)
     orchestrator.barrier_controller.trigger_barrier_open(channel=2, duration_ms=500, force_override=True)
     return conf
