@@ -181,7 +181,7 @@ class CashierPosManager:
 
         z_report = {
             "report_title": "RAPPORT Z DE CLOTURE DE CAISSE",
-            "facility": "SMARTPARK VISION AI ALGER",
+            "facility": "SMART PARK ALGER",
             "shift_id": self.active_shift.shift_id,
             "cashier_id": self.active_shift.cashier_id,
             "booth_id": self.booth_id,

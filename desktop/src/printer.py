@@ -67,7 +67,7 @@ class ThermalTicketEngine:
     and produces visual previews for on-screen inspection.
     """
 
-    def __init__(self, facility_name: str = "SMARTPARK VISION AI ALGIERS", rc_nif: str = "NIF: 001616098234190 | RC: 16/00-098214B"):
+    def __init__(self, facility_name: str = "SMART PARK ALGIERS", rc_nif: str = "NIF: 001616098234190 | RC: 16/00-098214B"):
         self.facility_name = facility_name
         self.rc_nif = rc_nif
         self.sequence_counter = 1000
@@ -119,7 +119,7 @@ class ThermalTicketEngine:
         buf.extend(EscPosCommands.TEXT_DOUBLE_HEIGHT)
         buf.extend(self.facility_name.encode("utf-8") + b"\n")
         buf.extend(EscPosCommands.TEXT_NORMAL)
-        buf.extend(b"STATIONNEMENT AUTOMATISE SOVERAIN\n")
+        buf.extend(b"STATIONNEMENT AUTOMATISE SOUVERAIN\n")
         buf.extend(self.rc_nif.encode("utf-8") + b"\n")
         buf.extend(b"------------------------------------------\n")
 
@@ -159,7 +159,7 @@ class ThermalTicketEngine:
         buf.extend(b"En cas de perte du ticket: Forfait 1500 DZD applique\n")
         buf.extend(b"------------------------------------------\n")
         buf.extend(EscPosCommands.ALIGN_CENTER)
-        buf.extend(b"Conforme Loi 18-07 & Loi 25-11 (ANPDP)\n")
+        buf.extend(b"Protection des donnees ANPDP certifiee\n")
         buf.extend(b"Conservation images limitee a 30 jours\n")
         buf.extend(b"MERCI DE VOTRE VISITE - BONNE ROUTE\n")
         buf.extend(EscPosCommands.FEED_5_LINES)
@@ -172,7 +172,7 @@ class ThermalTicketEngine:
         lines = [
             "==========================================",
             f"       {self.facility_name}",
-            "     STATIONNEMENT AUTOMATISE SOVERAIN    ",
+            "     STATIONNEMENT AUTOMATISE SOUVERAIN   ",
             f"   {self.rc_nif}",
             "==========================================",
             "         TICKET D'ENTREE / PASS           ",
@@ -191,7 +191,7 @@ class ThermalTicketEngine:
             f" Tarif:        {ticket.tariff_hourly_dzd:.0f} DZD / heure",
             f" Franchise:    {ticket.grace_period_min} min gratuites",
             " Perte ticket: Forfait 1,500 DZD",
-            " Conformite:   Loi 18-07 & Loi 25-11 (ANPDP)",
+            " Conformite:   Donnees certifiees ANPDP",
             "==========================================",
             "   MERCI DE VOTRE VISITE - BONNE ROUTE    ",
             "==========================================",

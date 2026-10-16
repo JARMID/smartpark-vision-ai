@@ -1,5 +1,5 @@
 /**
- * Smart Park - High-Fidelity CCTV Rendering Engine (V3.2 Sovereign DZ)
+ * Smart Park Alger - High-Fidelity CCTV Rendering Engine
  * Real-Time Canvas Pipeline with Complete Day/Night & Trilingual Support
  * 
  * CAM-01: Voie 1 Entry ALPR (High-Angle Architectural Perspective)
@@ -117,7 +117,7 @@
 
     ctx.textAlign = 'right';
     ctx.fillStyle = isLight ? '#059669' : '#10B981';
-    ctx.fillText(`${fps.toFixed(1)} FPS | AXIS-DZ SECURE`, w - 10, h - 7);
+    ctx.fillText(`${fps.toFixed(1)} FPS | SMART PARK ALGER`, w - 10, h - 7);
     ctx.textAlign = 'left';
   }
 
@@ -1112,14 +1112,14 @@
     const ctx = cvs.getContext('2d');
     cvs.width = 480; cvs.height = 270;
 
-    let armAngle = 0; // 0 = straight up across lane (closed), 82 = rotated clockwise along curb (open)
-    let targetAngle = 0;
+    let armAngle = 0.0; // 0 = horizontal across lane (closed), 88 = vertical upright (open)
+    let targetAngle = 0.0;
 
     // Physical State Machine:
     // 'APPROACHING' -> 'STOPPED' -> 'OPENING' -> 'DEPARTING' -> 'LANE_CLEAR'
-    let carState = 'STOPPED';
-    let carX = 60; // Stop position at X=60 (bumper X=178, stop line X=205, barrier X=220)
-    let carSpeed = 0.0;
+    let carState = 'APPROACHING';
+    let carX = -120; // Starts approaching from off-screen left
+    let carSpeed = 2.8;
     let wheelAngle = 0.0;
     let stopDwellFrames = 0;
     let clearDwellFrames = 0;
@@ -1147,7 +1147,7 @@
       // Card Header Arm Status Indicator Sync
       const armEl = document.getElementById('cam3-arm-text');
       if (armEl) {
-        if (armAngle > 15) {
+        if (armAngle > 30) {
           armEl.innerText = lang === 'ar' ? 'مفتوح' : (lang === 'en' ? 'OPEN' : 'LEVÉE (OUVERT)');
           armEl.className = 'text-emeraldAccent font-semibold';
         } else {
@@ -1160,14 +1160,14 @@
       // Physical Vehicle Motion & Detection State Machine
       // -------------------------------------------------------------
       if (carState === 'APPROACHING') {
-        targetAngle = 0; // Barrier strictly lowered
+        targetAngle = 0.0; // Barrier strictly horizontal (closed)
         const dist = 60 - carX;
-        if (dist > 0.8) {
-          // Smooth deceleration curve towards stop line
-          carSpeed = Math.min(2.8, Math.max(0.35, dist * 0.04));
+        if (dist > 0.6) {
+          // Smooth hydraulic deceleration curve towards stop line
+          carSpeed = Math.min(2.8, Math.max(0.10, dist * 0.038));
           carX += carSpeed;
-          wheelAngle += (carSpeed / 12.5) * Math.PI * 2;
-          brakeDip = Math.min(1.6, carSpeed * 0.45); // Forward braking pitch
+          wheelAngle += carSpeed / 12.5; // True no-slip rolling kinematics (R = 12.5px)
+          brakeDip = Math.min(1.8, carSpeed * 0.55); // Dynamic forward braking pitch
         } else {
           // Complete full stop
           carX = 60;
@@ -1179,36 +1179,37 @@
       } else if (carState === 'STOPPED') {
         carSpeed = 0.0;
         brakeDip = 0.0;
-        // Wheels do NOT spin when car is stopped!
+        targetAngle = 0.0; // Strictly horizontal
         stopDwellFrames++;
-        // Dwell at barrier for ~300 frames (5-6 seconds) before auto-departing
-        if (stopDwellFrames > 320) {
-          targetAngle = 82;
+        // Dwell at barrier for ~300 frames (5 seconds) before opening
+        if (stopDwellFrames > 300) {
+          targetAngle = 88.0; // Raise arm vertically
           carState = 'OPENING';
         }
       } else if (carState === 'OPENING') {
         carSpeed = 0.0;
-        targetAngle = 82;
-        // Wait for barrier arm to clear past 38 degrees before car rolls
-        if (armAngle > 38) {
+        brakeDip = 0.0;
+        targetAngle = 88.0;
+        // Wait for barrier arm to clear past 55 degrees before car departs
+        if (armAngle > 55) {
           carState = 'DEPARTING';
-          carSpeed = 0.6;
+          carSpeed = 0.4;
         }
       } else if (carState === 'DEPARTING') {
-        targetAngle = 82;
+        targetAngle = 88.0; // Maintain vertical clearance
         // Accelerate forward across departure loop
-        if (carSpeed < 3.6) carSpeed += 0.055;
+        if (carSpeed < 3.5) carSpeed += 0.045;
         carX += carSpeed;
-        wheelAngle += (carSpeed / 12.5) * Math.PI * 2;
-        brakeDip = -0.5; // Slight rear acceleration squat
+        wheelAngle += carSpeed / 12.5; // True no-slip rolling kinematics
+        brakeDip = -0.4; // Rear acceleration squat
 
         if (carX > cvs.width + 120) {
           carState = 'LANE_CLEAR';
           clearDwellFrames = 0;
-          targetAngle = 0; // Smoothly lower barrier
+          targetAngle = 0.0; // Lower barrier back to horizontal
         }
       } else if (carState === 'LANE_CLEAR') {
-        targetAngle = 0;
+        targetAngle = 0.0;
         carSpeed = 0.0;
         clearDwellFrames++;
         if (clearDwellFrames > 90) { // 1.5 seconds clear
@@ -1380,7 +1381,7 @@
       ctx.strokeStyle = '#64748B'; ctx.lineWidth = 1.2;
       ctx.strokeRect(95, 19, 290, 26);
 
-      const isOpen = armAngle > 35;
+      const isOpen = armAngle > 40;
       ctx.textAlign = 'center';
       if (isOpen) {
         ctx.fillStyle = '#10B981';
@@ -1609,60 +1610,63 @@
       }
 
       // 7. Automatic Barrier Gate Cabinet & Articulated Boom Arm
-      const barrierX = 220, barrierY = 196;
-      const pivotX = barrierX + 9, pivotY = barrierY + 12;
+      // Positioned at X = 205 (stop bar threshold). Rendered with physical elevation kinematics.
+      const barrierX = 205, barrierY = 172;
+      const pivotX = barrierX + 8, pivotY = barrierY + 10;
 
       // Heavy Duty Steel Pedestal Cabinet
       ctx.fillStyle = '#EA580C'; // RAL 2004 Safety Orange
       ctx.beginPath();
-      ctx.roundRect(barrierX, barrierY, 18, 48, 4);
+      ctx.roundRect(barrierX, barrierY, 18, 52, 4);
       ctx.fill();
       ctx.strokeStyle = '#9A3412'; ctx.lineWidth = 1.5;
-      ctx.strokeRect(barrierX, barrierY, 18, 48);
+      ctx.strokeRect(barrierX, barrierY, 18, 52);
 
       // Flashing Strobe Beacon on Barrier Top
-      const isMovingArm = Math.abs(armAngle) > 4 && Math.abs(armAngle) < 78;
+      const isMovingArm = armAngle > 4 && armAngle < 82;
       const beaconColor = isMovingArm ? (Math.floor(frameCount / 4) % 2 === 0 ? '#F59E0B' : '#EF4444') : (isOpen ? '#10B981' : '#EF4444');
       ctx.fillStyle = beaconColor;
       ctx.beginPath(); ctx.arc(pivotX, barrierY - 3, 4, Math.PI, 0); ctx.fill();
 
-      // Articulated Boom Arm
+      // Articulated Boom Arm Kinematics:
+      // armAngle = 0 deg -> Horizontal across lane (closed)
+      // armAngle = 88 deg -> Vertical upright towards sky (open)
       ctx.save();
       ctx.translate(pivotX, pivotY);
-      ctx.rotate((armAngle * Math.PI) / 180);
+      ctx.rotate((-armAngle * Math.PI) / 180);
 
       // Mechanical Hub
       ctx.fillStyle = '#0F172A';
       ctx.beginPath(); ctx.arc(0, 0, 6.5, 0, Math.PI * 2); ctx.fill();
       ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1.2; ctx.stroke();
 
-      // Boom Arm Tube (extends -108px along -Y when armAngle = 0)
+      // Boom Arm Tube (extends +110px horizontally along +X when armAngle = 0)
       ctx.fillStyle = '#F8FAFC';
-      ctx.fillRect(-3, -108, 6, 108);
+      ctx.fillRect(0, -3.5, 110, 7);
       ctx.strokeStyle = '#64748B'; ctx.lineWidth = 0.8;
-      ctx.strokeRect(-3, -108, 6, 108);
+      ctx.strokeRect(0, -3.5, 110, 7);
 
       // Red Reflective Diagonal Safety Bands
       ctx.fillStyle = '#EF4444';
-      for (let s = -100; s < -10; s += 20) {
+      for (let s = 12; s < 105; s += 18) {
         ctx.beginPath();
-        ctx.moveTo(-3, s);
-        ctx.lineTo(3, s + 6);
-        ctx.lineTo(3, s + 13);
-        ctx.lineTo(-3, s + 7);
+        ctx.moveTo(s, -3.5);
+        ctx.lineTo(s + 8, -3.5);
+        ctx.lineTo(s + 4, 3.5);
+        ctx.lineTo(s - 4, 3.5);
         ctx.closePath();
         ctx.fill();
       }
 
-      // Tip Red LED Warning Light
+      // Tip LED Warning Light
       ctx.fillStyle = isOpen ? '#10B981' : '#EF4444';
-      ctx.beginPath(); ctx.arc(0, -106, 3, 0, Math.PI * 2); ctx.fill();
+      ctx.beginPath(); ctx.arc(108, 0, 3, 0, Math.PI * 2); ctx.fill();
 
       // Under-Arm Red/Green Integrated Safety Strip
       ctx.strokeStyle = isOpen ? '#10B981' : '#EF4444';
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(0, -106); ctx.lineTo(0, -6);
+      ctx.moveTo(4, 3.5); ctx.lineTo(106, 3.5);
       ctx.stroke();
 
       ctx.restore();
@@ -1678,7 +1682,7 @@
 
     return {
       openBarrier: () => {
-        targetAngle = 82;
+        targetAngle = 88.0;
         if (carState === 'STOPPED' || carState === 'APPROACHING') {
           carState = 'OPENING';
         }

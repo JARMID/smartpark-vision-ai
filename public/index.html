@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Smart Park - Centre de Contrôle Souverain 2D & 3D (Algérie)</title>
+  <title>Smart Park Alger - Centre de Contrôle 2D & 3D</title>
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Lucide Icons CDN -->
@@ -243,6 +243,10 @@
       <button onclick="openMobilePreviewModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-cyan-500/10 hover:bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 font-medium transition cursor-pointer" title="Application Mobile">
         <i data-lucide="smartphone" class="w-3.5 h-3.5"></i>
         <span class="hidden sm:inline" data-i18n="btn_mobile_app">Mobile</span>
+      </button>
+      <button onclick="openAnpdpModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 font-medium transition cursor-pointer" title="Protection des Données ANPDP">
+        <i data-lucide="shield-check" class="w-3.5 h-3.5"></i>
+        <span class="hidden sm:inline" data-i18n="btn_law">ANPDP</span>
       </button>
       <button onclick="openGuideModal()" class="flex items-center space-x-1 px-2.5 py-1 rounded-lg bg-emeraldAccent/10 hover:bg-emeraldAccent/20 text-emerald-400 border border-emeraldAccent/30 font-medium transition">
         <i data-lucide="book-open" class="w-3.5 h-3.5"></i>
@@ -817,7 +821,7 @@
         <div class="bg-black/50 p-3 rounded-xl border border-gray-800 space-y-1">
           <span class="font-semibold text-emeraldAccent block" data-i18n="guide_highlights_title">Points Clés à Mettre en Valeur :</span>
           <p class="text-gray-300 leading-relaxed" data-i18n="guide_highlights_body">
-            1. <strong>Conformité ANPDP Intégrale :</strong> 100% hébergé en Algérie. Zéro envoi de données biométriques à l'étranger (Article 44 de la Loi 18-07 et Loi 25-11).<br>
+            1. <strong>Protection des Données ANPDP :</strong> Hébergement local à Alger. Aucun transfert de données biométriques hors du territoire national.<br>
             2. <strong>Autonomie Hors-Ligne Totale :</strong> La décision d'ouverture de barrière est calculée en mémoire vive (RAM FAISS) en moins de 1 milliseconde, sans dépendre d'Internet.<br>
             3. <strong>Plaques Algériennes Authentiques :</strong> Prise en charge des 6 chiffres récents et du code temporaire "00" (cartes grises provisoires).<br>
             4. <strong>Jumeau Numérique 3D & 2D CAD :</strong> Visualisation en temps réel de l'état de chaque place et des flux de véhicules.
@@ -870,7 +874,7 @@
   </div>
 
   <!-- ======================================================= -->
-  <!-- MODAL 6: DOSSIER DE CONFORMITÉ ANPDP LOI 25-11 -->
+  <!-- MODAL 6: PROTECTION DES DONNÉES ANPDP -->
   <!-- ======================================================= -->
   <div id="anpdp-modal" class="fixed inset-0 bg-black/85 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
     <div class="glass-panel rounded-2xl border border-surfaceBorder max-w-2xl w-full p-5 shadow-2xl space-y-4">
@@ -902,8 +906,8 @@
             <p class="text-gray-400 text-[11px]" data-i18n="anpdp_dpia_desc">Réf : AIPD-ALPR-FACE-2026-DZ<br>Statut : Validé par DPO<br>Biométrie proportionnée (vecteurs 512-D non inversibles).</p>
           </div>
           <div class="bg-black/40 p-2.5 rounded-xl border border-gray-800">
-            <span class="font-semibold text-gray-300 block mb-1" data-i18n="anpdp_breach_title">Délai Notification Fuite (Loi 25-11) :</span>
-            <p class="text-gray-400 text-[11px]" data-i18n="anpdp_breach_desc">Délai légal : 5 jours calendrier<br>Incidents actifs : 0<br>Module de télé-déclaration ANPDP pré-rempli.</p>
+            <span class="font-semibold text-gray-300 block mb-1" data-i18n="anpdp_breach_title">Délai de Notification (ANPDP) :</span>
+            <p class="text-gray-400 text-[11px]" data-i18n="anpdp_breach_desc">Délai réglementaire : 5 jours ouvrés<br>Incidents actifs : 0<br>Registre de notification ANPDP disponible.</p>
           </div>
         </div>
 
@@ -1027,13 +1031,13 @@
     const I18N = {
       fr: {
         app_title: "Smart Park",
-        app_edition: "Édition Souveraine DZ",
+        app_edition: "Smart Park Alger",
         site_location: "Site Pilote: Parking Alger-Centre (El-Biar) | Wilaya: 16 (Alger)",
         pipeline_idle: "Pipeline IA: En Veille",
         pipeline_active: "Pipeline IA: Détection Active",
         server_online: "Serveur: En Ligne",
         btn_guide: "Guide",
-        btn_law: "Loi 25-11",
+        btn_law: "Protection des Données ANPDP",
         btn_close: "Fermer",
         btn_cancel: "Annuler",
         scenarios_label: "Scénarios:",
@@ -1120,13 +1124,13 @@
       },
       en: {
         app_title: "Smart Park",
-        app_edition: "Sovereign DZ Edition",
+        app_edition: "Smart Park Algiers",
         site_location: "Pilot Site: Algiers Central Parking (El-Biar) | Wilaya: 16 (Algiers)",
         pipeline_idle: "AI Pipeline: Standby",
         pipeline_active: "AI Pipeline: Active Detection",
         server_online: "Server: Online",
         btn_guide: "Guide",
-        btn_law: "Law 25-11",
+        btn_law: "ANPDP Data Protection",
         btn_close: "Close",
         btn_cancel: "Cancel",
         scenarios_label: "Scenarios:",
@@ -1213,13 +1217,13 @@
       },
       ar: {
         app_title: "سمارت بارك",
-        app_edition: "النسخة السيادية الجزائرية",
+        app_edition: "سمارت بارك الجزائر",
         site_location: "الموقع النموذجي: موقف الجزائر الوسطى (الأبيار) | ولاية: 16 (الجزائر)",
         pipeline_idle: "مسار الذكاء الاصطناعي: في وضع الاستعداد",
         pipeline_active: "مسار الذكاء الاصطناعي: رصد حي ونشط",
         server_online: "الخادم: متصل",
         btn_guide: "الدليل",
-        btn_law: "القانون 25-11",
+        btn_law: "حماية البيانات ANPDP",
         btn_close: "إغلاق",
         btn_cancel: "إلغاء",
         scenarios_label: "السيناريوهات:",
@@ -2018,6 +2022,13 @@
     async function manualBarrierOverride(ch) {
       playChime(true);
       trigger3DGateAnimation(true);
+      if (window.cctvEngine) {
+        if (ch === 2) {
+          window.cctvEngine.triggerCam3();
+        } else {
+          window.cctvEngine.triggerCam1();
+        }
+      }
       setTimeout(() => trigger3DGateAnimation(false), 4500);
       if (isConnectedToBackend) {
         try {

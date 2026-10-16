@@ -155,7 +155,7 @@ class SmartParkApiService {
     return const {
       'system_status': 'ONLINE',
       'deployment_profile': 'PROFILE 1 (Single-PC Sovereign Appliance)',
-      'anpdp_compliance': 'LOI 18-07 & LOI 25-11 VERIFIED',
+      'anpdp_compliance': 'CONFORMITE ANPDP CERTIFIEE',
       'occupancy': {'occupied_slots': 7, 'total_slots': 14, 'percentage': 50.0},
     };
   }
