@@ -106,11 +106,19 @@ class TestServerAPI(unittest.TestCase):
         self.assertTrue(exit_data["is_vip"])
 
     def test_barrier_manual_override(self):
-        payload = {"channel": 1, "duration_ms": 500}
-        response = self.client.post("/api/barrier/override", json=payload)
-        self.assertEqual(response.status_code, 200)
-        data = response.json()
-        self.assertTrue(data["success"])
+        # Valid channel 1
+        res1 = self.client.post("/api/barrier/override", json={"channel": 1, "duration_ms": 500})
+        self.assertEqual(res1.status_code, 200)
+        self.assertTrue(res1.json()["success"])
+
+        # Valid channel 2 with duration clamping
+        res2 = self.client.post("/api/barrier/override", json={"channel": 2, "duration_ms": 3000})
+        self.assertEqual(res2.status_code, 200)
+        self.assertTrue(res2.json()["success"])
+
+        # Invalid channel (e.g. 3) rejected with 400
+        res_bad = self.client.post("/api/barrier/override", json={"channel": 3, "duration_ms": 500})
+        self.assertEqual(res_bad.status_code, 400)
 
     def test_anpdp_compliance_endpoint(self):
         response = self.client.get("/api/compliance/anpdp")
@@ -228,13 +236,24 @@ class TestServerAPI(unittest.TestCase):
         secret = "test_secret_hmac_chargily_satim"
         valid_sig = hmac.new(secret.encode("utf-8"), payload_bytes, hashlib.sha256).hexdigest()
 
-        # Valid signature
+        # Valid signature via JSON envelope
         res_ok = self.client.post("/api/chargily/webhook", json={
             "payload": payload,
             "signature": valid_sig
         })
         self.assertEqual(res_ok.status_code, 200)
         self.assertEqual(res_ok.json()["payment_status"], "PAID")
+
+        # Valid signature via HTTP Signature header with raw JSON body
+        raw_payload_bytes = json.dumps(payload, separators=(",", ":")).encode("utf-8")
+        raw_sig = hmac.new(secret.encode("utf-8"), raw_payload_bytes, hashlib.sha256).hexdigest()
+        res_header = self.client.post(
+            "/api/chargily/webhook",
+            content=raw_payload_bytes,
+            headers={"signature": raw_sig, "content-type": "application/json"}
+        )
+        self.assertEqual(res_header.status_code, 200)
+        self.assertEqual(res_header.json()["payment_status"], "PAID")
 
         # Invalid signature
         res_bad = self.client.post("/api/chargily/webhook", json={

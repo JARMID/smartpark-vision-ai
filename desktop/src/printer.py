@@ -6,6 +6,7 @@ ticket layout formatting, visual ticket rendering, and hardware printer dispatch
 
 from dataclasses import dataclass
 from datetime import datetime
+import html
 import io
 import os
 import re
@@ -198,7 +199,14 @@ class ThermalTicketEngine:
         return "\n".join(lines)
 
     def render_svg_ticket(self, ticket: ParkingTicket) -> str:
-        """Render vector SVG thermal ticket preview for crisp desktop screen rendering."""
+        """Render vector SVG thermal ticket preview for crisp desktop screen rendering with XSS sanitization."""
+        safe_ticket_id = html.escape(str(ticket.ticket_id))
+        safe_entry_time = html.escape(ticket.entry_time.strftime('%Y-%m-%d %H:%M:%S'))
+        safe_lane_id = html.escape(str(ticket.lane_id))
+        safe_zone_name = html.escape(str(ticket.zone_name))
+        safe_plate_number = html.escape(str(ticket.plate_number))
+        safe_barcode_value = html.escape(str(ticket.barcode_value))
+
         return f"""<svg width="340" height="490" viewBox="0 0 340 490" xmlns="http://www.w3.org/2000/svg">
   <rect width="340" height="490" fill="#FFFDF8" rx="8" stroke="#E2E8F0" stroke-width="2"/>
   <rect x="15" y="15" width="310" height="460" fill="none" stroke="#CBD5E1" stroke-dasharray="4,4"/>
@@ -206,17 +214,17 @@ class ThermalTicketEngine:
   <text x="170" y="62" font-family="'Segoe UI', Roboto, sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#64748B">ALGER CENTRE</text>
   <line x1="25" y1="75" x2="315" y2="75" stroke="#E2E8F0" stroke-width="1.5"/>
   <text x="170" y="96" font-family="'Segoe UI', Roboto, sans-serif" font-size="12" font-weight="700" text-anchor="middle" fill="#10B981">TICKET DE STATIONNEMENT</text>
-  <text x="35" y="125" font-family="monospace" font-size="11" fill="#475569">Ticket: <tspan font-weight="700" fill="#0F172A">{ticket.ticket_id}</tspan></text>
-  <text x="35" y="145" font-family="monospace" font-size="11" fill="#475569">Entrée: <tspan font-weight="700" fill="#0F172A">{ticket.entry_time.strftime('%Y-%m-%d %H:%M:%S')}</tspan></text>
-  <text x="35" y="165" font-family="monospace" font-size="11" fill="#475569">Voie:   <tspan font-weight="700" fill="#0F172A">{ticket.lane_id}</tspan> | Zone: <tspan font-weight="700" fill="#0F172A">{ticket.zone_name}</tspan></text>
+  <text x="35" y="125" font-family="monospace" font-size="11" fill="#475569">Ticket: <tspan font-weight="700" fill="#0F172A">{safe_ticket_id}</tspan></text>
+  <text x="35" y="145" font-family="monospace" font-size="11" fill="#475569">Entrée: <tspan font-weight="700" fill="#0F172A">{safe_entry_time}</tspan></text>
+  <text x="35" y="165" font-family="monospace" font-size="11" fill="#475569">Voie:   <tspan font-weight="700" fill="#0F172A">{safe_lane_id}</tspan> | Zone: <tspan font-weight="700" fill="#0F172A">{safe_zone_name}</tspan></text>
   <rect x="30" y="185" width="280" height="55" fill="#F8FAFC" rx="6" stroke="#94A3B8"/>
   <text x="170" y="203" font-family="'Segoe UI', sans-serif" font-size="10" font-weight="600" text-anchor="middle" fill="#64748B">PLAQUE DETECTEE PAR CAMERA ALPR</text>
-  <text x="170" y="228" font-family="monospace" font-size="18" font-weight="900" text-anchor="middle" fill="#0F172A" letter-spacing="2">{ticket.plate_number}</text>
+  <text x="170" y="228" font-family="monospace" font-size="18" font-weight="900" text-anchor="middle" fill="#0F172A" letter-spacing="2">{safe_plate_number}</text>
   <g transform="translate(45, 255)">
     <rect x="0" y="0" width="250" height="50" fill="#FFFFFF" stroke="#E2E8F0"/>
     <text x="125" y="32" font-family="monospace" font-size="16" letter-spacing="4" text-anchor="middle" fill="#0F172A">||| ||||| || ||||||</text>
   </g>
-  <text x="170" y="322" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle" fill="#334155">{ticket.barcode_value}</text>
+  <text x="170" y="322" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle" fill="#334155">{safe_barcode_value}</text>
   <line x1="25" y1="335" x2="315" y2="335" stroke="#E2E8F0" stroke-width="1.5"/>
   <text x="35" y="358" font-family="'Segoe UI', sans-serif" font-size="10.5" fill="#475569">Tarif standard: <tspan font-weight="700">100 DZD / heure</tspan></text>
   <text x="35" y="375" font-family="'Segoe UI', sans-serif" font-size="10.5" fill="#475569">Franchise de grace: <tspan font-weight="700">15 minutes</tspan></text>

@@ -185,32 +185,37 @@ class _PaymentScreenState extends State<PaymentScreen> {
 
   Widget _cardSelectorChip(String type, String title, IconData icon, Color color) {
     final isSelected = _cardType == type;
-    return InkWell(
-      onTap: () => setState(() => _cardType = type),
-      borderRadius: BorderRadius.circular(10),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
-        decoration: BoxDecoration(
-          color: isSelected ? color.withValues(alpha: 0.15) : Theme.of(context).cardColor,
-          border: Border.all(
-            color: isSelected ? color : Theme.of(context).dividerColor,
-            width: isSelected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 28),
-            const SizedBox(height: 6),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 11,
-                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-              ),
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: '$title, ${isSelected ? "sélectionné" : "non sélectionné"}',
+      child: InkWell(
+        onTap: () => setState(() => _cardType = type),
+        borderRadius: BorderRadius.circular(10),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
+          decoration: BoxDecoration(
+            color: isSelected ? color.withValues(alpha: 0.15) : Theme.of(context).cardColor,
+            border: Border.all(
+              color: isSelected ? color : Theme.of(context).dividerColor,
+              width: isSelected ? 2 : 1,
             ),
-          ],
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            children: [
+              Icon(icon, color: color, size: 28),
+              const SizedBox(height: 6),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

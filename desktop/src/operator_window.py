@@ -174,6 +174,66 @@ class DesktopBridgeApi:
         self.audio_synth.play_success_chime()
         return report
 
+    def get_audit_data(self) -> Dict[str, Any]:
+        """Fetch local SQLite transaction history, barrier logs, and active shift status."""
+        try:
+            txs = self.pos_manager.db.get_recent_transactions(limit=20)
+            barrier_logs = self.pos_manager.db.get_recent_barrier_logs(limit=20)
+            shift = self.pos_manager.active_shift
+            shift_info = {
+                "shift_id": shift.shift_id if shift else "AUCUN",
+                "cashier_name": getattr(shift, "cashier_name", getattr(shift, "cashier_id", "Agent")) if shift else "Non assigné",
+                "opening_float_dzd": shift.opening_float_dzd if shift else 0.0,
+                "total_cash_dzd": shift.total_cash_collected_dzd if shift else 0.0,
+                "total_card_dzd": shift.total_card_collected_dzd if shift else 0.0,
+                "expected_drawer_dzd": ((shift.opening_float_dzd + shift.total_cash_collected_dzd) if shift else 0.0),
+                "transaction_count": shift.tickets_settled_count if shift else 0,
+                "status": "OUVERT" if shift else "FERMÉ",
+            }
+            return {
+                "success": True,
+                "transactions": txs,
+                "barrier_logs": barrier_logs,
+                "shift": shift_info,
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e), "transactions": [], "barrier_logs": []}
+
+    def reprint_receipt(self, tx_id: str) -> Dict[str, Any]:
+        """Generate and spool duplicate thermal receipt for a past transaction."""
+        tx = self.pos_manager.db.get_transaction_by_id(tx_id)
+        if not tx:
+            return {"success": False, "message": f"Transaction {tx_id} introuvable."}
+
+        self.audio_synth.play_success_chime()
+        receipt_lines = [
+            "=" * 32,
+            "         SMART PARK         ",
+            "   --- DUPLICATA REÇU ---   ",
+            "=" * 32,
+            f"REÇU N°   : {tx.get('receipt_number', 'N/A')}",
+            f"DATE/HEURE: {tx.get('exit_time', tx.get('entry_time', 'N/A'))}",
+            f"VÉHICULE  : {tx.get('plate_number', 'N/A')}",
+            f"TICKET ID : {tx.get('ticket_id', 'N/A')}",
+            f"DURÉE     : {tx.get('duration_minutes', 0)} min",
+            "-" * 32,
+            f"MONTANT DÛ: {tx.get('amount_due_dzd', 0.0):.2f} DZD",
+            f"MODE      : {tx.get('payment_method', 'CASH')}",
+            f"REÇU      : {tx.get('amount_tendered_dzd', 0.0):.2f} DZD",
+            f"RENDU     : {tx.get('change_dzd', 0.0):.2f} DZD",
+            "=" * 32,
+            "    MERCI DE VOTRE VISITE   ",
+            "   SMART PARK - SOUVERAIN   ",
+            "=" * 32,
+        ]
+        receipt_text = "\n".join(receipt_lines)
+        return {
+            "success": True,
+            "receipt_number": tx.get("receipt_number"),
+            "receipt_text": receipt_text,
+            "message": f"Duplicata {tx.get('receipt_number')} généré avec succès.",
+        }
+
     def play_sound(self, sound_type: str) -> bool:
         """Trigger sound effect."""
         if sound_type == "siren":
@@ -744,6 +804,7 @@ def get_desktop_ui_html() -> str:
         <button class="tab-btn active" onclick="switchTab('pos')" id="tabPos">Caisse POS</button>
         <button class="tab-btn" onclick="switchTab('scenarios')" id="tabScenarios">Scénarios (1-7)</button>
         <button class="tab-btn" onclick="switchTab('ticket')" id="tabTicket">Ticket Thermique</button>
+        <button class="tab-btn" onclick="switchTab('audit')" id="tabAudit">Journal &amp; Audit</button>
       </div>
 
       <!-- POS Tab Content -->
@@ -808,6 +869,25 @@ def get_desktop_ui_html() -> str:
           <!-- Vector ticket preview will render here -->
         </div>
       </div>
+
+      <!-- Audit & Ledger Tab Content -->
+      <div id="paneAudit" class="tab-content">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+          <span style="font-weight:700; font-size:12px;" id="lblAuditTitle">Transactions Récentes (SQLite Local)</span>
+          <button class="btn-secondary" style="width:auto; padding:3px 8px; font-size:11px;" onclick="loadAuditData()">Actualiser</button>
+        </div>
+        <div id="auditShiftSummary" class="tariff-card" style="margin-bottom:10px; font-size:11px; padding:10px;">
+          <div style="color:var(--text-muted);">Chargement du bilan de caisse...</div>
+        </div>
+        <div style="font-size:11px; font-weight:bold; margin-bottom:5px; color:var(--text-muted);">Derniers Règlements :</div>
+        <div id="auditTxList" style="max-height:160px; overflow-y:auto; display:flex; flex-direction:column; gap:6px;">
+          <div style="color:var(--text-muted); font-size:11px;">Aucune transaction enregistrée.</div>
+        </div>
+        <div style="font-size:11px; font-weight:bold; margin-top:10px; margin-bottom:5px; color:var(--text-muted);">Journal des Barrières (Modbus) :</div>
+        <div id="auditBarrierList" style="max-height:110px; overflow-y:auto; display:flex; flex-direction:column; gap:4px; font-size:10.5px;">
+          <div style="color:var(--text-muted); font-size:11px;">Aucun événement barrière récent.</div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -865,6 +945,8 @@ def get_desktop_ui_html() -> str:
         tabPos: "Caisse POS",
         tabScenarios: "Scénarios (1-7)",
         tabTicket: "Ticket Thermique",
+        tabAudit: "Journal & Audit",
+        lblAuditTitle: "Transactions Récentes (SQLite Local)",
         lblScan: "Scan Code-Barres / Entrée Manuelle (Touche S):",
         btnVerify: "Vérifier Ticket",
         lblPlate: "Immatriculation:",
@@ -892,6 +974,8 @@ def get_desktop_ui_html() -> str:
         tabPos: "Cashier POS",
         tabScenarios: "Scenarios (1-7)",
         tabTicket: "Thermal Ticket",
+        tabAudit: "Logs & Audit",
+        lblAuditTitle: "Recent Transactions (Local SQLite)",
         lblScan: "Scan Barcode / Manual Input (Key S):",
         btnVerify: "Verify Ticket",
         lblPlate: "License Plate:",
@@ -919,6 +1003,8 @@ def get_desktop_ui_html() -> str:
         tabPos: "الصندوق POS",
         tabScenarios: "سيناريوهات (1-7)",
         tabTicket: "تذكرة حرارية",
+        tabAudit: "السجل والتدقيق",
+        lblAuditTitle: "المعاملات الأخيرة (SQLite محلي)",
         lblScan: "مسح الرمز الشريطي / إدخال يدوي (زر S):",
         btnVerify: "تحقق من التذكرة",
         lblPlate: "رقم اللوحة:",
@@ -949,6 +1035,8 @@ def get_desktop_ui_html() -> str:
       document.getElementById('tabPos').innerText = dict.tabPos;
       document.getElementById('tabScenarios').innerText = dict.tabScenarios;
       document.getElementById('tabTicket').innerText = dict.tabTicket;
+      if (document.getElementById('tabAudit')) document.getElementById('tabAudit').innerText = dict.tabAudit;
+      if (document.getElementById('lblAuditTitle')) document.getElementById('lblAuditTitle').innerText = dict.lblAuditTitle;
       document.getElementById('lblScan').innerText = dict.lblScan;
       document.getElementById('btnVerify').innerText = dict.btnVerify;
       document.getElementById('lblPlate').innerText = dict.lblPlate;
@@ -991,6 +1079,84 @@ def get_desktop_ui_html() -> str:
       } else if (tab === 'ticket') {
         document.getElementById('tabTicket').classList.add('active');
         document.getElementById('paneTicket').classList.add('active');
+      } else if (tab === 'audit') {
+        document.getElementById('tabAudit').classList.add('active');
+        document.getElementById('paneAudit').classList.add('active');
+        loadAuditData();
+      }
+    }
+
+    async function loadAuditData() {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_audit_data) {
+        try {
+          const res = await window.pywebview.api.get_audit_data();
+          if (res.success) {
+            renderAuditData(res);
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    function renderAuditData(data) {
+      const summary = document.getElementById('auditShiftSummary');
+      if (data.shift && summary) {
+        summary.innerHTML = `
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:6px;">
+            <div><strong>Agent:</strong> ${data.shift.cashier_name}</div>
+            <div><strong>Statut:</strong> <span style="color:#10B981;">${data.shift.status}</span></div>
+            <div><strong>Fond de caisse:</strong> ${data.shift.opening_float_dzd} DZD</div>
+            <div><strong>Espèces perçues:</strong> ${data.shift.total_cash_dzd} DZD</div>
+            <div><strong>Cartes CIB:</strong> ${data.shift.total_card_dzd} DZD</div>
+            <div><strong>Total en caisse:</strong> <span style="color:#38BDF8; font-weight:bold;">${data.shift.expected_drawer_dzd} DZD</span></div>
+          </div>
+        `;
+      }
+
+      const txList = document.getElementById('auditTxList');
+      if (txList) {
+        if (!data.transactions || data.transactions.length === 0) {
+          txList.innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Aucune transaction enregistrée.</div>';
+        } else {
+          txList.innerHTML = data.transactions.map(t => `
+            <div style="background:var(--bg-surface-elevated); padding:6px 8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-color);">
+              <div>
+                <div style="font-weight:bold; font-size:11.5px;">${t.receipt_number || t.id} - ${t.plate_number}</div>
+                <div style="font-size:10px; color:var(--text-muted);">${t.exit_time || ''} | ${t.payment_method} | Rendue: ${t.change_dzd || 0} DZD</div>
+              </div>
+              <div style="display:flex; align-items:center; gap:6px;">
+                <span style="font-weight:bold; color:#10B981; font-size:11.5px;">${t.amount_due_dzd} DZD</span>
+                <button class="btn-secondary" style="width:auto; padding:2px 6px; font-size:10px;" onclick="reprintTx('${t.id}')">Reçu</button>
+              </div>
+            </div>
+          `).join('');
+        }
+      }
+
+      const barrierList = document.getElementById('auditBarrierList');
+      if (barrierList) {
+        if (!data.barrier_logs || data.barrier_logs.length === 0) {
+          barrierList.innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Aucun événement barrière récent.</div>';
+        } else {
+          barrierList.innerHTML = data.barrier_logs.map(b => `
+            <div style="background:var(--bg-surface-elevated); padding:3px 6px; border-radius:4px; display:flex; justify-content:space-between; align-items:center;">
+              <span>${b.timestamp} | Voie ${b.channel} (${b.duration_ms}ms)</span>
+              <span style="color:${b.hardware_success ? '#10B981' : '#EF4444'};">${b.reason} [${b.operator_name}]</span>
+            </div>
+          `).join('');
+        }
+      }
+    }
+
+    async function reprintTx(txId) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.reprint_receipt) {
+        const res = await window.pywebview.api.reprint_receipt(txId);
+        if (res.success) {
+          alert("Duplicata imprimé : " + res.receipt_number);
+        } else {
+          alert("Erreur : " + res.message);
+        }
       }
     }
 

@@ -39,7 +39,7 @@ class _HomeShellState extends State<HomeShell> {
         type: BottomNavigationBarType.fixed,
         backgroundColor: const Color(0xFF0D131F),
         selectedItemColor: const Color(0xFF00F2FE),
-        unselectedItemColor: const Color(0xFF64748B),
+        unselectedItemColor: const Color(0xFF94A3B8),
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.local_parking),

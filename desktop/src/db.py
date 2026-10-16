@@ -384,6 +384,28 @@ class DesktopDatabase:
         )
         return [dict(r) for r in cursor.fetchall()]
 
+    def get_transaction_by_id(self, tx_id: str) -> Optional[Dict[str, Any]]:
+        cursor = self.conn.execute(
+            """
+            SELECT * FROM pos_transactions
+            WHERE id = ? OR receipt_number = ?
+            LIMIT 1
+            """,
+            (tx_id, tx_id),
+        )
+        row = cursor.fetchone()
+        return dict(row) if row else None
+
+    def get_recent_barrier_logs(self, limit: int = 15) -> List[Dict[str, Any]]:
+        cursor = self.conn.execute(
+            """
+            SELECT * FROM barrier_audit_log
+            ORDER BY created_at DESC LIMIT ?
+            """,
+            (limit,),
+        )
+        return [dict(r) for r in cursor.fetchall()]
+
     @staticmethod
     def _calculate_ean13_checksum(raw12: str) -> int:
         if len(raw12) != 12 or not raw12.isdigit():

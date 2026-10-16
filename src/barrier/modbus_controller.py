@@ -95,8 +95,12 @@ class ModbusBarrierController:
                     message="Actuation blocked: No vehicle detected on induction ground loop.",
                 )
 
+        # Clamp channel and duration safely
+        clamped_channel = max(1, min(channel, 8))
+        clamped_duration_ms = min(max(duration_ms, 250), 1500)
+
         if self.simulation_mode:
-            time.sleep(duration_ms / 1000.0)
+            time.sleep(clamped_duration_ms / 1000.0)
             elapsed = (time.time() - start_time) * 1000.0
             return TriggerResponse(
                 success=True,
@@ -106,12 +110,12 @@ class ModbusBarrierController:
                     else BarrierTriggerResult.PULSE_SENT
                 ),
                 latency_ms=elapsed,
-                message=f"Simulated {duration_ms}ms pulse sent on relay channel {channel}.",
+                message=f"Simulated {clamped_duration_ms}ms pulse sent on relay channel {clamped_channel}.",
             )
 
         try:
             # Modbus TCP Function 05: Write Single Coil (Turn ON)
-            coil_addr = channel - 1
+            coil_addr = clamped_channel - 1
             on_cmd = bytes([0x00, 0x02, 0x00, 0x00, 0x00, 0x06, 0x01, 0x05, 0x00, coil_addr, 0xFF, 0x00])
             off_cmd = bytes([0x00, 0x03, 0x00, 0x00, 0x00, 0x06, 0x01, 0x05, 0x00, coil_addr, 0x00, 0x00])
 
@@ -120,12 +124,13 @@ class ModbusBarrierController:
                 sock.sendall(on_cmd)
                 sock.recv(32)
 
-                # Hold pulse duration
-                time.sleep(duration_ms / 1000.0)
-
-                # Turn OFF relay
-                sock.sendall(off_cmd)
-                sock.recv(32)
+                try:
+                    # Hold pulse duration
+                    time.sleep(clamped_duration_ms / 1000.0)
+                finally:
+                    # Guarantee coil shutoff
+                    sock.sendall(off_cmd)
+                    sock.recv(32)
 
             elapsed = (time.time() - start_time) * 1000.0
             return TriggerResponse(

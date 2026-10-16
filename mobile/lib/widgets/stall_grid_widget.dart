@@ -94,93 +94,99 @@ class StallGridWidget extends StatelessWidget {
     }
 
     final isVip = slot.isVip;
+    final semanticStatus = slot.isVacant ? "Libre" : (slot.isOccupied ? "Occupée" : "Réservée");
 
-    return InkWell(
-      onTap: () => onSlotSelected(slot),
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(
-            color: isSelected
-                ? const Color(0xFF00F2FE)
-                : (isVip ? const Color(0xFF8B5CF6) : Theme.of(context).dividerColor),
-            width: isSelected ? 2.5 : 1.2,
+    return Semantics(
+      button: true,
+      selected: isSelected,
+      label: 'Place ${slot.slotNumber}, ${slot.zoneName}, statut $semanticStatus${slot.plate != null ? ", immatriculation ${slot.plate}" : ""}',
+      child: InkWell(
+        onTap: () => onSlotSelected(slot),
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected
+                  ? const Color(0xFF00F2FE)
+                  : (isVip ? const Color(0xFFA78BFA) : Theme.of(context).dividerColor),
+              width: isSelected ? 2.5 : 1.2,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: const Color(0xFF00F2FE).withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    ),
+                  ]
+                : null,
           ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: const Color(0xFF00F2FE).withValues(alpha: 0.25),
-                    blurRadius: 8,
-                    offset: const Offset(0, 2),
-                  ),
-                ]
-              : null,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  slot.slotNumber,
-                  style: const TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 0.5,
-                  ),
-                ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: statusBg,
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(
-                    statusLabel,
-                    style: TextStyle(
-                      fontSize: 9.5,
-                      fontWeight: FontWeight.w800,
-                      color: statusColor,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  slot.zoneName,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: isVip ? const Color(0xFF8B5CF6) : Colors.grey,
-                    fontWeight: isVip ? FontWeight.w700 : FontWeight.w500,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (slot.plate != null)
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
                   Text(
-                    slot.plate!,
+                    slot.slotNumber,
                     style: const TextStyle(
-                      fontSize: 10.5,
-                      fontWeight: FontWeight.bold,
-                      fontFamily: 'monospace',
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.5,
                     ),
-                  )
-                else if (slot.isVacant)
-                  const Text(
-                    'Toucher pour reserver',
-                    style: TextStyle(fontSize: 10, color: Color(0xFF10B981)),
                   ),
-              ],
-            ),
-          ],
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: statusBg,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      statusLabel,
+                      style: TextStyle(
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        color: statusColor,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    slot.zoneName,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isVip ? const Color(0xFFA78BFA) : const Color(0xFF94A3B8),
+                      fontWeight: isVip ? FontWeight.w700 : FontWeight.w500,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (slot.plate != null)
+                    Text(
+                      slot.plate!,
+                      style: const TextStyle(
+                        fontSize: 10.5,
+                        fontWeight: FontWeight.bold,
+                        fontFamily: 'monospace',
+                      ),
+                    )
+                  else if (slot.isVacant)
+                    const Text(
+                      'Toucher pour reserver',
+                      style: TextStyle(fontSize: 10, color: Color(0xFF10B981)),
+                    ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

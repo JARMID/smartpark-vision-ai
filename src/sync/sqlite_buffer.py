@@ -6,6 +6,7 @@ Ensures zero data loss during network outages and provides local whitelist cachi
 from enum import Enum
 import json
 import sqlite3
+import threading
 import time
 from typing import Dict, List, Optional, Any
 
@@ -24,6 +25,7 @@ class SqliteBufferQueue:
 
     def __init__(self, db_path: str = "edge_buffer.db"):
         self.db_path = db_path
+        self._lock = threading.Lock()
         self.conn = sqlite3.connect(self.db_path, check_same_thread=False)
         self.conn.row_factory = sqlite3.Row
         self._init_db()
@@ -174,14 +176,23 @@ class SqliteBufferQueue:
     def purge_events_older_than(self, days: int = 30) -> int:
         """Purge events older than retention days complying with Law 25-11."""
         cutoff = time.time() - (days * 86400)
-        with self.conn:
-            cursor = self.conn.execute(
-                "DELETE FROM event_queue WHERE created_at < ?",
-                (cutoff,)
-            )
-            deleted = cursor.rowcount
+        with self._lock:
+            with self.conn:
+                cursor = self.conn.execute(
+                    "DELETE FROM event_queue WHERE created_at < ?",
+                    (cutoff,)
+                )
+                deleted = cursor.rowcount
             if deleted > 0:
-                self.conn.execute("VACUUM;")
+                # VACUUM must run in autocommit mode outside transactions
+                old_isolation = self.conn.isolation_level
+                try:
+                    self.conn.isolation_level = None
+                    self.conn.execute("VACUUM;")
+                except Exception:
+                    pass
+                finally:
+                    self.conn.isolation_level = old_isolation
             return deleted
 
     def close(self):

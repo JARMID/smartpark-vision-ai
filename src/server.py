@@ -9,7 +9,7 @@ import json
 import os
 import time
 from typing import Dict, List, Optional, Any
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse, PlainTextResponse, Response
@@ -413,13 +413,19 @@ def get_events():
 
 @app.post("/api/barrier/override")
 async def override_barrier(req: BarrierOverrideRequest):
+    if req.channel not in (1, 2):
+        raise HTTPException(
+            status_code=400,
+            detail="Canal de barrière non valide (seuls les canaux 1 et 2 sont autorisés)",
+        )
+    clamped_duration = max(250, min(1500, req.duration_ms))
     res = orchestrator.barrier_controller.trigger_barrier_open(
-        channel=req.channel, duration_ms=req.duration_ms, force_override=True
+        channel=req.channel, duration_ms=clamped_duration, force_override=True
     )
     event_data = {
         "type": "BARRIER_MANUAL_OVERRIDE",
         "channel": req.channel,
-        "duration_ms": req.duration_ms,
+        "duration_ms": clamped_duration,
         "timestamp": datetime.now().strftime("%H:%M:%S"),
         "success": res.success,
     }
@@ -880,17 +886,38 @@ def run_compliance_purge():
 
 
 @app.post("/api/chargily/webhook")
-async def chargily_webhook(req: WebhookVerifyRequest):
-    payload_str = json.dumps(req.payload, separators=(",", ":"))
-    payload_bytes = payload_str.encode("utf-8")
-    is_valid = chargily_client.verify_webhook_signature(payload_bytes, req.signature)
-    if not is_valid:
-        fallback_bytes = json.dumps(req.payload).encode("utf-8")
-        is_valid = chargily_client.verify_webhook_signature(fallback_bytes, req.signature)
+async def chargily_webhook(request: Request):
+    raw_body = await request.body()
+    try:
+        body_json = json.loads(raw_body.decode("utf-8"))
+    except Exception:
+        raise HTTPException(status_code=400, detail="Corps JSON invalide")
+
+    # Check for signature in HTTP headers (standard Chargily) or JSON body envelope
+    signature = request.headers.get("signature") or request.headers.get("Signature")
+    if not signature and isinstance(body_json, dict):
+        signature = body_json.get("signature")
+
+    if not signature:
+        raise HTTPException(status_code=401, detail="En-tête ou champ de signature manquant")
+
+    # Determine payload dictionary and signature verification payload bytes
+    if isinstance(body_json, dict) and "payload" in body_json and isinstance(body_json["payload"], dict):
+        payload_data = body_json["payload"]
+        payload_bytes = json.dumps(payload_data, separators=(",", ":")).encode("utf-8")
+        is_valid = chargily_client.verify_webhook_signature(payload_bytes, signature)
+        if not is_valid:
+            fallback_bytes = json.dumps(payload_data).encode("utf-8")
+            is_valid = chargily_client.verify_webhook_signature(fallback_bytes, signature)
+    else:
+        payload_data = body_json
+        is_valid = chargily_client.verify_webhook_signature(raw_body, signature)
+
     if not is_valid:
         raise HTTPException(status_code=401, detail="Signature cryptographique Chargily invalide")
-    checkout_id = req.payload.get("id", "ch_unknown")
-    plate_number = req.payload.get("metadata", {}).get("plate_number", "08192 120 09")
+
+    checkout_id = payload_data.get("id", "ch_unknown")
+    plate_number = payload_data.get("metadata", {}).get("plate_number", "08192 120 09")
     conf = chargily_client.process_payment_confirmation(checkout_id, plate_number)
     orchestrator.barrier_controller.trigger_barrier_open(channel=2, duration_ms=500, force_override=True)
     return conf

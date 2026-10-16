@@ -220,6 +220,37 @@ class TestDesktopBridgeApi(unittest.TestCase):
         inst = launch_desktop_station(server_url="http://127.0.0.1:8080", headless=True)
         self.assertIsNotNone(inst)
 
+    def test_audit_data_and_reprint(self):
+        # Open shift first
+        self.bridge.pos_manager.open_shift("AGENT-TEST", 5000.0)
+
+        # Get initial audit data
+        audit_initial = self.bridge.get_audit_data()
+        self.assertTrue(audit_initial["success"])
+        self.assertIn("shift", audit_initial)
+
+        # Process a payment
+        settle_res = self.bridge.settle_payment(
+            ticket_id="TKT-AUDIT-01",
+            plate_number="104822 119 16",
+            amount_dzd=150.0,
+            payment_method="CASH",
+            tendered_dzd=200.0,
+        )
+        self.assertTrue(settle_res["success"])
+
+        # Check updated audit data
+        audit_updated = self.bridge.get_audit_data()
+        self.assertTrue(audit_updated["success"])
+        self.assertGreaterEqual(len(audit_updated["transactions"]), 1)
+        latest_tx = audit_updated["transactions"][0]
+
+        # Test duplicate receipt reprint
+        reprint_res = self.bridge.reprint_receipt(latest_tx["id"])
+        self.assertTrue(reprint_res["success"])
+        self.assertIn("DUPLICATA REÇU", reprint_res["receipt_text"])
+        self.assertIn("104822 119 16", reprint_res["receipt_text"])
+
 
 class TestDesktopDatabaseAndHardware(unittest.TestCase):
     def setUp(self):

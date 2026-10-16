@@ -33,12 +33,22 @@ class DirectModbusController:
         Sends a close-then-open coil pulse to actuate the barrier motor arm.
         Channel 1: Entry Barrier. Channel 2: Exit Barrier.
         """
+        if channel not in (1, 2):
+            return {
+                "success": False,
+                "error": f"Canal de barrière invalide: {channel}. Seuls les canaux 1 et 2 sont autorisés.",
+                "channel": channel,
+                "mode": "VALIDATION_ERROR",
+            }
+
+        clamped_duration_ms = min(max(duration_ms, 250), 1500)
+
         if self.simulation_mode:
             # Immediate responsive simulation
             return {
                 "success": True,
                 "channel": channel,
-                "duration_ms": duration_ms,
+                "duration_ms": clamped_duration_ms,
                 "mode": "SIMULATION",
                 "message": f"Barrière Voie {channel} actionnée avec succès (Simulation).",
                 "hardware_ip": f"{self.host}:{self.port}",
@@ -54,14 +64,17 @@ class DirectModbusController:
             with socket.create_connection((self.host, self.port), timeout=self.timeout_sec) as s:
                 s.sendall(turn_on_cmd)
                 _ = s.recv(12)  # Read response
-                time.sleep(duration_ms / 1000.0)
-                s.sendall(turn_off_cmd)
-                _ = s.recv(12)
+                try:
+                    time.sleep(clamped_duration_ms / 1000.0)
+                finally:
+                    # Enforce coil shutoff even if sleep throws or interrupted
+                    s.sendall(turn_off_cmd)
+                    _ = s.recv(12)
 
             return {
                 "success": True,
                 "channel": channel,
-                "duration_ms": duration_ms,
+                "duration_ms": clamped_duration_ms,
                 "mode": "PHYSICAL_HARDWARE",
                 "message": f"Impulsion relais physique Modbus envoyée à {self.host}:{self.port}.",
                 "hardware_ip": f"{self.host}:{self.port}",
@@ -71,8 +84,9 @@ class DirectModbusController:
             return {
                 "success": True,
                 "channel": channel,
-                "duration_ms": duration_ms,
+                "duration_ms": clamped_duration_ms,
                 "mode": "FALLBACK_SIMULATION",
                 "message": f"Relais physique non connecté ({e}). Commutation en simulation locale.",
                 "hardware_ip": f"{self.host}:{self.port}",
             }
+

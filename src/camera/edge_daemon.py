@@ -27,6 +27,11 @@ import uvicorn
 from fastapi import FastAPI, HTTPException, BackgroundTasks
 from pydantic import BaseModel, Field
 
+# Ensure project root is in sys.path for direct CLI execution
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+if project_root not in sys.path:
+    sys.path.insert(0, project_root)
+
 from src.camera.edge_stream_manager import EdgeStreamManager
 from src.camera.rtsp_worker import CameraStreamStatus
 from src.main import GateOrchestrator, GateDecisionResult

@@ -20,53 +20,59 @@ class DynamicQrWidget extends StatelessWidget {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Stack(
-          alignment: Alignment.center,
-          children: [
-            // Outer circular countdown indicator
-            SizedBox(
-              width: size + 40,
-              height: size + 40,
-              child: CircularProgressIndicator(
-                value: secondsRemaining / 30.0,
-                strokeWidth: 4,
-                backgroundColor: primaryColor.withValues(alpha: 0.15),
-                valueColor: AlwaysStoppedAnimation<Color>(
-                  secondsRemaining > 5 ? primaryColor : Colors.red,
-                ),
-              ),
-            ),
-            // Custom QR Matrix Card
-            Container(
-              width: size,
-              height: size,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
+        Semantics(
+          image: true,
+          label: 'Pass d\'accès QR dynamique sécurisé. Renouvellement automatique dans $secondsRemaining secondes.',
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              // Outer circular countdown indicator
+              SizedBox(
+                width: size + 40,
+                height: size + 40,
+                child: CircularProgressIndicator(
+                  value: secondsRemaining / 30.0,
+                  strokeWidth: 4,
+                  backgroundColor: primaryColor.withValues(alpha: 0.15),
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    secondsRemaining > 5 ? primaryColor : Colors.red,
                   ),
-                ],
-              ),
-              child: CustomPaint(
-                size: Size(size - 24, size - 24),
-                painter: _MatrixQrPainter(
-                  seedString: payload,
-                  moduleColor: const Color(0xFF0F172A),
                 ),
               ),
-            ),
-          ],
+              // Custom QR Matrix Card
+              Container(
+                width: size,
+                height: size,
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: CustomPaint(
+                  size: Size(size - 24, size - 24),
+                  painter: _MatrixQrPainter(
+                    seedString: payload,
+                    moduleColor: const Color(0xFF0F172A),
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
         const SizedBox(height: 16),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.refresh, size: 16, color: primaryColor),
+            ExcludeSemantics(
+              child: Icon(Icons.refresh, size: 16, color: primaryColor),
+            ),
             const SizedBox(width: 6),
             Text(
               'Renouvellement dans ${secondsRemaining}s',
