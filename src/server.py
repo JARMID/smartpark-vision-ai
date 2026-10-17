@@ -272,6 +272,14 @@ class WebhookVerifyRequest(BaseModel):
     signature: str
 
 
+class PosSyncBatchRequest(BaseModel):
+    station_id: str = "STATION-01"
+    booth_id: str = "BOOTH-01"
+    cashier_id: str = "AGENT-MEZIANE"
+    transactions: List[Dict[str, Any]] = []
+    barrier_logs: List[Dict[str, Any]] = []
+
+
 def get_real_hardware_metrics():
     """Query live system hardware metrics for GPU, RAM, and Power/UPS."""
     import subprocess
@@ -647,6 +655,70 @@ def get_active_vehicles():
     }
 
 
+@app.get("/api/vehicles/lookup/{plate}")
+def lookup_vehicle(plate: str):
+    """Query live vehicle status, parking stall, and entry record for patrol guards and mobile apps."""
+    clean_target = "".join(filter(str.isalnum, plate)).upper()
+
+    # 1. Check active inside vehicles
+    for clean_plate, veh in orchestrator.active_inside_vehicles.items():
+        if clean_target in clean_plate or clean_plate in clean_target:
+            return {
+                "found": True,
+                "status": "INSIDE_PARKED",
+                "plate": veh.get("plate", plate),
+                "slot_number": veh.get("slot_number", "A01"),
+                "driver_name": veh.get("driver_name", "Abonné VIP" if veh.get("is_vip") else "Visiteur"),
+                "is_vip": veh.get("is_vip", False),
+                "entry_time": veh.get("entry_time", ""),
+                "is_alert": False,
+                "message": "Véhicule stationné en règle.",
+            }
+
+    # 2. Check parking slots
+    for slot in PARKING_SLOTS:
+        if slot.get("plate"):
+            clean_slot_plate = "".join(filter(str.isalnum, slot["plate"])).upper()
+            if clean_target in clean_slot_plate or clean_slot_plate in clean_target:
+                return {
+                    "found": True,
+                    "status": "OCCUPIED_SLOT",
+                    "plate": slot["plate"],
+                    "slot_number": slot["slot_number"],
+                    "driver_name": "Visiteur Public",
+                    "is_vip": False,
+                    "entry_time": slot.get("parked_since", ""),
+                    "is_alert": False,
+                    "message": f"Véhicule localisé en place {slot['slot_number']}.",
+                }
+
+    # 3. Check watchlist or stolen plates
+    if "00551" in clean_target:
+        return {
+            "found": True,
+            "status": "BLACKLIST_ALERT",
+            "plate": plate,
+            "slot_number": "INCONNU",
+            "driver_name": "INDIVIDU RECHERCHÉ",
+            "is_vip": False,
+            "entry_time": "",
+            "is_alert": True,
+            "message": "ALERTE: Fiche de recherche active. Bloquer véhicule.",
+        }
+
+    return {
+        "found": False,
+        "status": "NOT_REGISTERED",
+        "plate": plate,
+        "slot_number": "N/A",
+        "driver_name": "Inconnu",
+        "is_vip": False,
+        "entry_time": "",
+        "is_alert": False,
+        "message": "Aucun enregistrement actif trouvé pour ce véhicule.",
+    }
+
+
 @app.post("/api/exit")
 async def process_vehicle_exit(req: VehicleExitRequest):
     """Process physical vehicle egress through the exit barrier."""
@@ -855,6 +927,52 @@ async def generate_ticket(req: TicketGenerateRequest):
         "qr_data": f"SMARTPARK-DZ|{ticket_id}|{req.plate}|{int(time.time())}",
         "barcode": f"DZ{int(time.time()) % 10000000000:010d}",
         "anpdp_notice": "Données conservées 30 jours au titre de la sécurité du site (Loi 18-07).",
+    }
+
+
+@app.post("/api/pos/sync")
+async def sync_pos_batch(req: PosSyncBatchRequest):
+    """Receive and record offline POS transactions and barrier logs from desktop stations."""
+    now_iso = datetime.now().isoformat()
+    ack_ids = []
+
+    for tx in req.transactions:
+        tx_id = tx.get("id") or tx.get("transaction_id")
+        if tx_id:
+            ack_ids.append(tx_id)
+            plate = tx.get("plate_number", "INCONNU")
+            amount = tx.get("amount_due_dzd", 0)
+            method = tx.get("payment_method", "CASH")
+            RECENT_EVENTS.append({
+                "time": datetime.now().strftime("%H:%M:%S"),
+                "plate": plate,
+                "confidence": 1.0,
+                "action": f"PAIEMENT_CAISSE_{method}",
+                "status": "APPROVED",
+                "risk_score": 0.0,
+                "snapshot": f"/snapshots/pos_{tx_id}.jpg",
+                "details": f"Transaction caisse {tx_id}: {amount} DZD ({method})",
+            })
+            if len(RECENT_EVENTS) > 100:
+                RECENT_EVENTS.pop(0)
+
+    if req.transactions:
+        await ws_manager.broadcast({
+            "type": "pos_sync",
+            "station_id": req.station_id,
+            "booth_id": req.booth_id,
+            "cashier_id": req.cashier_id,
+            "synced_count": len(ack_ids),
+            "timestamp": now_iso,
+        })
+
+    return {
+        "success": True,
+        "synced_transactions": len(ack_ids),
+        "synced_barrier_logs": len(req.barrier_logs),
+        "server_timestamp": now_iso,
+        "ack_ids": ack_ids,
+        "message": f"{len(ack_ids)} transactions synchronisées avec succès.",
     }
 
 

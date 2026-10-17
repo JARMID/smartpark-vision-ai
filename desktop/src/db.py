@@ -78,10 +78,16 @@ class DesktopDatabase:
                     payment_method TEXT NOT NULL,
                     receipt_number TEXT NOT NULL,
                     created_at REAL NOT NULL,
+                    is_synced INTEGER NOT NULL DEFAULT 0,
                     FOREIGN KEY (shift_id) REFERENCES cashier_shifts(shift_id)
                 );
                 """
             )
+            # Automatic column migration for existing databases
+            try:
+                self.conn.execute("ALTER TABLE pos_transactions ADD COLUMN is_synced INTEGER NOT NULL DEFAULT 0;")
+            except Exception:
+                pass
 
             # 3. Local Offline Parking Tickets
             self.conn.execute(
@@ -201,8 +207,8 @@ class DesktopDatabase:
                 INSERT INTO pos_transactions (
                     id, shift_id, ticket_id, plate_number, entry_time, exit_time,
                     duration_minutes, amount_due_dzd, amount_tendered_dzd, change_dzd,
-                    payment_method, receipt_number, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    payment_method, receipt_number, created_at, is_synced
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0)
                 """,
                 (
                     tx_id, shift_id, ticket_id, plate_number, entry_time, exit_time,
@@ -424,6 +430,46 @@ class DesktopDatabase:
                 (limit,),
             )
             return [dict(r) for r in cursor.fetchall()]
+
+    def get_unsynced_transactions(self, limit: int = 50) -> List[Dict[str, Any]]:
+        """Fetch transactions that have not yet been synchronized with the gateway server."""
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM pos_transactions
+                WHERE is_synced = 0
+                ORDER BY created_at ASC LIMIT ?
+                """,
+                (limit,),
+            )
+            return [dict(r) for r in cursor.fetchall()]
+
+    def mark_transactions_synced(self, tx_ids: List[str]):
+        """Mark a list of transaction IDs as synchronized."""
+        if not tx_ids:
+            return
+        with self._lock, self.conn:
+            placeholders = ",".join("?" for _ in tx_ids)
+            self.conn.execute(
+                f"UPDATE pos_transactions SET is_synced = 1 WHERE id IN ({placeholders})",
+                tx_ids,
+            )
+
+    def get_sync_status(self) -> Dict[str, Any]:
+        """Return counts of synced vs pending transactions."""
+        with self._lock:
+            cursor = self.conn.execute(
+                "SELECT COUNT(*) AS total, SUM(CASE WHEN is_synced = 0 THEN 1 ELSE 0 END) AS pending FROM pos_transactions"
+            )
+            row = cursor.fetchone()
+            total = row["total"] if row and row["total"] is not None else 0
+            pending = row["pending"] if row and row["pending"] is not None else 0
+            return {
+                "total_transactions": total,
+                "pending_transactions": pending,
+                "synced_transactions": total - pending,
+                "is_fully_synced": pending == 0,
+            }
 
     @staticmethod
     def _calculate_ean13_checksum(raw12: str) -> int:

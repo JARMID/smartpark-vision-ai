@@ -25,7 +25,7 @@ class ParkingController extends ChangeNotifier {
   Map<String, dynamic>? _patrolPlateStatus;
 
   ParkingController({SmartParkApiService? service, bool autoStartTicker = true})
-      : apiService = service ?? SmartParkApiService() {
+    : apiService = service ?? SmartParkApiService() {
     _initialize(autoStartTicker);
   }
 
@@ -52,7 +52,10 @@ class ParkingController extends ChangeNotifier {
   void _initDemoPass() {
     final now = DateTime.now();
     const plate = '104822 119 16';
-    final token = AccessPass.generateRotatingToken(plate, now.millisecondsSinceEpoch ~/ 1000);
+    final token = AccessPass.generateRotatingToken(
+      plate,
+      now.millisecondsSinceEpoch ~/ 1000,
+    );
 
     _accessPass = AccessPass(
       passId: 'PASS-ALG-9901',
@@ -86,7 +89,10 @@ class ParkingController extends ChangeNotifier {
       if (_accessPass == null) return;
       final nowSec = DateTime.now().millisecondsSinceEpoch ~/ 1000;
       final rem = 30 - (nowSec % 30);
-      final token = AccessPass.generateRotatingToken(_accessPass!.plateNumber, nowSec);
+      final token = AccessPass.generateRotatingToken(
+        _accessPass!.plateNumber,
+        nowSec,
+      );
 
       _accessPass = _accessPass!.copyWith(
         currentToken: token,
@@ -96,10 +102,15 @@ class ParkingController extends ChangeNotifier {
     });
   }
 
+  bool _isDisposed = false;
+
   Future<void> loadSlots() async {
+    if (_isDisposed) return;
     _isLoading = true;
     notifyListeners();
-    _slots = List<ParkingSlot>.from(await apiService.fetchSlots());
+    final res = await apiService.fetchSlots();
+    if (_isDisposed) return;
+    _slots = List<ParkingSlot>.from(res);
     _isLoading = false;
     notifyListeners();
   }
@@ -111,11 +122,42 @@ class ParkingController extends ChangeNotifier {
 
   Future<bool> reserveSelectedSlot() async {
     if (_selectedSlot == null || !_selectedSlot!.isVacant) return false;
-    final success = await apiService.toggleSlotReservation(_selectedSlot!.slotNumber, true);
+    final success = await apiService.toggleSlotReservation(
+      _selectedSlot!.slotNumber,
+      true,
+    );
     if (success) {
-      final index = _slots.indexWhere((s) => s.slotNumber == _selectedSlot!.slotNumber);
+      final index = _slots.indexWhere(
+        (s) => s.slotNumber == _selectedSlot!.slotNumber,
+      );
       if (index != -1) {
         _slots[index] = _slots[index].copyWith(status: 'reserved');
+        _selectedSlot = _slots[index];
+        notifyListeners();
+      }
+    }
+    return success;
+  }
+
+  String get currentServerUrl => apiService.baseUrl;
+
+  Future<void> updateServerUrl(String newUrl) async {
+    apiService.updateBaseUrl(newUrl);
+    await loadSlots();
+  }
+
+  Future<bool> releaseSelectedSlot() async {
+    if (_selectedSlot == null || !_selectedSlot!.isReserved) return false;
+    final success = await apiService.toggleSlotReservation(
+      _selectedSlot!.slotNumber,
+      false,
+    );
+    if (success) {
+      final index = _slots.indexWhere(
+        (s) => s.slotNumber == _selectedSlot!.slotNumber,
+      );
+      if (index != -1) {
+        _slots[index] = _slots[index].copyWith(status: 'vacant');
         _selectedSlot = _slots[index];
         notifyListeners();
       }
@@ -148,10 +190,29 @@ class ParkingController extends ChangeNotifier {
     notifyListeners();
   }
 
-  void executePatrolScan(String plate) {
+  Future<void> executePatrolScan(String plate) async {
     _patrolLastScannedPlate = plate;
-    // Query local list to verify authorization
-    final matched = _slots.where((s) => s.plate != null && s.plate!.contains(plate)).toList();
+
+    // 1. Try remote gateway verification if online
+    final live = await apiService.checkVehicleStatus(plate);
+    if (!_isDisposed && live != null && live['found'] == true) {
+      _patrolPlateStatus = {
+        'status': live['status'] == 'BLACKLIST_ALERT' ? 'BLACKLIST_ALERT' : 'AUTHORIZED',
+        'slot': live['slot_number'] ?? 'N/A',
+        'zone': live['slot_number'] != null && (live['slot_number'] as String).startsWith('A') ? 'Zone A (VIP)' : 'Zone B',
+        'message': live['message'] ?? 'Vehicule verifie sur la passerelle.',
+        'is_alert': live['is_alert'] ?? false,
+      };
+      notifyListeners();
+      return;
+    }
+
+    if (_isDisposed) return;
+
+    // 2. Local fallback heuristic
+    final matched = _slots
+        .where((s) => s.plate != null && s.plate!.contains(plate))
+        .toList();
     if (matched.isNotEmpty) {
       _patrolPlateStatus = {
         'status': 'AUTHORIZED',
@@ -189,7 +250,9 @@ class ParkingController extends ChangeNotifier {
   }
 
   void toggleTheme() {
-    _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
+    _themeMode = _themeMode == ThemeMode.dark
+        ? ThemeMode.light
+        : ThemeMode.dark;
     notifyListeners();
   }
 
@@ -200,6 +263,7 @@ class ParkingController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _isDisposed = true;
     _passTimer?.cancel();
     super.dispose();
   }

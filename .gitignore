@@ -29,4 +29,5 @@ mobile/.pub/
 mobile/build/
 
 desktop/spool/*.bin
+desktop/data/
 

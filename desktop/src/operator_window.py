@@ -236,6 +236,91 @@ class DesktopBridgeApi:
         except Exception as e:
             return {"success": False, "error": str(e), "transactions": [], "barrier_logs": []}
 
+    def sync_offline_buffer(self) -> Dict[str, Any]:
+        """Synchronize unsynced local SQLite transactions and barrier logs to the gateway server."""
+        import urllib.request
+        unsynced_txs = self.pos_manager.db.get_unsynced_transactions(limit=100)
+        recent_barrier = self.pos_manager.db.get_recent_barrier_logs(limit=20)
+        if not unsynced_txs:
+            return {
+                "success": True,
+                "synced_count": 0,
+                "pending_count": 0,
+                "message": "Toutes les transactions locales sont déjà synchronisées avec la passerelle.",
+            }
+
+        url = f"{self.server_url}/api/pos/sync"
+        payload = json.dumps({
+            "station_id": self.config.get("station_id", "DESKTOP-STATION-01"),
+            "booth_id": self.booth_id,
+            "cashier_id": self.cashier_id,
+            "transactions": unsynced_txs,
+            "barrier_logs": recent_barrier,
+        }).encode("utf-8")
+
+        try:
+            req = urllib.request.Request(url, data=payload, headers={"Content-Type": "application/json"})
+            with urllib.request.urlopen(req, timeout=3.0) as resp:
+                data = json.loads(resp.read().decode("utf-8"))
+                ack_ids = data.get("ack_ids", [])
+                if ack_ids:
+                    self.pos_manager.db.mark_transactions_synced(ack_ids)
+                self.audio_synth.play_success_chime()
+                rem = self.pos_manager.db.get_sync_status()
+                return {
+                    "success": True,
+                    "synced_count": len(ack_ids),
+                    "pending_count": rem.get("pending_transactions", 0),
+                    "message": f"Synchronisation réussie: {len(ack_ids)} transactions transmises à la passerelle.",
+                }
+        except Exception as e:
+            return {
+                "success": False,
+                "synced_count": 0,
+                "pending_count": len(unsynced_txs),
+                "error": str(e),
+                "message": f"Passerelle inaccessible ({str(e)}). Transactions conservées dans le tampon SQLite local.",
+            }
+
+    def get_sync_status(self) -> Dict[str, Any]:
+        """Fetch current sync statistics from local SQLite store."""
+        try:
+            return self.pos_manager.db.get_sync_status()
+        except Exception as e:
+            return {"total_transactions": 0, "pending_transactions": 0, "synced_transactions": 0, "error": str(e)}
+
+    def export_shift_csv(self) -> Dict[str, Any]:
+        """Export local SQLite transactions to a CSV file on disk in data/exports."""
+        try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            export_dir = os.path.join(base_dir, "data", "exports")
+            os.makedirs(export_dir, exist_ok=True)
+            now_str = datetime.now().strftime("%Y%m%d_%H%M%S")
+            filename = f"shift_audit_{now_str}.csv"
+            filepath = os.path.join(export_dir, filename)
+
+            txs = self.pos_manager.db.get_recent_transactions(limit=1000)
+            lines = [
+                "id,receipt_number,ticket_id,plate_number,entry_time,exit_time,duration_minutes,amount_due_dzd,amount_tendered_dzd,change_dzd,payment_method,shift_id,created_at"
+            ]
+            for t in txs:
+                lines.append(
+                    f'"{t.get("id","")}","{t.get("receipt_number","")}","{t.get("ticket_id","")}","{t.get("plate_number","")}","{t.get("entry_time","")}","{t.get("exit_time","")}",{t.get("duration_minutes",0)},{t.get("amount_due_dzd",0)},{t.get("amount_tendered_dzd",0)},{t.get("change_dzd",0)},"{t.get("payment_method","")}","{t.get("shift_id","")}",{t.get("created_at",0)}'
+                )
+
+            with open(filepath, "w", encoding="utf-8") as f:
+                f.write("\n".join(lines))
+
+            return {
+                "success": True,
+                "filepath": filepath,
+                "filename": filename,
+                "total_rows": len(txs),
+                "message": f"Export réussi: {filename} ({len(txs)} transactions)",
+            }
+        except Exception as e:
+            return {"success": False, "error": str(e), "message": f"Échec export: {str(e)}"}
+
     def reprint_receipt(self, tx_id: str) -> Dict[str, Any]:
         """Generate and spool duplicate thermal receipt for a past transaction."""
         tx = self.pos_manager.db.get_transaction_by_id(tx_id)
@@ -708,6 +793,10 @@ def get_desktop_ui_html() -> str:
       <div class="hotkey-indicator">[BOOTH-01]</div>
     </div>
     <div class="header-pills">
+      <div class="status-pill" id="syncStatusBadge" onclick="triggerManualSync()" style="cursor: pointer;" title="Cliquer pour forcer la synchronisation avec la passerelle">
+        <div class="status-dot" id="syncDot" style="background-color: var(--accent-green);"></div>
+        <span id="txtSyncStatus">SYNC: À JOUR</span>
+      </div>
       <div class="status-pill">
         <div class="status-dot"></div>
         <span id="txtStatus">MODBUS &amp; RTSP EN LIGNE</span>
@@ -891,7 +980,13 @@ def get_desktop_ui_html() -> str:
       <div id="paneAudit" class="tab-content">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
           <span style="font-weight:700; font-size:12px;" id="lblAuditTitle">Transactions Récentes (SQLite Local)</span>
-          <button class="btn-secondary" style="width:auto; padding:3px 8px; font-size:11px;" onclick="loadAuditData()">Actualiser</button>
+          <div style="display:flex; gap:6px;">
+            <button class="btn-secondary" style="width:auto; padding:3px 8px; font-size:11px;" onclick="exportAuditData()" id="btnExportAudit">Exporter CSV</button>
+            <button class="btn-secondary" style="width:auto; padding:3px 8px; font-size:11px;" onclick="loadAuditData()">Actualiser</button>
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:8px;">
+          <input type="text" id="auditSearchInput" class="form-input" placeholder="Rechercher par plaque ou reçu..." oninput="filterAuditTransactions()" style="font-size:11px; padding:6px 10px;">
         </div>
         <div id="auditShiftSummary" class="tariff-card" style="margin-bottom:10px; font-size:11px; padding:10px;">
           <div style="color:var(--text-muted);">Chargement du bilan de caisse...</div>
@@ -975,11 +1070,16 @@ def get_desktop_ui_html() -> str:
         btnCash: "Espèces (P)",
         btnCard: "Carte CIB",
         btnZReport: "Clôture de Caisse (Rapport Z)",
+        btnExportAudit: "Exporter CSV",
+        auditSearchPlaceholder: "Rechercher par plaque ou reçu...",
         btnTheme: "Mode Jour / Nuit (D)",
         btnLang: "Langue: FR (L)",
         txtShortcuts: "Raccourcis: ",
         btnPrintTicket: "Imprimer Ticket Entrée (T)",
-        threatText: "ALERTE SÉCURITÉ: VÉHICULE RECHERCHÉ OU TENTATIVE DE SPOOFING"
+        threatText: "ALERTE SÉCURITÉ: VÉHICULE RECHERCHÉ OU TENTATIVE DE SPOOFING",
+        syncOk: "SYNC: À JOUR",
+        syncPending: "SYNC: {n} EN ATTENTE",
+        syncRunning: "SYNC EN COURS..."
       },
       en: {
         title: "Guard Station & Dedicated POS",
@@ -995,6 +1095,8 @@ def get_desktop_ui_html() -> str:
         tabTicket: "Thermal Ticket",
         tabAudit: "Logs & Audit",
         lblAuditTitle: "Recent Transactions (Local SQLite)",
+        btnExportAudit: "Export CSV",
+        auditSearchPlaceholder: "Search by plate or receipt...",
         lblScan: "Scan Barcode / Manual Input (Key S):",
         btnVerify: "Verify Ticket",
         lblPlate: "License Plate:",
@@ -1010,7 +1112,10 @@ def get_desktop_ui_html() -> str:
         btnLang: "Language: EN (L)",
         txtShortcuts: "Shortcuts: ",
         btnPrintTicket: "Print Entry Ticket (T)",
-        threatText: "SECURITY ALERT: WATCHLIST MATCH OR SPOOF ATTEMPT"
+        threatText: "SECURITY ALERT: WATCHLIST MATCH OR SPOOF ATTEMPT",
+        syncOk: "SYNC: UP TO DATE",
+        syncPending: "SYNC: {n} PENDING",
+        syncRunning: "SYNC IN PROGRESS..."
       },
       ar: {
         title: "مركز الحراسة والصندوق المخصص",
@@ -1026,6 +1131,8 @@ def get_desktop_ui_html() -> str:
         tabTicket: "تذكرة حرارية",
         tabAudit: "السجل والتدقيق",
         lblAuditTitle: "المعاملات الأخيرة (SQLite محلي)",
+        btnExportAudit: "تصدير CSV",
+        auditSearchPlaceholder: "البحث باللوحة أو الإيصال...",
         lblScan: "مسح الرمز الشريطي / إدخال يدوي (زر S):",
         btnVerify: "تحقق من التذكرة",
         lblPlate: "رقم اللوحة:",
@@ -1041,7 +1148,10 @@ def get_desktop_ui_html() -> str:
         btnLang: "اللغة: العربية (L)",
         txtShortcuts: "اختصارات: ",
         btnPrintTicket: "طباعة تذكرة الدخول (T)",
-        threatText: "تنبيه أمني: سيارة مسروقة أو محاولة تزييف بيومتري"
+        threatText: "تنبيه أمني: سيارة مسروقة أو محاولة تزييف بيومتري",
+        syncOk: "مزامنة: محدث",
+        syncPending: "مزامنة: {n} معلق",
+        syncRunning: "جاري المزامنة..."
       }
     };
 
@@ -1060,6 +1170,8 @@ def get_desktop_ui_html() -> str:
       document.getElementById('tabTicket').innerText = dict.tabTicket;
       if (document.getElementById('tabAudit')) document.getElementById('tabAudit').innerText = dict.tabAudit;
       if (document.getElementById('lblAuditTitle')) document.getElementById('lblAuditTitle').innerText = dict.lblAuditTitle;
+      if (document.getElementById('btnExportAudit')) document.getElementById('btnExportAudit').innerText = dict.btnExportAudit;
+      if (document.getElementById('auditSearchInput')) document.getElementById('auditSearchInput').placeholder = dict.auditSearchPlaceholder;
       document.getElementById('lblScan').innerText = dict.lblScan;
       document.getElementById('btnVerify').innerText = dict.btnVerify;
       document.getElementById('lblPlate').innerText = dict.lblPlate;
@@ -1076,6 +1188,7 @@ def get_desktop_ui_html() -> str:
       document.getElementById('txtShortcuts').innerText = dict.txtShortcuts;
       document.getElementById('btnPrintTicket').innerText = dict.btnPrintTicket;
       document.getElementById('threatText').innerText = dict.threatText;
+      updateSyncBadge();
 
       document.documentElement.dir = (currentLang === 'ar') ? 'rtl' : 'ltr';
     }
@@ -1111,17 +1224,56 @@ def get_desktop_ui_html() -> str:
       }
     }
 
+    let cachedAuditData = null;
+
     async function loadAuditData() {
       if (window.pywebview && window.pywebview.api && window.pywebview.api.get_audit_data) {
         try {
           const res = await window.pywebview.api.get_audit_data();
           if (res.success) {
+            cachedAuditData = res;
             renderAuditData(res);
           }
         } catch (e) {
           console.error(e);
         }
       }
+    }
+
+    function filterAuditTransactions() {
+      if (!cachedAuditData) return;
+      const q = (document.getElementById('auditSearchInput').value || '').trim().toLowerCase();
+      if (!q) {
+        renderAuditTxList(cachedAuditData.transactions || []);
+        return;
+      }
+      const filtered = (cachedAuditData.transactions || []).filter(t => {
+        const plate = (t.plate_number || '').toLowerCase();
+        const receipt = (t.receipt_number || t.id || '').toLowerCase();
+        return plate.includes(q) || receipt.includes(q);
+      });
+      renderAuditTxList(filtered);
+    }
+
+    function renderAuditTxList(txs) {
+      const txList = document.getElementById('auditTxList');
+      if (!txList) return;
+      if (!txs || txs.length === 0) {
+        txList.innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Aucune transaction correspondante.</div>';
+        return;
+      }
+      txList.innerHTML = txs.map(t => `
+        <div style="background:var(--bg-surface-elevated); padding:6px 8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-color);">
+          <div>
+            <div style="font-weight:bold; font-size:11.5px;">${t.receipt_number || t.id} - ${t.plate_number}</div>
+            <div style="font-size:10px; color:var(--text-muted);">${t.exit_time || ''} | ${t.payment_method} | Rendue: ${t.change_dzd || 0} DZD</div>
+          </div>
+          <div style="display:flex; align-items:center; gap:6px;">
+            <span style="font-weight:bold; color:#10B981; font-size:11.5px;">${t.amount_due_dzd} DZD</span>
+            <button class="btn-secondary" style="width:auto; padding:2px 6px; font-size:10px;" onclick="reprintTx('${t.id}')">Reçu</button>
+          </div>
+        </div>
+      `).join('');
     }
 
     function renderAuditData(data) {
@@ -1139,25 +1291,7 @@ def get_desktop_ui_html() -> str:
         `;
       }
 
-      const txList = document.getElementById('auditTxList');
-      if (txList) {
-        if (!data.transactions || data.transactions.length === 0) {
-          txList.innerHTML = '<div style="color:var(--text-muted); font-size:11px;">Aucune transaction enregistrée.</div>';
-        } else {
-          txList.innerHTML = data.transactions.map(t => `
-            <div style="background:var(--bg-surface-elevated); padding:6px 8px; border-radius:6px; display:flex; justify-content:space-between; align-items:center; border:1px solid var(--border-color);">
-              <div>
-                <div style="font-weight:bold; font-size:11.5px;">${t.receipt_number || t.id} - ${t.plate_number}</div>
-                <div style="font-size:10px; color:var(--text-muted);">${t.exit_time || ''} | ${t.payment_method} | Rendue: ${t.change_dzd || 0} DZD</div>
-              </div>
-              <div style="display:flex; align-items:center; gap:6px;">
-                <span style="font-weight:bold; color:#10B981; font-size:11.5px;">${t.amount_due_dzd} DZD</span>
-                <button class="btn-secondary" style="width:auto; padding:2px 6px; font-size:10px;" onclick="reprintTx('${t.id}')">Reçu</button>
-              </div>
-            </div>
-          `).join('');
-        }
-      }
+      renderAuditTxList(data.transactions || []);
 
       const barrierList = document.getElementById('auditBarrierList');
       if (barrierList) {
@@ -1171,6 +1305,66 @@ def get_desktop_ui_html() -> str:
             </div>
           `).join('');
         }
+      }
+    }
+
+    async function updateSyncBadge() {
+      const dict = I18N[currentLang] || I18N['fr'];
+      const dot = document.getElementById('syncDot');
+      const txt = document.getElementById('txtSyncStatus');
+      const badge = document.getElementById('syncStatusBadge');
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_sync_status) {
+        try {
+          const res = await window.pywebview.api.get_sync_status();
+          if (res && res.pending_transactions > 0) {
+            if (dot) dot.style.backgroundColor = '#F59E0B';
+            if (txt) txt.innerText = dict.syncPending.replace('{n}', res.pending_transactions);
+            if (badge) badge.style.color = '#F59E0B';
+          } else {
+            if (dot) dot.style.backgroundColor = '#10B981';
+            if (txt) txt.innerText = dict.syncOk;
+            if (badge) badge.style.color = '#10B981';
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      } else {
+        if (dot) dot.style.backgroundColor = '#10B981';
+        if (txt) txt.innerText = dict.syncOk;
+      }
+    }
+
+    async function triggerManualSync() {
+      const dict = I18N[currentLang] || I18N['fr'];
+      const txt = document.getElementById('txtSyncStatus');
+      if (txt) txt.innerText = dict.syncRunning;
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.sync_offline_buffer) {
+        try {
+          const res = await window.pywebview.api.sync_offline_buffer();
+          alert(res.message);
+          updateSyncBadge();
+        } catch (e) {
+          alert("Erreur lors de la synchronisation: " + e);
+          updateSyncBadge();
+        }
+      } else {
+        alert("Synchronisation simulée avec la passerelle locale.");
+        updateSyncBadge();
+      }
+    }
+
+    async function exportAuditData() {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.export_shift_csv) {
+        const res = await window.pywebview.api.export_shift_csv();
+        if (res.success) {
+          alert(res.message);
+        } else {
+          alert("Erreur lors de l'export: " + (res.error || res.message));
+        }
+      } else {
+        alert("Export CSV simulé (Fichier généré dans data/exports).");
       }
     }
 
@@ -1321,6 +1515,7 @@ def get_desktop_ui_html() -> str:
       document.getElementById('scanResultCard').style.display = 'none';
       document.getElementById('barcodeInput').value = '';
       if (document.getElementById('tenderedAmountInput')) document.getElementById('tenderedAmountInput').value = '';
+      updateSyncBadge();
     }
 
     async function printManualTicket() {
@@ -2107,6 +2302,8 @@ def get_desktop_ui_html() -> str:
     initCam2();
     initCam3();
     initCam4();
+    updateSyncBadge();
+    setInterval(updateSyncBadge, 10000);
   </script>
 </body>
 </html>"""

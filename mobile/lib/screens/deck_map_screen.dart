@@ -23,7 +23,11 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
 
     final filteredSlots = _selectedZoneFilter == 'ALL'
         ? allSlots
-        : allSlots.where((s) => s.zoneName.toUpperCase().contains(_selectedZoneFilter)).toList();
+        : allSlots
+              .where(
+                (s) => s.zoneName.toUpperCase().contains(_selectedZoneFilter),
+              )
+              .toList();
 
     return Scaffold(
       appBar: AppBar(
@@ -46,6 +50,11 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => _showGatewayConfigDialog(context),
+            tooltip: 'Configuration Passerelle',
+          ),
+          IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: () => controller.loadSlots(),
             tooltip: 'Actualiser les places',
@@ -59,16 +68,27 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
                 if (controller.apiService.isOffline)
                   Container(
                     width: double.infinity,
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 8,
+                    ),
                     color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.cloud_off, size: 14, color: Color(0xFFF59E0B)),
+                        Icon(
+                          Icons.cloud_off,
+                          size: 14,
+                          color: Color(0xFFF59E0B),
+                        ),
                         SizedBox(width: 8),
                         Text(
                           'Mode hors ligne (données locales synchronisées)',
-                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFF59E0B)),
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFFF59E0B),
+                          ),
                         ),
                       ],
                     ),
@@ -84,8 +104,10 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
                         ? _buildEmptyState()
                         : StallGridWidget(
                             slots: filteredSlots,
-                            selectedSlotNumber: controller.selectedSlot?.slotNumber,
-                            onSlotSelected: (slot) => _onSlotTapped(context, slot),
+                            selectedSlotNumber:
+                                controller.selectedSlot?.slotNumber,
+                            onSlotSelected: (slot) =>
+                                _onSlotTapped(context, slot),
                           ),
                   ),
                 ),
@@ -109,7 +131,11 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
                   color: Colors.white.withValues(alpha: 0.05),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.local_parking, size: 48, color: Colors.grey),
+                child: const Icon(
+                  Icons.local_parking,
+                  size: 48,
+                  color: Colors.grey,
+                ),
               ),
               const SizedBox(height: 16),
               const Text(
@@ -190,10 +216,16 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
                 children: [
                   Text(
                     'Emplacement ${slot.slotNumber}',
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10,
+                      vertical: 4,
+                    ),
                     decoration: BoxDecoration(
                       color: slot.isVacant
                           ? Colors.green.withValues(alpha: 0.15)
@@ -212,10 +244,22 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
                 ],
               ),
               const SizedBox(height: 12),
-              Text('Zone: ${slot.zoneName}', style: const TextStyle(fontSize: 14)),
-              Text('Etage: ${slot.floorLevel}', style: const TextStyle(fontSize: 14)),
+              Text(
+                'Zone: ${slot.zoneName}',
+                style: const TextStyle(fontSize: 14),
+              ),
+              Text(
+                'Etage: ${slot.floorLevel}',
+                style: const TextStyle(fontSize: 14),
+              ),
               if (slot.plate != null)
-                Text('Véhicule: ${slot.plate}', style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+                Text(
+                  'Véhicule: ${slot.plate}',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               const SizedBox(height: 16),
               const Divider(),
               const SizedBox(height: 8),
@@ -227,19 +271,57 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
                       backgroundColor: const Color(0xFF0284C7),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
                     ),
                     icon: const Icon(Icons.bookmark_add),
-                    label: const Text('Réserver cette place (Franchise 30 min)'),
+                    label: const Text(
+                      'Réserver cette place (Franchise 30 min)',
+                    ),
                     onPressed: () async {
                       Navigator.pop(ctx);
                       final ok = await widget.controller.reserveSelectedSlot();
                       if (context.mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text(ok
-                                ? 'Place ${slot.slotNumber} réservée pour 30 minutes.'
-                                : 'Échec de réservation.'),
+                            content: Text(
+                              ok
+                                  ? 'Place ${slot.slotNumber} réservée pour 30 minutes.'
+                                  : 'Échec de réservation.',
+                            ),
+                            backgroundColor: ok ? Colors.green : Colors.red,
+                          ),
+                        );
+                      }
+                    },
+                  ),
+                )
+              else if (slot.isReserved)
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.amber.shade800,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 14),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    icon: const Icon(Icons.bookmark_remove),
+                    label: const Text('Libérer cette réservation'),
+                    onPressed: () async {
+                      Navigator.pop(ctx);
+                      final ok = await widget.controller.releaseSelectedSlot();
+                      if (context.mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                              ok
+                                  ? 'Réservation de la place ${slot.slotNumber} annulée.'
+                                  : 'Échec de l\'annulation.',
+                            ),
                             backgroundColor: ok ? Colors.green : Colors.red,
                           ),
                         );
@@ -259,6 +341,82 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
           ),
         );
       },
+    );
+  }
+
+  void _showGatewayConfigDialog(BuildContext context) {
+    final textController = TextEditingController(
+      text: widget.controller.currentServerUrl,
+    );
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.router, color: Color(0xFF00F2FE)),
+            SizedBox(width: 8),
+            Text('Passerelle Edge Gateway', style: TextStyle(fontSize: 16)),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Saisir l\'adresse IP ou l\'URL du serveur passerelle du parking :',
+              style: TextStyle(fontSize: 12.5),
+            ),
+            const SizedBox(height: 12),
+            TextField(
+              controller: textController,
+              decoration: const InputDecoration(
+                labelText: 'URL Serveur',
+                hintText: 'http://192.168.1.100:8080',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Statut actuel : ${widget.controller.apiService.isOffline ? "Hors-ligne (Cache local)" : "Connecté (En direct)"}',
+              style: TextStyle(
+                fontSize: 11.5,
+                color: widget.controller.apiService.isOffline
+                    ? Colors.amber
+                    : Colors.green,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF0284C7),
+              foregroundColor: Colors.white,
+            ),
+            onPressed: () {
+              final newUrl = textController.text.trim();
+              if (newUrl.isNotEmpty) {
+                widget.controller.updateServerUrl(newUrl);
+              }
+              Navigator.pop(ctx);
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text('Passerelle configurée : $newUrl'),
+                  backgroundColor: Colors.green,
+                ),
+              );
+            },
+            child: const Text('Enregistrer'),
+          ),
+        ],
+      ),
     );
   }
 }

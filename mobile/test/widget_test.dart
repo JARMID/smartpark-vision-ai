@@ -9,6 +9,7 @@ import 'package:smartpark_mobile/screens/car_finder_screen.dart';
 import 'package:smartpark_mobile/screens/access_pass_screen.dart';
 import 'package:smartpark_mobile/screens/payment_screen.dart';
 import 'package:smartpark_mobile/screens/patrol_scanner_screen.dart';
+import 'package:smartpark_mobile/screens/deck_map_screen.dart';
 import 'package:smartpark_mobile/widgets/stall_grid_widget.dart';
 import 'package:smartpark_mobile/services/api_service.dart';
 
@@ -76,6 +77,16 @@ void main() {
     expect(success, isTrue);
     expect(controller.selectedSlot!.isReserved, isTrue);
 
+    // Test releasing reservation
+    final released = await controller.releaseSelectedSlot();
+    expect(released, isTrue);
+    expect(controller.selectedSlot!.isVacant, isTrue);
+
+    // Test updating server URL
+    expect(controller.currentServerUrl, isNotEmpty);
+    await controller.updateServerUrl('http://192.168.1.120:8080');
+    expect(controller.currentServerUrl, equals('http://192.168.1.120:8080'));
+
     controller.dispose();
   });
 
@@ -92,6 +103,32 @@ void main() {
 
     expect(find.text('Aucune place disponible dans cette catégorie.'), findsOneWidget);
     expect(find.byIcon(Icons.local_parking_outlined), findsOneWidget);
+  });
+
+  testWidgets('DeckMapScreen Gateway Config modal opens and displays current URL', (WidgetTester tester) async {
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    await tester.pumpWidget(MaterialApp(
+      home: DeckMapScreen(controller: controller),
+    ));
+    await tester.pumpAndSettle();
+
+    // Tap settings icon in AppBar
+    await tester.tap(find.byIcon(Icons.settings_outlined));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Passerelle Edge Gateway'), findsOneWidget);
+    expect(find.text('URL Serveur'), findsOneWidget);
+    expect(find.text('Enregistrer'), findsOneWidget);
+
+    // Tap Annuler
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Passerelle Edge Gateway'), findsNothing);
+
+    controller.dispose();
   });
 
   testWidgets('CarFinderScreen grace period vs paid tariff', (WidgetTester tester) async {
@@ -240,6 +277,52 @@ void main() {
 
     controller.dispose();
   });
+
+  testWidgets('PatrolScannerScreen live gateway lookup updates status card', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockService = _LivePatrolMockService();
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    await tester.pumpWidget(MaterialApp(
+      home: PatrolScannerScreen(controller: controller),
+    ));
+    await tester.pumpAndSettle();
+
+    // Tap VIP chip
+    await tester.tap(find.text('104822 119 16 (VIP)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('AUTHORIZED'), findsOneWidget);
+    expect(find.textContaining('Vehicule verifie sur la passerelle'), findsOneWidget);
+
+    controller.dispose();
+  });
+}
+
+class _LivePatrolMockService extends SmartParkApiService {
+  _LivePatrolMockService() : super(isMock: false);
+
+  @override
+  Future<Map<String, dynamic>?> checkVehicleStatus(String plate) async {
+    if (plate.contains('104822')) {
+      return {
+        'found': true,
+        'status': 'INSIDE_PARKED',
+        'plate': '104822 119 16',
+        'slot_number': 'A01',
+        'driver_name': 'Amine Hadj',
+        'is_vip': true,
+        'entry_time': '14:15',
+        'is_alert': false,
+        'message': 'Vehicule verifie sur la passerelle.',
+      };
+    }
+    return null;
+  }
 }
 
 class _NullVehicleMockController extends ParkingController {

@@ -148,6 +148,10 @@ class TestCashierPosManager(unittest.TestCase):
         self.pos = CashierPosManager(booth_id="BOOTH-01")
         self.pos.open_shift("AGENT-SALAH", 5000.0)
 
+    def tearDown(self):
+        if hasattr(self, "pos") and self.pos.db:
+            self.pos.db.close()
+
     def test_shift_lifecycle_and_transactions(self):
         # Process cash transaction
         tx1 = self.pos.process_settlement(
@@ -187,6 +191,10 @@ class TestDesktopBridgeApi(unittest.TestCase):
     def setUp(self):
         self.bridge = DesktopBridgeApi(server_url="http://127.0.0.1:8080")
 
+    def tearDown(self):
+        if hasattr(self, "bridge") and self.bridge.pos_manager and self.bridge.pos_manager.db:
+            self.bridge.pos_manager.db.close()
+
     def test_barrier_and_simulation(self):
         # Trigger barrier in local simulation mode
         res = self.bridge.trigger_barrier(channel=1, duration_ms=250)
@@ -219,6 +227,8 @@ class TestDesktopBridgeApi(unittest.TestCase):
     def test_headless_launcher(self):
         inst = launch_desktop_station(server_url="http://127.0.0.1:8080", headless=True)
         self.assertIsNotNone(inst)
+        if inst.pos_manager and inst.pos_manager.db:
+            inst.pos_manager.db.close()
 
     def test_audit_data_and_reprint(self):
         # Open shift first
@@ -258,6 +268,10 @@ class TestDesktopBridgeApi(unittest.TestCase):
         self.assertIn('id="cam2Canvas"', html)
         self.assertIn('id="cam3Canvas"', html)
         self.assertIn('id="cam4Canvas"', html)
+        self.assertIn('id="syncStatusBadge"', html)
+        self.assertIn('id="txtSyncStatus"', html)
+        self.assertIn('triggerManualSync', html)
+        self.assertIn('updateSyncBadge', html)
         self.assertIn('window.openExitBarrier', html)
         self.assertIn('window.triggerEntryCar', html)
         self.assertIn('window.triggerFaceScan', html)
@@ -287,6 +301,53 @@ class TestDesktopBridgeApi(unittest.TestCase):
         self.assertEqual(settle_res["change_dzd"], 300.0)
         self.assertEqual(settle_res["tendered_dzd"], 500.0)
         self.assertEqual(settle_res["amount_settled_dzd"], 200.0)
+
+    def test_audit_csv_export_and_filtering_in_html(self):
+        from desktop.src.operator_window import get_desktop_ui_html
+        html = get_desktop_ui_html()
+        self.assertIn('id="auditSearchInput"', html)
+        self.assertIn('id="btnExportAudit"', html)
+        self.assertIn('filterAuditTransactions', html)
+        self.assertIn('exportAuditData', html)
+
+        # Test bridge export_shift_csv
+        self.bridge.pos_manager.open_shift("AGENT-TEST", 5000.0)
+        self.bridge.settle_payment(
+            ticket_id="TKT-CSV-01",
+            plate_number="08192 120 09",
+            amount_dzd=200.0,
+            payment_method="CASH",
+            tendered_dzd=500.0,
+        )
+        export_res = self.bridge.export_shift_csv()
+        self.assertTrue(export_res["success"])
+        self.assertIn("filepath", export_res)
+        with open(export_res["filepath"], "r", encoding="utf-8") as f:
+            content = f.read()
+            self.assertIn("08192 120 09", content)
+            self.assertIn("TKT-CSV-01", content)
+
+    def test_offline_buffer_sync_and_status(self):
+        # 1. Initial status
+        status = self.bridge.get_sync_status()
+        self.assertIn("total_transactions", status)
+        self.assertIn("pending_transactions", status)
+
+        # 2. Settle a transaction and verify pending status
+        tkt = self.bridge.print_ticket("104822 119 16")
+        self.bridge.settle_payment(
+            ticket_id=tkt["ticket_id"],
+            plate_number="104822 119 16",
+            amount_dzd=150.0,
+            payment_method="CASH",
+            tendered_dzd=200.0,
+        )
+        status_after = self.bridge.get_sync_status()
+        self.assertGreater(status_after["pending_transactions"], 0)
+
+        # 3. Test sync_offline_buffer execution
+        sync_res = self.bridge.sync_offline_buffer()
+        self.assertIn("pending_count", sync_res)
 
 
 class TestDesktopDatabaseAndHardware(unittest.TestCase):
@@ -379,6 +440,39 @@ class TestDesktopDatabaseAndHardware(unittest.TestCase):
         fallback_res = hw_controller.pulse_barrier(channel=2, duration_ms=100)
         self.assertTrue(fallback_res["success"])
         self.assertEqual(fallback_res["mode"], "FALLBACK_SIMULATION")
+
+    def test_database_sync_ledger(self):
+        shift = self.db.get_or_open_shift("BOOTH-SYNC", "CASHIER-SYNC", "Amine Sync", 5000.0)
+        tkt = self.db.create_local_ticket("104822 119 16", "LANE-01", "Zone A", 100.0)
+        tx = self.db.record_transaction(
+            shift_id=shift["shift_id"],
+            ticket_id=tkt["ticket_id"],
+            plate_number="104822 119 16",
+            entry_time=tkt["entry_time"],
+            exit_time="2026-10-17 15:00:00",
+            duration_minutes=30,
+            amount_due_dzd=100.0,
+            amount_tendered_dzd=100.0,
+            change_dzd=0.0,
+            payment_method="CASH",
+        )
+        # Check unsynced
+        unsynced = self.db.get_unsynced_transactions()
+        self.assertEqual(len(unsynced), 1)
+        self.assertEqual(unsynced[0]["id"], tx["transaction_id"])
+        self.assertEqual(unsynced[0]["is_synced"], 0)
+
+        # Mark synced
+        self.db.mark_transactions_synced([tx["transaction_id"]])
+        unsynced_after = self.db.get_unsynced_transactions()
+        self.assertEqual(len(unsynced_after), 0)
+
+        # Check sync stats
+        stats = self.db.get_sync_status()
+        self.assertEqual(stats["total_transactions"], 1)
+        self.assertEqual(stats["pending_transactions"], 0)
+        self.assertEqual(stats["synced_transactions"], 1)
+        self.assertTrue(stats["is_fully_synced"])
 
 
 if __name__ == "__main__":

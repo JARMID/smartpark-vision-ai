@@ -326,6 +326,84 @@ class TestServerAPI(unittest.TestCase):
         # In testing environment, if static/mobile/index.html is compiled it returns 200
         self.assertIn(res.status_code, [200, 404])
 
+    def test_vehicle_lookup_endpoint(self):
+        # 1. Lookup occupied or registered plate
+        res_vip = self.client.get("/api/vehicles/lookup/104822%20119%2016")
+        self.assertEqual(res_vip.status_code, 200)
+        data_vip = res_vip.json()
+        self.assertTrue(data_vip["found"])
+        self.assertFalse(data_vip["is_alert"])
+
+        # 2. Lookup stolen plate
+        res_stolen = self.client.get("/api/vehicles/lookup/00551%20218%2016")
+        self.assertEqual(res_stolen.status_code, 200)
+        data_stolen = res_stolen.json()
+        self.assertTrue(data_stolen["found"])
+        self.assertTrue(data_stolen["is_alert"])
+        self.assertEqual(data_stolen["status"], "BLACKLIST_ALERT")
+
+        # 3. Lookup unregistered plate
+        res_unk = self.client.get("/api/vehicles/lookup/77777%20999%2099")
+        self.assertEqual(res_unk.status_code, 200)
+        data_unk = res_unk.json()
+        self.assertFalse(data_unk["found"])
+        self.assertEqual(data_unk["status"], "NOT_REGISTERED")
+
+    def test_pos_batch_sync_endpoint(self):
+        payload = {
+            "station_id": "TEST-BOOTH-01",
+            "booth_id": "BOOTH-01",
+            "cashier_id": "AGENT-TEST",
+            "transactions": [
+                {
+                    "id": "TX-SYNC-001",
+                    "shift_id": "SHIFT-TEST-01",
+                    "ticket_id": "TKT-SYNC-01",
+                    "plate_number": "104822 119 16",
+                    "entry_time": "2026-10-17 12:00:00",
+                    "exit_time": "2026-10-17 14:00:00",
+                    "duration_minutes": 120,
+                    "amount_due_dzd": 200.0,
+                    "amount_tendered_dzd": 500.0,
+                    "change_dzd": 300.0,
+                    "payment_method": "CASH",
+                    "receipt_number": "REC-SYNC-001",
+                },
+                {
+                    "id": "TX-SYNC-002",
+                    "shift_id": "SHIFT-TEST-01",
+                    "ticket_id": "TKT-SYNC-02",
+                    "plate_number": "08412 00 16",
+                    "entry_time": "2026-10-17 13:00:00",
+                    "exit_time": "2026-10-17 14:30:00",
+                    "duration_minutes": 90,
+                    "amount_due_dzd": 200.0,
+                    "amount_tendered_dzd": 200.0,
+                    "change_dzd": 0.0,
+                    "payment_method": "CIB_TERMINAL",
+                    "receipt_number": "REC-SYNC-002",
+                },
+            ],
+            "barrier_logs": [
+                {
+                    "channel": 2,
+                    "duration_ms": 500,
+                    "reason": "PAIEMENT_VALIDE",
+                    "operator_name": "AGENT-TEST",
+                    "hardware_success": 1,
+                }
+            ],
+        }
+
+        res = self.client.post("/api/pos/sync", json=payload)
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertTrue(data["success"])
+        self.assertEqual(data["synced_transactions"], 2)
+        self.assertEqual(data["synced_barrier_logs"], 1)
+        self.assertIn("TX-SYNC-001", data["ack_ids"])
+        self.assertIn("TX-SYNC-002", data["ack_ids"])
+
 
 if __name__ == "__main__":
     unittest.main()

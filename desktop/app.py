@@ -60,8 +60,10 @@ def main():
         scan = bridge.scan_ticket(tkt["barcode_value"])
         settle = bridge.settle_payment(tkt["ticket_id"], "104822 119 16", 200.0, payment_method="CASH", tendered_dzd=500.0)
         zrep = bridge.close_shift()
-        print(f"[smartpark-desktop] Diagnostic Passed: Ticket={tkt['ticket_id']} | Total={scan['total_due_dzd']} DZD | Change={settle['change_dzd']} DZD | Z-Hash={zrep['audit_hash'][:16]}...")
-        print("[smartpark-desktop] Subsystems operational: ESC/POS Printer, Barcode Scanner, POS Ledger, Acoustic Audio.")
+        sync_res = bridge.sync_offline_buffer()
+        print(f"[smartpark-desktop] Diagnostic Passed: Ticket={tkt['ticket_id']} | Total={scan['total_due_dzd']} DZD | Change={settle['change_dzd']} DZD | Z-Hash={zrep['audit_hash'][:16]}... | Sync={sync_res.get('message', 'OK')}")
+        print("[smartpark-desktop] Subsystems operational: ESC/POS Printer, Barcode Scanner, POS Ledger, Acoustic Audio, Write-Ahead Buffer.")
+        bridge.pos_manager.db.close()
 
 
 if __name__ == "__main__":
