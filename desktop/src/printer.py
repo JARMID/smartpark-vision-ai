@@ -302,6 +302,17 @@ class ThermalTicketEngine:
         pulse_bytes = EscPosCommands.DRAWER_KICK
         if target == "simulation":
             return True, "Signal d'ouverture tiroir-caisse émis (Simulation)."
+        elif target.startswith("tcp://"):
+            import socket
+            host_port = target.replace("tcp://", "").split(":")
+            host = host_port[0]
+            port = int(host_port[1]) if len(host_port) > 1 else 9100
+            try:
+                with socket.create_connection((host, port), timeout=3.0) as s:
+                    s.sendall(pulse_bytes)
+                return True, f"Impulsion tiroir-caisse envoyée via réseau à {host}:{port}"
+            except Exception as e:
+                return False, f"Erreur déclenchement tiroir via réseau: {str(e)}"
         try:
             import win32print
             printer_name = target if target != "default" else win32print.GetDefaultPrinter()

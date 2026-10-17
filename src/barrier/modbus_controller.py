@@ -141,7 +141,7 @@ class ModbusBarrierController:
                     else BarrierTriggerResult.PULSE_SENT
                 ),
                 latency_ms=elapsed,
-                message=f"Relay pulse executed on channel {channel} ({duration_ms}ms).",
+                message=f"Relay pulse executed on channel {clamped_channel} ({clamped_duration_ms}ms).",
             )
         except Exception as ex:
             elapsed = (time.time() - start_time) * 1000.0

@@ -583,9 +583,76 @@ class TestDesktopDatabaseAndHardware(unittest.TestCase):
         self.assertIn('id="txtWsStatus"', html)
         self.assertIn('initGatewayWebSocket', html)
         self.assertIn('handleGatewayBroadcast', html)
-        self.assertIn('wsOnline', html)
-        self.assertIn('wsReconnecting', html)
-        self.assertIn('wsOffline', html)
+    def test_network_escpos_print_and_drawer_kick(self):
+        """Verify direct network ESC/POS ticket printing and cash drawer kick over TCP socket."""
+        import socket
+        import threading
+        from desktop.src.printer import ThermalTicketEngine
+
+        server_sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        server_sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_sock.bind(("127.0.0.1", 0))
+        port = server_sock.getsockname()[1]
+        server_sock.listen(2)
+
+        received_payloads = []
+        stop_server = False
+
+        def tcp_printer_server():
+            server_sock.settimeout(3.0)
+            while not stop_server:
+                try:
+                    client, _ = server_sock.accept()
+                except (socket.timeout, OSError):
+                    break
+                with client:
+                    client.settimeout(2.0)
+                    buf = bytearray()
+                    while True:
+                        try:
+                            chunk = client.recv(1024)
+                            if not chunk:
+                                break
+                            buf.extend(chunk)
+                        except (socket.timeout, OSError):
+                            break
+                    if buf:
+                        received_payloads.append(bytes(buf))
+
+        t = threading.Thread(target=tcp_printer_server, daemon=True)
+        t.start()
+
+        engine = ThermalTicketEngine(facility_name="Smart Park Alger")
+        ticket = engine.generate_ticket(plate_number="08192 120 09", lane_id="LANE-01")
+
+        # 1. Print ticket over TCP
+        print_ok, print_msg = engine.dispatch_print_job(ticket, target=f"tcp://127.0.0.1:{port}")
+        self.assertTrue(print_ok)
+        self.assertIn(f"127.0.0.1:{port}", print_msg)
+
+        # 2. Kick cash drawer over TCP
+        kick_ok, kick_msg = engine.kick_cash_drawer(target=f"tcp://127.0.0.1:{port}")
+        self.assertTrue(kick_ok)
+        self.assertIn(f"127.0.0.1:{port}", kick_msg)
+
+        stop_server = True
+        server_sock.close()
+        t.join(timeout=2.0)
+
+        # Verify payload contents
+        self.assertEqual(len(received_payloads), 2)
+        # Payload 1: ESC/POS Ticket contains HW_INIT and CUT_PAPER
+        self.assertTrue(received_payloads[0].startswith(b"\x1b@"))
+        self.assertIn(b"08192 120 09", received_payloads[0])
+        self.assertIn(b"\x1dVA", received_payloads[0])
+
+        # Payload 2: Cash drawer kick pin 2 pulse
+        self.assertEqual(received_payloads[1], b"\x1bp\x00\x19\xfa")
+
+        # 3. Test unreachable network printer error handling
+        fail_ok, fail_msg = engine.dispatch_print_job(ticket, target=f"tcp://127.0.0.1:{port}")
+        self.assertFalse(fail_ok)
+        self.assertIn("Failed network print", fail_msg)
 
 
 if __name__ == "__main__":

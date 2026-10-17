@@ -285,6 +285,34 @@ class TestTOTPSecurity(unittest.TestCase):
 
         bridge.pos_manager.db.close()
 
+    def test_totp_brute_force_lockout_protection(self):
+        """Verify that 5 failed TOTP attempts trigger automated lockout cooldown."""
+        import uuid
+        op_id = f"OP-BRUTE-{uuid.uuid4().hex[:6]}"
+        info = totp_service.get_or_create_operator_secret(op_id, "Test Attacker Target")
+        secret = info["secret"]
+
+        # First 4 failed attempts are rejected normally
+        for i in range(4):
+            ok, msg = totp_service.verify_and_activate(op_id, "000000")
+            self.assertFalse(ok)
+            self.assertIn("invalide", msg)
+
+        # 5th failed attempt triggers automated security lockout
+        ok5, msg5 = totp_service.verify_and_activate(op_id, "000000")
+        self.assertFalse(ok5)
+        self.assertIn("verrouille", msg5.lower())
+
+        # 6th attempt is blocked immediately by lockout guard
+        ok6, msg6 = totp_service.verify_and_activate(op_id, "000000")
+        self.assertFalse(ok6)
+        self.assertIn("verrouille", msg6.lower())
+
+        # Verify lockout also protects verify_action
+        ok_action, msg_action = totp_service.verify_action(op_id, "000000")
+        self.assertFalse(ok_action)
+        self.assertIn("verrouille", msg_action.lower())
+
 
 if __name__ == "__main__":
     unittest.main()

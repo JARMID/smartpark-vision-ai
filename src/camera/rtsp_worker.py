@@ -7,6 +7,7 @@ automatic network watchdog with exponential backoff reconnects, and ROI cropping
 from collections import deque
 from enum import Enum
 import logging
+import os
 import threading
 import time
 from typing import Callable, Dict, Optional, Tuple, Any
@@ -254,10 +255,10 @@ class RtspStreamWorker:
 
         # Set transport options in RTSP pipeline
         pipeline_url = self.rtsp_url
-        # If standard RTSP, enforce TCP transport to eliminate UDP packet tearing
-        if self.rtsp_url.startswith("rtsp://") and "?" not in self.rtsp_url and self.transport == "tcp":
-            # Pass TCP transport flags if supported by OpenCV backend
-            pass
+        if self.transport.lower() == "tcp":
+            os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;tcp"
+        else:
+            os.environ["OPENCV_FFMPEG_CAPTURE_OPTIONS"] = "rtsp_transport;udp"
 
         cap = cv2.VideoCapture(pipeline_url, cv2.CAP_FFMPEG)
         # Configure OpenCV buffer size to 1 to minimize internal OS socket latency

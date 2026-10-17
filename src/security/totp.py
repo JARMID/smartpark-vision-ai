@@ -177,6 +177,12 @@ class TOTPSecurityService:
         self.enforce_for_compliance_purge: bool = True
         self.enforce_for_shift_close: bool = False
 
+        # Brute-force rate limiting and lockout state
+        self._failed_attempts: Dict[str, list] = {}
+        self._lockouts: Dict[str, float] = {}
+        self.max_failed_attempts: int = 5
+        self.lockout_duration_sec: float = 60.0
+
         # Pre-seed default supervisor account
         self._init_default_operator()
 
@@ -225,6 +231,12 @@ class TOTPSecurityService:
 
     def verify_and_activate(self, operator_id: str, code: str) -> Tuple[bool, str]:
         """Verify code from Google Authenticator and enable 2FA for the operator."""
+        now = time.time()
+        lockout_until = self._lockouts.get(operator_id, 0.0)
+        if now < lockout_until:
+            remaining = int(lockout_until - now)
+            return False, f"Compte verrouille suite a de multiples echecs. Reessayez dans {remaining}s."
+
         if operator_id not in self._secrets:
             return False, "Operateur non trouve dans le registre de securite"
 
@@ -235,14 +247,29 @@ class TOTPSecurityService:
             last_verified_step=record.get("last_step"),
         )
         if not success:
+            attempts = self._failed_attempts.setdefault(operator_id, [])
+            attempts = [t for t in attempts if now - t < 60.0]
+            attempts.append(now)
+            self._failed_attempts[operator_id] = attempts
+            if len(attempts) >= self.max_failed_attempts:
+                self._lockouts[operator_id] = now + self.lockout_duration_sec
+                return False, f"Trop de tentatives infructueuses ({self.max_failed_attempts}). Compte verrouille pour {int(self.lockout_duration_sec)}s."
             return False, "Code Google Authenticator invalide ou expire"
 
+        self._failed_attempts.pop(operator_id, None)
+        self._lockouts.pop(operator_id, None)
         record["is_enabled"] = True
         record["last_step"] = step
         return True, "Authentification a deux facteurs (2FA) activee avec succes"
 
     def deactivate(self, operator_id: str, code: str) -> Tuple[bool, str]:
         """Deactivate 2FA after validating current code."""
+        now = time.time()
+        lockout_until = self._lockouts.get(operator_id, 0.0)
+        if now < lockout_until:
+            remaining = int(lockout_until - now)
+            return False, f"Compte verrouille suite a de multiples echecs. Reessayez dans {remaining}s."
+
         if operator_id not in self._secrets:
             return False, "Operateur non trouve"
 
@@ -256,8 +283,17 @@ class TOTPSecurityService:
             last_verified_step=record.get("last_step"),
         )
         if not success:
+            attempts = self._failed_attempts.setdefault(operator_id, [])
+            attempts = [t for t in attempts if now - t < 60.0]
+            attempts.append(now)
+            self._failed_attempts[operator_id] = attempts
+            if len(attempts) >= self.max_failed_attempts:
+                self._lockouts[operator_id] = now + self.lockout_duration_sec
+                return False, f"Trop de tentatives infructueuses ({self.max_failed_attempts}). Compte verrouille pour {int(self.lockout_duration_sec)}s."
             return False, "Code Google Authenticator requis pour desactiver la protection"
 
+        self._failed_attempts.pop(operator_id, None)
+        self._lockouts.pop(operator_id, None)
         record["is_enabled"] = False
         record["last_step"] = step
         return True, "Authentification a deux facteurs desactivee"
@@ -272,6 +308,12 @@ class TOTPSecurityService:
         Verify whether an action is permitted.
         If 2FA is active for this operator or action, a valid code is mandatory.
         """
+        now = time.time()
+        lockout_until = self._lockouts.get(operator_id, 0.0)
+        if now < lockout_until:
+            remaining = int(lockout_until - now)
+            return False, f"Compte verrouille suite a de multiples echecs. Reessayez dans {remaining}s."
+
         record = self._secrets.get(operator_id)
         if not record or not record.get("is_enabled", False):
             # If 2FA not enabled for operator, permit if policy allows
@@ -288,8 +330,17 @@ class TOTPSecurityService:
             last_verified_step=record.get("last_step"),
         )
         if not success:
+            attempts = self._failed_attempts.setdefault(operator_id, [])
+            attempts = [t for t in attempts if now - t < 60.0]
+            attempts.append(now)
+            self._failed_attempts[operator_id] = attempts
+            if len(attempts) >= self.max_failed_attempts:
+                self._lockouts[operator_id] = now + self.lockout_duration_sec
+                return False, f"Trop de tentatives infructueuses ({self.max_failed_attempts}). Compte verrouille pour {int(self.lockout_duration_sec)}s."
             return False, "Code Google Authenticator invalide ou expire"
 
+        self._failed_attempts.pop(operator_id, None)
+        self._lockouts.pop(operator_id, None)
         record["last_step"] = step
         return True, "Code 2FA valide"
 

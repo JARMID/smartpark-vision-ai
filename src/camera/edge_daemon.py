@@ -36,6 +36,7 @@ from src.camera.edge_stream_manager import EdgeStreamManager
 from src.camera.rtsp_worker import CameraStreamStatus
 from src.main import GateOrchestrator, GateDecisionResult
 from src.compliance.law_25_11_audit import Law2511ComplianceEngine
+from src.security.totp import totp_service
 
 logging.basicConfig(
     level=logging.INFO,
@@ -58,6 +59,8 @@ class BarrierOverrideRequest(BaseModel):
     action: str = Field(default="open", description="'open' or 'close'")
     duration_seconds: float = Field(default=5.0, ge=1.0, le=30.0)
     operator_id: str = Field(default="op_guard_01", description="Audited operator tag")
+    totp_code: Optional[str] = Field(default=None, description="Supervisor TOTP 2FA code")
+    auth_token: Optional[str] = Field(default=None, description="Optional Edge security bearer token")
 
 
 class EdgeDaemonService:
@@ -271,6 +274,20 @@ def create_edge_app(daemon: EdgeDaemonService) -> FastAPI:
                 status_code=400,
                 detail=f"Identifiant de barrière invalide: {req.gate_id}. Seules les voies 1 et 2 sont configurées."
             )
+
+        # Check security policy for 2FA / token authorization
+        expected_token = os.environ.get("SMARTPARK_EDGE_AUTH_TOKEN")
+        if expected_token and req.auth_token != expected_token:
+            raise HTTPException(status_code=401, detail="Jeton de sécurité de borne non autorisé")
+
+        is_allowed, msg = totp_service.verify_action(
+            operator_id=req.operator_id,
+            code=req.totp_code,
+            action_name="barrier_override"
+        )
+        if not is_allowed:
+            raise HTTPException(status_code=403, detail=f"Action refusée par politique de sécurité 2FA: {msg}")
+
         success = False
         duration_ms = max(250, min(1500, int(req.duration_seconds * 1000)))
         if req.action.lower() == "open":

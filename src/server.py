@@ -1500,6 +1500,10 @@ STATIC_DIR = os.path.join(os.path.dirname(__file__), "..", "static")
 if os.path.exists(STATIC_DIR):
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+ASSETS_DIR = os.path.join(STATIC_DIR, "assets")
+if os.path.exists(ASSETS_DIR):
+    app.mount("/assets", StaticFiles(directory=ASSETS_DIR), name="assets")
+
 # Mount Mobile Web application
 MOBILE_DIR = os.path.join(STATIC_DIR, "mobile")
 if os.path.exists(MOBILE_DIR):

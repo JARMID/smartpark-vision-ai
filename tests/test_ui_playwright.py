@@ -1,14 +1,47 @@
 import asyncio
-import sys
-from playwright.async_api import async_playwright
-
 import os
+import socket
+import sys
+import threading
+from playwright.async_api import async_playwright
+import uvicorn
+
+
+def is_port_open(host: str, port: int) -> bool:
+    try:
+        with socket.create_connection((host, port), timeout=0.8):
+            return True
+    except Exception:
+        return False
+
+
+def start_server_thread(port: int):
+    root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+    from src.server import app
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
+    server = uvicorn.Server(config)
+    t = threading.Thread(target=server.run, daemon=True)
+    t.start()
+    return server
+
 
 async def run_ui_verification():
     console_errors = []
     port = os.environ.get("PORT", "8088")
     if len(sys.argv) > 1:
         port = sys.argv[1]
+    port_int = int(port)
+
+    server_instance = None
+    if not is_port_open("127.0.0.1", port_int):
+        print(f"Starting Smart Park server on 127.0.0.1:{port_int} for Playwright verification...")
+        server_instance = start_server_thread(port_int)
+        for _ in range(50):
+            if is_port_open("127.0.0.1", port_int):
+                break
+            await asyncio.sleep(0.1)
 
     async with async_playwright() as p:
         browser = await p.chromium.launch(headless=True)
@@ -18,6 +51,7 @@ async def run_ui_verification():
         # Capture console errors
         page.on("console", lambda msg: console_errors.append(f"[{msg.type}] {msg.text}") if msg.type in ["error"] else None)
         page.on("pageerror", lambda err: console_errors.append(f"[pageerror] {err}"))
+        page.on("response", lambda res: print(f"[HTTP {res.status}] {res.url}") if res.status >= 400 else None)
 
         print(f"Navigating to http://127.0.0.1:{port}/...")
         await page.goto(f"http://127.0.0.1:{port}/", wait_until="networkidle")
