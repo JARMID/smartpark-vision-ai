@@ -730,21 +730,10 @@ def get_desktop_ui_html() -> str:
       <div class="camera-tile" id="tileCam1">
         <div class="camera-header">
           <strong id="lblCam1">CAM 1: Entrée ALPR (Voie 1)</strong>
-          <span class="hotkey-indicator">1080p @ 30fps</span>
+          <span class="hotkey-indicator" id="cam1ArmPill">1080p @ 30fps</span>
         </div>
         <div class="camera-feed-canvas">
-          <svg width="100%" height="100%" viewBox="0 0 400 240">
-            <rect width="400" height="240" fill="#0B132B"/>
-            <path d="M 0 180 L 160 120 L 240 120 L 400 180 L 400 240 L 0 240 Z" fill="#1C2541"/>
-            <line x1="200" y1="120" x2="200" y2="240" stroke="#F59E0B" stroke-dasharray="10,10" stroke-width="2"/>
-            <!-- Car representation -->
-            <rect x="130" y="130" width="140" height="70" rx="8" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
-            <rect x="150" y="165" width="100" height="25" rx="3" fill="#F8FAFC" stroke="#0F172A"/>
-            <text x="200" y="182" font-family="monospace" font-size="12" font-weight="900" text-anchor="middle" fill="#0F172A">104822 119 16</text>
-            <!-- ALPR Target Box -->
-            <rect x="145" y="160" width="110" height="35" fill="none" stroke="#10B981" stroke-width="2" stroke-dasharray="6,3"/>
-            <text x="145" y="155" font-family="monospace" font-size="9" font-weight="700" fill="#10B981">OCR: 98.4% [ALGER]</text>
-          </svg>
+          <canvas id="cam1Canvas" width="400" height="240" style="width:100%;height:100%;display:block;object-fit:cover;"></canvas>
         </div>
         <div class="camera-telemetry">
           <span>RTSP: TCP // IMX678</span>
@@ -756,22 +745,14 @@ def get_desktop_ui_html() -> str:
       <div class="camera-tile" id="tileCam2">
         <div class="camera-header">
           <strong id="lblCam2">CAM 2: Kiosque Biométrique (Voie 1)</strong>
-          <span class="hotkey-indicator">RGB + NIR 850nm</span>
+          <span class="hotkey-indicator" id="cam2NirPill">RGB + NIR 850nm</span>
         </div>
         <div class="camera-feed-canvas">
-          <svg width="100%" height="100%" viewBox="0 0 400 240">
-            <rect width="400" height="240" fill="#030712"/>
-            <circle cx="200" cy="110" r="50" fill="#1E293B" stroke="#38BDF8" stroke-width="1.5"/>
-            <circle cx="185" cy="100" r="4" fill="#38BDF8"/>
-            <circle cx="215" cy="100" r="4" fill="#38BDF8"/>
-            <path d="M 190 130 Q 200 138 210 130" stroke="#38BDF8" stroke-width="2" fill="none"/>
-            <rect x="140" y="50" width="120" height="120" fill="none" stroke="#38BDF8" stroke-width="1.5" stroke-dasharray="4,4"/>
-            <text x="200" y="185" font-family="monospace" font-size="10" font-weight="700" text-anchor="middle" fill="#38BDF8">VIVACITE NIR: 0.985 [PASSED]</text>
-          </svg>
+          <canvas id="cam2Canvas" width="400" height="240" style="width:100%;height:100%;display:block;object-fit:cover;"></canvas>
         </div>
         <div class="camera-telemetry">
           <span>ARCFACE 512-D</span>
-          <span>DISTANCE: 0.418</span>
+          <span id="cam2Dist">DISTANCE: 0.418</span>
         </div>
       </div>
 
@@ -779,20 +760,13 @@ def get_desktop_ui_html() -> str:
       <div class="camera-tile" id="tileCam3">
         <div class="camera-header">
           <strong id="lblCam3">CAM 3: Sortie &amp; Barrière (Voie 2)</strong>
-          <span class="hotkey-indicator">1080p @ 30fps</span>
+          <span class="hotkey-indicator" id="cam3ArmPill">BARRIÈRE: FERMÉE</span>
         </div>
         <div class="camera-feed-canvas">
-          <svg width="100%" height="100%" viewBox="0 0 400 240">
-            <rect width="400" height="240" fill="#0B132B"/>
-            <!-- Barrier Gate representation -->
-            <rect x="50" y="80" width="16" height="120" fill="#E2E8F0"/>
-            <rect x="66" y="90" width="220" height="10" fill="#EF4444" transform="rotate(-5 66 90)"/>
-            <circle cx="58" cy="95" r="5" fill="#10B981"/>
-            <text x="200" y="160" font-family="monospace" font-size="11" font-weight="700" text-anchor="middle" fill="#94A3B8">SAS DE SORTIE LIBRE</text>
-          </svg>
+          <canvas id="cam3Canvas" width="400" height="240" style="width:100%;height:100%;display:block;object-fit:cover;"></canvas>
         </div>
         <div class="camera-telemetry">
-          <span>BOUCLE INDUCTIVE: ACTIVE</span>
+          <span id="cam3LoopStatus">BOUCLE INDUCTIVE: ACTIVE</span>
           <span id="gateStatus">BARRIÈRE: FERMÉE</span>
         </div>
       </div>
@@ -804,22 +778,11 @@ def get_desktop_ui_html() -> str:
           <span class="hotkey-indicator">Fisheye 12MP</span>
         </div>
         <div class="camera-feed-canvas">
-          <svg width="100%" height="100%" viewBox="0 0 400 240">
-            <rect width="400" height="240" fill="#0F172A"/>
-            <!-- Parking slots representation -->
-            <rect x="30" y="40" width="60" height="70" fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444"/>
-            <text x="60" y="80" font-size="10" font-weight="700" text-anchor="middle" fill="#EF4444">A01 (OCC)</text>
-            <rect x="100" y="40" width="60" height="70" fill="rgba(239, 68, 68, 0.2)" stroke="#EF4444"/>
-            <text x="130" y="80" font-size="10" font-weight="700" text-anchor="middle" fill="#EF4444">A02 (OCC)</text>
-            <rect x="170" y="40" width="60" height="70" fill="rgba(16, 185, 129, 0.2)" stroke="#10B981"/>
-            <text x="200" y="80" font-size="10" font-weight="700" text-anchor="middle" fill="#10B981">A03 (LIBRE)</text>
-            <rect x="240" y="40" width="60" height="70" fill="rgba(245, 158, 11, 0.2)" stroke="#F59E0B"/>
-            <text x="270" y="80" font-size="10" font-weight="700" text-anchor="middle" fill="#F59E0B">A04 (RES)</text>
-          </svg>
+          <canvas id="cam4Canvas" width="400" height="240" style="width:100%;height:100%;display:block;object-fit:cover;"></canvas>
         </div>
         <div class="camera-telemetry">
-          <span>OCCUPATION: 8 / 14 PLACES</span>
-          <span>DISPONIBLES: 6</span>
+          <span id="cam4Occ">OCCUPATION: 8 / 14 PLACES</span>
+          <span id="cam4Disp">DISPONIBLES: 6</span>
         </div>
       </div>
     </div>
@@ -1196,16 +1159,19 @@ def get_desktop_ui_html() -> str:
     }
 
     async function triggerManualBarrier() {
+      if (window.openExitBarrier) window.openExitBarrier();
       if (window.pywebview && window.pywebview.api) {
         await window.pywebview.api.trigger_barrier(1, 500);
       }
       const st = document.getElementById('gateStatus');
-      st.innerText = "BARRIÈRE: OUVERTE (IMPULSION)";
-      st.style.color = "#10B981";
-      setTimeout(() => {
-        st.innerText = "BARRIÈRE: FERMÉE";
-        st.style.color = "#38BDF8";
-      }, 3000);
+      if (st) {
+        st.innerText = "BARRIÈRE: OUVERTE (IMPULSION)";
+        st.style.color = "#10B981";
+        setTimeout(() => {
+          st.innerText = "BARRIÈRE: FERMÉE";
+          st.style.color = "#38BDF8";
+        }, 3000);
+      }
     }
 
     async function triggerScenario(key) {
@@ -1214,6 +1180,17 @@ def get_desktop_ui_html() -> str:
       } else if (key === 'driver_mismatch') {
         document.getElementById('triageModal').style.display = 'flex';
       }
+
+      if (key === 'spoof_attack') {
+        if (window.triggerFaceScan) window.triggerFaceScan(true);
+      } else if (key === 'driver_mismatch') {
+        if (window.triggerFaceScan) window.triggerFaceScan(false);
+      } else if (key === 'vip_entry' || key === 'temporary_00') {
+        if (window.triggerEntryCar) window.triggerEntryCar('104822 119 16');
+      } else if (key === 'visitor_payment_exit') {
+        if (window.openExitBarrier) window.openExitBarrier();
+      }
+
       if (window.pywebview && window.pywebview.api) {
         await window.pywebview.api.simulate_scenario(key);
       }
@@ -1242,13 +1219,21 @@ def get_desktop_ui_html() -> str:
           is_valid: true,
           plate_snippet: "104822",
           elapsed_minutes: 115,
-          total_due_dzd: 200.0
+          total_due_dzd: 200.0,
+          is_grace_period: false
         };
       }
       currentScanData = res;
+      if (res.plate_snippet && window.setCam3Plate) {
+        window.setCam3Plate(res.plate_snippet);
+      }
       document.getElementById('valPlate').innerText = res.plate_snippet || "104822 119 16";
       document.getElementById('valDuration').innerText = res.elapsed_minutes + " min";
-      document.getElementById('valTotal').innerText = res.total_due_dzd.toFixed(0) + " DZD";
+      if (res.is_grace_period) {
+        document.getElementById('valTotal').innerText = "0 DZD (Franchise 15 min)";
+      } else {
+        document.getElementById('valTotal').innerText = res.total_due_dzd.toFixed(0) + " DZD";
+      }
       document.getElementById('scanResultCard').style.display = 'block';
     }
 
@@ -1261,6 +1246,7 @@ def get_desktop_ui_html() -> str:
     async function processPayment(method) {
       if (!currentScanData) return;
       const ticketId = (currentScanData && currentScanData.ticket_id) ? currentScanData.ticket_id : "TKT-CURRENT";
+      if (window.openExitBarrier) window.openExitBarrier();
       if (window.pywebview && window.pywebview.api) {
         await window.pywebview.api.settle_payment(
           ticketId,
@@ -1277,6 +1263,7 @@ def get_desktop_ui_html() -> str:
 
     async function printManualTicket() {
       const plate = document.getElementById('manualPlateInput').value.trim() || "08412 00 16";
+      if (window.triggerEntryCar) window.triggerEntryCar(plate);
       let res;
       if (window.pywebview && window.pywebview.api) {
         res = await window.pywebview.api.print_ticket(plate, "LANE-01");
@@ -1382,7 +1369,682 @@ def get_desktop_ui_html() -> str:
       }
     });
 
+    /* =========================================================================
+       HIGH-FIDELITY REAL-TIME 4-CHANNEL CCTV SIMULATION PIPELINE
+       ========================================================================= */
+
+    function drawCCTVLensOverlay(ctx, w, h, camCode, camTitle, fps, isRec) {
+      if (isRec === undefined) isRec = true;
+      // 1. Scanlines
+      ctx.fillStyle = (currentTheme === 'light') ? 'rgba(15, 23, 42, 0.025)' : 'rgba(0, 0, 0, 0.16)';
+      for (let y = 0; y < h; y += 3) {
+        ctx.fillRect(0, y, w, 1);
+      }
+      // 2. Optical Security Lens Vignette
+      const vig = ctx.createRadialGradient(w/2, h/2, h*0.4, w/2, h/2, w*0.75);
+      vig.addColorStop(0, 'rgba(0,0,0,0)');
+      vig.addColorStop(1, (currentTheme === 'light') ? 'rgba(15,23,42,0.12)' : 'rgba(2,6,18,0.65)');
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, w, h);
+
+      // 3. Header OSD Bar
+      ctx.fillStyle = (currentTheme === 'light') ? 'rgba(248, 250, 252, 0.92)' : 'rgba(4, 8, 20, 0.88)';
+      ctx.fillRect(0, 0, w, 20);
+      ctx.strokeStyle = (currentTheme === 'light') ? 'rgba(203, 213, 225, 0.8)' : 'rgba(30, 41, 59, 0.8)';
+      ctx.beginPath(); ctx.moveTo(0, 20); ctx.lineTo(w, 20); ctx.stroke();
+
+      // Blinking REC Indicator
+      const blink = Math.floor(Date.now() / 600) % 2 === 0;
+      if (isRec && blink) {
+        ctx.fillStyle = '#EF4444';
+        ctx.beginPath(); ctx.arc(10, 10, 3, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = '#EF4444';
+        ctx.font = 'bold 8px monospace';
+        ctx.fillText('REC', 17, 13);
+      } else {
+        ctx.fillStyle = '#94A3B8';
+        ctx.font = 'bold 8px monospace';
+        ctx.fillText('STBY', 10, 13);
+      }
+
+      ctx.fillStyle = (currentTheme === 'light') ? '#0F172A' : '#F1F5F9';
+      ctx.font = 'bold 8.5px monospace';
+      ctx.fillText(camCode + ' [' + camTitle + ']', 44, 13);
+
+      // Real-time timecode
+      ctx.fillStyle = '#38BDF8';
+      ctx.textAlign = 'right';
+      const nowStr = new Date().toLocaleTimeString('fr-FR');
+      ctx.fillText(nowStr + ' UTC+1', w - 8, 13);
+      ctx.textAlign = 'left';
+    }
+
+    // --- CAM 1 : ENTRÉE ALPR & KINÉMATIQUE VÉHICULE ---
+    let cam1ArmAngle = 0.0;
+    let cam1TargetArmAngle = 0.0;
+    let cam1CarState = 'STOPPED';
+    let cam1CarY = 120.0;
+    let cam1Plate = '104822 119 16';
+
+    window.triggerEntryCar = function(plate) {
+      if (plate) cam1Plate = plate;
+      cam1TargetArmAngle = 88.0;
+      cam1CarState = 'DEPARTING';
+      const pill = document.getElementById('cam1ArmPill');
+      if (pill) { pill.innerText = 'ACCÈS AUTORISÉ'; pill.style.color = '#10B981'; }
+    };
+
+    function initCam1() {
+      const cvs = document.getElementById('cam1Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+
+      function render() {
+        cam1ArmAngle += (cam1TargetArmAngle - cam1ArmAngle) * 0.12;
+
+        if (cam1CarState === 'APPROACHING') {
+          cam1CarY += 1.8;
+          if (cam1CarY >= 120) {
+            cam1CarY = 120;
+            cam1CarState = 'STOPPED';
+          }
+        } else if (cam1CarState === 'DEPARTING') {
+          cam1CarY += 2.6;
+          if (cam1CarY > h + 80) {
+            cam1CarState = 'APPROACHING';
+            cam1CarY = -60;
+            cam1TargetArmAngle = 0.0;
+            const pill = document.getElementById('cam1ArmPill');
+            if (pill) { pill.innerText = '1080p @ 30fps'; pill.style.color = 'var(--text-muted)'; }
+          }
+        }
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Asphalt roadway
+        ctx.fillStyle = '#0B132B';
+        ctx.fillRect(0, 0, w, h);
+        ctx.fillStyle = '#1C2541';
+        ctx.beginPath();
+        ctx.moveTo(0, 180); ctx.lineTo(160, 90); ctx.lineTo(240, 90); ctx.lineTo(400, 180); ctx.lineTo(400, h); ctx.lineTo(0, h);
+        ctx.closePath(); ctx.fill();
+
+        // Central dashed road marker
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath();
+        ctx.moveTo(200, 90); ctx.lineTo(200, h);
+        ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Stop line
+        ctx.fillStyle = '#F59E0B';
+        ctx.fillRect(110, 175, 180, 4);
+
+        // Entry Totem (Left)
+        ctx.fillStyle = '#1E293B';
+        ctx.fillRect(70, 130, 24, 60);
+        ctx.strokeStyle = '#0284C7';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(70, 130, 24, 60);
+        ctx.fillStyle = '#10B981';
+        ctx.fillRect(74, 140, 16, 8);
+
+        // Barrier Cabinet (Right)
+        ctx.fillStyle = '#EA580C';
+        ctx.fillRect(295, 140, 20, 50);
+        ctx.strokeStyle = '#9A3412';
+        ctx.strokeRect(295, 140, 20, 50);
+
+        // Car Body
+        const cx = 130, cy = cam1CarY, cw = 140, ch = 70;
+        ctx.fillStyle = '#1E293B';
+        ctx.beginPath();
+        ctx.roundRect(cx, cy, cw, ch, 8);
+        ctx.fill();
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.5;
+        ctx.stroke();
+
+        // Windshield
+        ctx.fillStyle = '#0F172A';
+        ctx.beginPath();
+        ctx.roundRect(cx + 15, cy + 10, cw - 30, 20, 4);
+        ctx.fill();
+
+        // Headlights
+        ctx.fillStyle = '#FEF08A';
+        ctx.beginPath(); ctx.arc(cx + 18, cy + ch - 8, 5, 0, Math.PI * 2); ctx.fill();
+        ctx.beginPath(); ctx.arc(cx + cw - 18, cy + ch - 8, 5, 0, Math.PI * 2); ctx.fill();
+
+        // Front Plate
+        const px = cx + 25, py = cy + 42, pw = 90, ph = 18;
+        ctx.fillStyle = '#FDE047';
+        ctx.fillRect(px, py, pw, ph);
+        ctx.strokeStyle = '#000';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(px, py, pw, ph);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 9px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(cam1Plate, px + pw/2, py + 12);
+        ctx.textAlign = 'left';
+
+        // ALPR OCR Reticle
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([4, 2]);
+        ctx.strokeRect(px - 3, py - 3, pw + 6, ph + 6);
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
+        ctx.fillRect(px - 3, py - 12, 96, 9);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('OCR: 98.4% [ALGER]', px, py - 5);
+
+        // Barrier Boom Arm
+        ctx.save();
+        ctx.translate(295, 150);
+        ctx.rotate((-cam1ArmAngle * Math.PI) / 180);
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(-170, -3, 170, 6);
+        ctx.fillStyle = '#EF4444';
+        for (let s = -160; s < 0; s += 25) {
+          ctx.fillRect(s, -3, 12, 6);
+        }
+        ctx.restore();
+
+        drawCCTVLensOverlay(ctx, w, h, 'CAM-01', 'ENTRÉE ALPR VOIE 1', 25.0);
+        requestAnimationFrame(render);
+      }
+      render();
+    }
+
+    // --- CAM 2 : KIOSQUE BIOMÉTRIQUE & CANAL NIR 850nm ---
+    let cam2SpoofMode = false;
+    let cam2Frame = 0;
+    let cam2PulsePhase = 0.0;
+
+    window.triggerFaceScan = function(isSpoof) {
+      cam2SpoofMode = Boolean(isSpoof);
+      const pill = document.getElementById('cam2NirPill');
+      const dist = document.getElementById('cam2Dist');
+      if (pill) {
+        pill.innerText = cam2SpoofMode ? 'SPOOF DÉTECTÉ' : 'VIVACITÉ OK';
+        pill.style.color = cam2SpoofMode ? '#EF4444' : '#10B981';
+      }
+      if (dist) {
+        dist.innerText = cam2SpoofMode ? 'SCORE VIVACITÉ: 0.124' : 'SCORE MATCH: 0.985';
+      }
+      setTimeout(() => {
+        cam2SpoofMode = false;
+        if (pill) { pill.innerText = 'RGB + NIR 850nm'; pill.style.color = 'var(--text-muted)'; }
+        if (dist) { dist.innerText = 'DISTANCE: 0.418'; }
+      }, 7000);
+    };
+
+    function initCam2() {
+      const cvs = document.getElementById('cam2Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+
+      function render() {
+        cam2Frame++;
+        cam2PulsePhase += 0.08;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Vehicle Cabin Background
+        ctx.fillStyle = '#090D16';
+        ctx.fillRect(0, 0, w, h);
+
+        // Driver Window Frame
+        ctx.fillStyle = '#1E293B';
+        ctx.beginPath();
+        ctx.moveTo(0, 0); ctx.lineTo(50, 0); ctx.lineTo(70, h); ctx.lineTo(0, h);
+        ctx.closePath(); ctx.fill();
+
+        // Kiosk Column
+        ctx.fillStyle = '#111827';
+        ctx.fillRect(w - 60, 0, 60, h);
+        ctx.strokeStyle = '#0284C7';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(w - 60, 0, 60, h);
+
+        // Driver Head Silhouette
+        const headX = 180, headY = 110;
+        const isBlinking = (cam2Frame % 180) < 6;
+        const breathY = Math.sin(cam2Frame * 0.04) * 1.5;
+
+        ctx.fillStyle = '#334155';
+        ctx.beginPath();
+        ctx.ellipse(headX, headY + breathY, 38, 48, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Eyes
+        ctx.fillStyle = '#38BDF8';
+        if (isBlinking) {
+          ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(headX - 18, headY - 6 + breathY); ctx.lineTo(headX - 6, headY - 6 + breathY); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(headX + 6, headY - 6 + breathY); ctx.lineTo(headX + 18, headY - 6 + breathY); ctx.stroke();
+        } else {
+          ctx.beginPath(); ctx.arc(headX - 12, headY - 6 + breathY, 3.5, 0, Math.PI * 2); ctx.fill();
+          ctx.beginPath(); ctx.arc(headX + 12, headY - 6 + breathY, 3.5, 0, Math.PI * 2); ctx.fill();
+        }
+
+        // Nose Bridge
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(headX, headY - 4 + breathY); ctx.lineTo(headX, headY + 8 + breathY); ctx.lineTo(headX - 4, headY + 11 + breathY);
+        ctx.stroke();
+
+        // Mouth
+        ctx.beginPath();
+        ctx.arc(headX, headY + 20 + breathY, 8, 0.2, Math.PI - 0.2);
+        ctx.stroke();
+
+        // 68-Point Landmark Mesh Overlay
+        ctx.fillStyle = '#00F2FE';
+        const landmarks = [
+          [-28, -20], [-18, -22], [-8, -20], [8, -20], [18, -22], [28, -20],
+          [-22, -6], [-12, -8], [-2, -6], [2, -6], [12, -8], [22, -6],
+          [0, 0], [0, 6], [-5, 12], [0, 13], [5, 12],
+          [-12, 20], [0, 18], [12, 20], [0, 24],
+          [-30, 0], [-26, 20], [-18, 36], [0, 44], [18, 36], [26, 20], [30, 0]
+        ];
+        landmarks.forEach(pt => {
+          ctx.beginPath();
+          ctx.arc(headX + pt[0], headY + pt[1] + breathY, 1.3, 0, Math.PI * 2);
+          ctx.fill();
+        });
+
+        // Biometric Box
+        const boxColor = cam2SpoofMode ? '#EF4444' : '#10B981';
+        ctx.strokeStyle = boxColor;
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(headX - 50, headY - 60 + breathY, 100, 120);
+
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+        ctx.fillRect(headX - 50, headY - 76 + breathY, 100, 14);
+        ctx.fillStyle = boxColor;
+        ctx.font = 'bold 7.5px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillText(cam2SpoofMode ? 'SPOOF DÉTECTÉ (2D)' : 'ARCFACE: MATCH 0.985', headX, headY - 66 + breathY);
+        ctx.textAlign = 'left';
+
+        // PIP Viewport: 850nm NIR Infrared Channel
+        const pipX = w - 110, pipY = 24, pipW = 95, pipH = 65;
+        ctx.fillStyle = '#020617';
+        ctx.fillRect(pipX, pipY, pipW, pipH);
+        ctx.strokeStyle = cam2SpoofMode ? '#EF4444' : '#06B6D4';
+        ctx.lineWidth = 1.2;
+        ctx.strokeRect(pipX, pipY, pipW, pipH);
+
+        ctx.fillStyle = cam2SpoofMode ? '#EF4444' : '#06B6D4';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('NIR 850nm CANAL', pipX + 4, pipY + 10);
+
+        if (!cam2SpoofMode) {
+          const nirGrad = ctx.createRadialGradient(pipX + pipW/2, pipY + 38, 2, pipX + pipW/2, pipY + 38, 16);
+          nirGrad.addColorStop(0, '#CBD5E1');
+          nirGrad.addColorStop(0.7, '#64748B');
+          nirGrad.addColorStop(1, '#1E293B');
+          ctx.fillStyle = nirGrad;
+          ctx.beginPath(); ctx.arc(pipX + pipW/2, pipY + 38, 16, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#FFF';
+          ctx.fillRect(pipX + pipW/2 - 6, pipY + 35, 2, 2);
+          ctx.fillRect(pipX + pipW/2 + 4, pipY + 35, 2, 2);
+          ctx.fillStyle = '#10B981';
+          ctx.font = 'bold 6.5px monospace';
+          ctx.fillText('DIFFUSION DERMIQUE OK', pipX + 4, pipY + pipH - 4);
+        } else {
+          ctx.fillStyle = '#F8FAFC';
+          ctx.fillRect(pipX + 18, pipY + 18, 60, 32);
+          ctx.fillStyle = '#EF4444';
+          ctx.font = 'bold 6.5px monospace';
+          ctx.fillText('REFLET VERRE COMPACT', pipX + 4, pipY + pipH - 4);
+        }
+
+        // Bottom rPPG Heart Waveform
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 1.2;
+        ctx.beginPath();
+        for (let x = 80; x < w - 80; x += 3) {
+          const y = h - 26 + Math.sin((x * 0.08) - cam2PulsePhase) * 4 * (Math.sin(x * 0.02) > 0.3 ? 2 : 0.5);
+          if (x === 80) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+
+        drawCCTVLensOverlay(ctx, w, h, 'CAM-02', 'BORNE BIOMÉTRIQUE', 25.0);
+        requestAnimationFrame(render);
+      }
+      render();
+    }
+
+    // --- CAM 3 : VOIE 2 SORTIE & BARRIÈRE MODBUS AVEC CINÉMATIQUE 5-PHASES ---
+    let cam3ArmAngle = 0.0;
+    let cam3TargetAngle = 0.0;
+    let cam3CarState = 'APPROACHING';
+    let cam3CarX = -120.0;
+    let cam3CarSpeed = 2.8;
+    let cam3WheelAngle = 0.0;
+    let cam3StopFrames = 0;
+    let cam3ClearFrames = 0;
+    let cam3Plate = '08192 120 09';
+    let cam3Frame = 0;
+
+    window.setCam3Plate = function(plate) {
+      if (plate) cam3Plate = plate;
+    };
+
+    window.openExitBarrier = function() {
+      cam3TargetAngle = 88.0;
+      const st = document.getElementById('gateStatus');
+      const pill = document.getElementById('cam3ArmPill');
+      const loop = document.getElementById('cam3LoopStatus');
+      if (st) { st.innerText = 'BARRIÈRE: OUVERTE (88°)'; st.style.color = '#10B981'; }
+      if (pill) { pill.innerText = 'LEVÉE (OUVERT)'; pill.style.color = '#10B981'; }
+      if (loop) { loop.innerText = 'BOUCLE INDUCTIVE: PASSAGE (42 km/h)'; loop.style.color = '#10B981'; }
+
+      if (cam3CarState === 'STOPPED' || cam3CarState === 'APPROACHING') {
+        cam3CarState = 'OPENING';
+      }
+    };
+
+    function initCam3() {
+      const cvs = document.getElementById('cam3Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+
+      function render() {
+        cam3Frame++;
+        cam3ArmAngle += (cam3TargetAngle - cam3ArmAngle) * 0.09;
+
+        // Kinematic State Machine
+        if (cam3CarState === 'APPROACHING') {
+          cam3TargetAngle = 0.0;
+          const dist = 60 - cam3CarX;
+          if (dist > 0.6) {
+            cam3CarSpeed = Math.min(2.8, Math.max(0.12, dist * 0.038));
+            cam3CarX += cam3CarSpeed;
+            cam3WheelAngle += cam3CarSpeed / 12.0;
+          } else {
+            cam3CarX = 60;
+            cam3CarSpeed = 0.0;
+            cam3CarState = 'STOPPED';
+            cam3StopFrames = 0;
+          }
+        } else if (cam3CarState === 'STOPPED') {
+          cam3CarSpeed = 0.0;
+          cam3StopFrames++;
+          if (cam3StopFrames > 350) {
+            cam3TargetAngle = 88.0;
+            cam3CarState = 'OPENING';
+          }
+        } else if (cam3CarState === 'OPENING') {
+          cam3TargetAngle = 88.0;
+          if (cam3ArmAngle > 45) {
+            cam3CarState = 'DEPARTING';
+            cam3CarSpeed = 0.5;
+          }
+        } else if (cam3CarState === 'DEPARTING') {
+          cam3TargetAngle = 88.0;
+          if (cam3CarSpeed < 3.8) cam3CarSpeed += 0.05;
+          cam3CarX += cam3CarSpeed;
+          cam3WheelAngle += cam3CarSpeed / 12.0;
+
+          if (cam3CarX > w + 120) {
+            cam3CarState = 'LANE_CLEAR';
+            cam3ClearFrames = 0;
+            cam3TargetAngle = 0.0;
+            const st = document.getElementById('gateStatus');
+            const pill = document.getElementById('cam3ArmPill');
+            const loop = document.getElementById('cam3LoopStatus');
+            if (st) { st.innerText = 'BARRIÈRE: FERMÉE'; st.style.color = '#38BDF8'; }
+            if (pill) { pill.innerText = 'BARRIÈRE: FERMÉE'; pill.style.color = 'var(--text-muted)'; }
+            if (loop) { loop.innerText = 'BOUCLE INDUCTIVE: ACTIVE'; loop.style.color = '#38BDF8'; }
+          }
+        } else if (cam3CarState === 'LANE_CLEAR') {
+          cam3TargetAngle = 0.0;
+          cam3ClearFrames++;
+          if (cam3ClearFrames > 90) {
+            cam3CarX = -130;
+            cam3CarSpeed = 2.8;
+            cam3CarState = 'APPROACHING';
+            const plates = ['08192 120 09', '104822 119 16', '04122 118 16', '08412 00 16'];
+            cam3Plate = plates[Math.floor(Math.random() * plates.length)];
+          }
+        }
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Sky & Facade
+        ctx.fillStyle = '#0B132B';
+        ctx.fillRect(0, 0, w, 70);
+
+        // Roadway
+        const roadGrad = ctx.createLinearGradient(0, 70, 0, h);
+        roadGrad.addColorStop(0, '#1E293B');
+        roadGrad.addColorStop(1, '#0F172A');
+        ctx.fillStyle = roadGrad;
+        ctx.fillRect(0, 70, w, h - 70);
+
+        // Curb Lines
+        ctx.strokeStyle = '#F59E0B';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(0, 85); ctx.lineTo(w, 85);
+        ctx.stroke();
+
+        // Inductive loop markings
+        ctx.strokeStyle = 'rgba(56, 189, 248, 0.4)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([5, 5]);
+        ctx.strokeRect(180, 115, 90, 60);
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(56, 189, 248, 0.6)';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('BOUCLE DÉTECTION SAS', 184, 110);
+
+        // Car Body
+        const cx = cam3CarX, cy = 100, cw = 110, ch = 52;
+        ctx.fillStyle = '#1E293B';
+        ctx.beginPath();
+        ctx.roundRect(cx, cy, cw, ch, 6);
+        ctx.fill();
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1.2;
+        ctx.stroke();
+
+        // Wheels
+        function drawWheel(wx, wy) {
+          ctx.fillStyle = '#020617';
+          ctx.beginPath(); ctx.arc(wx, wy, 11, 0, Math.PI * 2); ctx.fill();
+          ctx.strokeStyle = '#64748B'; ctx.lineWidth = 2; ctx.stroke();
+          ctx.save();
+          ctx.translate(wx, wy);
+          ctx.rotate(cam3WheelAngle);
+          ctx.strokeStyle = '#94A3B8'; ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(-9, 0); ctx.lineTo(9, 0);
+          ctx.moveTo(0, -9); ctx.lineTo(0, 9);
+          ctx.stroke();
+          ctx.restore();
+        }
+        drawWheel(cx + 25, cy + ch);
+        drawWheel(cx + cw - 25, cy + ch);
+
+        // Tail Lights & Plate
+        ctx.fillStyle = '#EF4444';
+        ctx.fillRect(cx + cw - 4, cy + 12, 4, 10);
+        const px = cx + cw - 8, py = cy + 28, pw = 8, ph = 16;
+        ctx.fillStyle = '#FDE047';
+        ctx.fillRect(px, py, pw, ph);
+
+        // ALPR Detection Bounding Box
+        ctx.strokeStyle = '#10B981';
+        ctx.lineWidth = 1.2;
+        ctx.setLineDash([3, 2]);
+        ctx.strokeRect(cx - 4, cy - 4, cw + 8, ch + 12);
+        ctx.setLineDash([]);
+        ctx.fillStyle = 'rgba(16, 185, 129, 0.9)';
+        ctx.fillRect(cx - 4, cy - 14, 110, 10);
+        ctx.fillStyle = '#000';
+        ctx.font = 'bold 7px monospace';
+        ctx.fillText('OCR: ' + cam3Plate + ' (99%)', cx - 2, cy - 6);
+
+        // Barrier Cabinet
+        const bx = 160, by = 80, bw = 16, bh = 85;
+        ctx.fillStyle = '#EA580C';
+        ctx.fillRect(bx, by, bw, bh);
+        ctx.strokeStyle = '#9A3412';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(bx, by, bw, bh);
+
+        // Strobe Dome
+        const strobeColor = (Math.abs(cam3ArmAngle) > 5 && Math.abs(cam3ArmAngle) < 75)
+          ? ((Math.floor(cam3Frame / 4) % 2 === 0) ? '#F59E0B' : '#EF4444')
+          : (cam3ArmAngle > 45 ? '#10B981' : '#EF4444');
+        ctx.fillStyle = strobeColor;
+        ctx.beginPath(); ctx.arc(bx + bw/2, by - 2, 4, Math.PI, 0); ctx.fill();
+
+        // Barrier Boom Arm
+        ctx.save();
+        ctx.translate(bx + bw/2, by + 16);
+        ctx.rotate((-cam3ArmAngle * Math.PI) / 180);
+        ctx.fillStyle = '#F8FAFC';
+        ctx.fillRect(0, -3.5, 120, 7);
+        ctx.fillStyle = '#EF4444';
+        for (let s = 10; s < 115; s += 20) {
+          ctx.beginPath();
+          ctx.moveTo(s, -3.5); ctx.lineTo(s + 8, -3.5);
+          ctx.lineTo(s + 4, 3.5); ctx.lineTo(s - 4, 3.5);
+          ctx.closePath(); ctx.fill();
+        }
+        ctx.strokeStyle = cam3ArmAngle > 40 ? '#10B981' : '#EF4444';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath(); ctx.moveTo(0, -3.5); ctx.lineTo(120, -3.5); ctx.stroke();
+        ctx.restore();
+
+        drawCCTVLensOverlay(ctx, w, h, 'CAM-03', 'SORTIE & BARRIÈRE VOIE 2', 25.0);
+        requestAnimationFrame(render);
+      }
+      render();
+    }
+
+    // --- CAM 4 : VUE PLAFOND NIVEAU 0 ---
+    let cam4RadarAngle = 0.0;
+    function initCam4() {
+      const cvs = document.getElementById('cam4Canvas');
+      if (!cvs) return;
+      const ctx = cvs.getContext('2d');
+      const w = cvs.width, h = cvs.height;
+
+      const stalls = [
+        { id: 'A01', status: 'OCC', x: 30, y: 35 },
+        { id: 'A02', status: 'OCC', x: 80, y: 35 },
+        { id: 'A03', status: 'LIBRE', x: 130, y: 35 },
+        { id: 'A04', status: 'RES', x: 180, y: 35 },
+        { id: 'A05', status: 'OCC', x: 230, y: 35 },
+        { id: 'A06', status: 'LIBRE', x: 280, y: 35 },
+        { id: 'A07', status: 'OCC', x: 330, y: 35 },
+        { id: 'B01', status: 'OCC', x: 30, y: 145 },
+        { id: 'B02', status: 'LIBRE', x: 80, y: 145 },
+        { id: 'B03', status: 'OCC', x: 130, y: 145 },
+        { id: 'B04', status: 'LIBRE', x: 180, y: 145 },
+        { id: 'B05', status: 'OCC', x: 230, y: 145 },
+        { id: 'B06', status: 'LIBRE', x: 280, y: 145 },
+        { id: 'B07', status: 'OCC', x: 330, y: 145 }
+      ];
+
+      function render() {
+        cam4RadarAngle += 0.025;
+
+        ctx.clearRect(0, 0, w, h);
+
+        // Deck Floor
+        ctx.fillStyle = '#0B132B';
+        ctx.fillRect(0, 0, w, h);
+
+        // Central Driving Aisle
+        ctx.fillStyle = '#080E1F';
+        ctx.fillRect(0, 95, w, 45);
+        ctx.strokeStyle = '#38BDF8';
+        ctx.lineWidth = 1;
+        ctx.setLineDash([8, 8]);
+        ctx.beginPath(); ctx.moveTo(0, 117); ctx.lineTo(w, 117); ctx.stroke();
+        ctx.setLineDash([]);
+
+        // Stalls
+        stalls.forEach(s => {
+          const sw = 42, sh = 55;
+          let color = '#10B981';
+          let fill = 'rgba(16, 185, 129, 0.12)';
+          if (s.status === 'OCC') {
+            color = '#EF4444';
+            fill = 'rgba(239, 68, 68, 0.15)';
+          } else if (s.status === 'RES') {
+            color = '#F59E0B';
+            fill = 'rgba(245, 158, 11, 0.15)';
+          }
+
+          ctx.fillStyle = fill;
+          ctx.fillRect(s.x, s.y, sw, sh);
+          ctx.strokeStyle = color;
+          ctx.lineWidth = 1;
+          ctx.strokeRect(s.x, s.y, sw, sh);
+
+          if (s.status === 'OCC') {
+            ctx.fillStyle = '#1E293B';
+            ctx.beginPath();
+            ctx.roundRect(s.x + 4, s.y + 6, sw - 8, sh - 12, 4);
+            ctx.fill();
+            ctx.strokeStyle = '#475569';
+            ctx.stroke();
+          }
+
+          ctx.fillStyle = color;
+          ctx.font = 'bold 7px monospace';
+          ctx.textAlign = 'center';
+          ctx.fillText(s.id + ' ' + s.status, s.x + sw/2, s.y + (s.y < 100 ? sh - 4 : 12));
+          ctx.textAlign = 'left';
+        });
+
+        // Radar sweep line from center
+        ctx.save();
+        ctx.translate(w/2, h/2);
+        ctx.rotate(cam4RadarAngle);
+        const sweepGrad = ctx.createLinearGradient(0, 0, 160, 0);
+        sweepGrad.addColorStop(0, 'rgba(16, 185, 129, 0.4)');
+        sweepGrad.addColorStop(1, 'rgba(16, 185, 129, 0)');
+        ctx.fillStyle = sweepGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, 0);
+        ctx.arc(0, 0, 180, -0.2, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+
+        drawCCTVLensOverlay(ctx, w, h, 'CAM-04', 'VUE PLAFOND NIVEAU 0', 30.0);
+        requestAnimationFrame(render);
+      }
+      render();
+    }
+
     applyTranslations();
+    initCam1();
+    initCam2();
+    initCam3();
+    initCam4();
   </script>
 </body>
 </html>"""

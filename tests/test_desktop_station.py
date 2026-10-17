@@ -251,6 +251,21 @@ class TestDesktopBridgeApi(unittest.TestCase):
         self.assertIn("DUPLICATA REÇU", reprint_res["receipt_text"])
         self.assertIn("104822 119 16", reprint_res["receipt_text"])
 
+    def test_cctv_canvas_and_animation_pipeline_in_html(self):
+        from desktop.src.operator_window import get_desktop_ui_html
+        html = get_desktop_ui_html()
+        self.assertIn('id="cam1Canvas"', html)
+        self.assertIn('id="cam2Canvas"', html)
+        self.assertIn('id="cam3Canvas"', html)
+        self.assertIn('id="cam4Canvas"', html)
+        self.assertIn('window.openExitBarrier', html)
+        self.assertIn('window.triggerEntryCar', html)
+        self.assertIn('window.triggerFaceScan', html)
+        self.assertIn('initCam1()', html)
+        self.assertIn('initCam2()', html)
+        self.assertIn('initCam3()', html)
+        self.assertIn('initCam4()', html)
+
 
 class TestDesktopDatabaseAndHardware(unittest.TestCase):
     def setUp(self):
