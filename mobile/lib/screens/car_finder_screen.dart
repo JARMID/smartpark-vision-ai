@@ -49,8 +49,9 @@ class CarFinderScreen extends StatelessWidget {
     }
 
     final duration = vehicle.elapsedDuration;
-    final tariff = vehicle.calculateAccruedTariff();
-    final isGracePeriod = tariff == 0.0;
+    final breakdown = vehicle.calculateProgressiveTariff();
+    final tariff = breakdown.totalDueDzd;
+    final isGracePeriod = breakdown.isGracePeriod;
 
     return Scaffold(
       appBar: AppBar(
@@ -111,8 +112,10 @@ class CarFinderScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _infoRow('Stationné Depuis', '${duration.inHours}h ${duration.inMinutes % 60}m'),
                   const SizedBox(height: 8),
+                  _infoRow('Grille Tarifaire', breakdown.breakdownDescription),
+                  const SizedBox(height: 8),
                   _infoRow(
-                    'Tarif Estimé',
+                    'Montant Estimé',
                     isGracePeriod ? '0 DZD (Franchise 15 min)' : '${tariff.toStringAsFixed(0)} DZD',
                     isHighlight: true,
                   ),

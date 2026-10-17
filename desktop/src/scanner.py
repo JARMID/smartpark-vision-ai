@@ -7,8 +7,18 @@ parking duration calculation, and tariff computation.
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 import math
+import os
 import re
+import sys
 from typing import Optional, Tuple, Dict, Any
+
+try:
+    from src.tariff_engine import TariffEngine, TariffSchedule
+except ImportError:
+    root_dir = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    if root_dir not in sys.path:
+        sys.path.insert(0, root_dir)
+    from src.tariff_engine import TariffEngine, TariffSchedule
 
 
 @dataclass
@@ -23,6 +33,11 @@ class ScanResult:
     total_due_dzd: float
     is_grace_period: bool
     status_message: str
+    breakdown: str = "Tarif standard"
+    base_amount_dzd: float = 0.0
+    discount_dzd: float = 0.0
+    is_lost_ticket: bool = False
+    is_pmr: bool = False
 
 
 class BarcodeScannerDecoder:
@@ -30,9 +45,35 @@ class BarcodeScannerDecoder:
     Decodes parking ticket barcodes, checks integrity, and computes dues.
     """
 
-    def __init__(self, hourly_rate_dzd: float = 100.0, grace_period_min: int = 15):
+    def __init__(
+        self,
+        hourly_rate_dzd: float = 100.0,
+        grace_period_min: int = 15,
+        progressive: bool = False,
+        schedule: Optional[TariffSchedule] = None,
+    ):
         self.hourly_rate_dzd = hourly_rate_dzd
         self.grace_period_min = grace_period_min
+        self.progressive = progressive
+        if schedule:
+            self.schedule = schedule
+            self.tariff_engine = TariffEngine(schedule=schedule)
+        elif progressive:
+            self.schedule = TariffSchedule(
+                grace_period_min=grace_period_min,
+                first_hour_rate_dzd=hourly_rate_dzd,
+                tier2_hourly_rate_dzd=50.0,
+                tier3_hourly_rate_dzd=30.0,
+            )
+            self.tariff_engine = TariffEngine(schedule=self.schedule)
+        else:
+            self.schedule = TariffSchedule(
+                grace_period_min=grace_period_min,
+                first_hour_rate_dzd=hourly_rate_dzd,
+                tier2_hourly_rate_dzd=hourly_rate_dzd,
+                tier3_hourly_rate_dzd=hourly_rate_dzd,
+            )
+            self.tariff_engine = TariffEngine(schedule=self.schedule)
 
     def decode_input(self, scan_input: str, exit_time: Optional[datetime] = None) -> ScanResult:
         """
@@ -142,18 +183,18 @@ class BarcodeScannerDecoder:
         entry_time: datetime,
         exit_time: datetime,
         msg: str,
+        is_lost_ticket: bool = False,
+        is_pmr: bool = False,
     ) -> ScanResult:
         delta = exit_time - entry_time
         elapsed_min = max(0, int(delta.total_seconds() / 60))
 
-        if elapsed_min <= self.grace_period_min:
-            due = 0.0
-            is_grace = True
-        else:
-            # Standard Algerian municipal parking formula: rounded up to next full hour
-            chargeable_hours = math.ceil(elapsed_min / 60.0)
-            due = chargeable_hours * self.hourly_rate_dzd
-            is_grace = False
+        calc = self.tariff_engine.calculate_fee(
+            entry_time=entry_time,
+            exit_time=exit_time,
+            is_pmr=is_pmr,
+            is_lost_ticket=is_lost_ticket,
+        )
 
         return ScanResult(
             is_valid=is_valid,
@@ -163,9 +204,14 @@ class BarcodeScannerDecoder:
             exit_time=exit_time,
             elapsed_minutes=elapsed_min,
             hourly_rate_dzd=self.hourly_rate_dzd,
-            total_due_dzd=due,
-            is_grace_period=is_grace,
+            total_due_dzd=calc["total_due_dzd"],
+            is_grace_period=calc["is_grace_period"],
             status_message=msg,
+            breakdown=calc.get("breakdown", "Tarif standard"),
+            base_amount_dzd=calc.get("base_amount_dzd", calc["total_due_dzd"]),
+            discount_dzd=calc.get("discount_dzd", 0.0),
+            is_lost_ticket=is_lost_ticket,
+            is_pmr=is_pmr,
         )
 
     @staticmethod

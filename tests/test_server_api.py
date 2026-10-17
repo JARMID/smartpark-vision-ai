@@ -404,6 +404,62 @@ class TestServerAPI(unittest.TestCase):
         self.assertIn("TX-SYNC-001", data["ack_ids"])
         self.assertIn("TX-SYNC-002", data["ack_ids"])
 
+    def test_tariff_rules_endpoint(self):
+        res = self.client.get("/api/tariffs/rules")
+        self.assertEqual(res.status_code, 200)
+        data = res.json()
+        self.assertEqual(data["first_hour_rate_dzd"], 100.0)
+        self.assertEqual(data["tier2_hourly_rate_dzd"], 50.0)
+        self.assertEqual(data["tier3_hourly_rate_dzd"], 30.0)
+        self.assertEqual(data["daily_cap_dzd"], 800.0)
+        self.assertEqual(data["grace_period_minutes"], 15)
+        self.assertEqual(data["currency"], "DZD")
+
+    def test_tariff_calculate_endpoint(self):
+        # 1. Grace period (10 minutes)
+        res_grace = self.client.post("/api/tariffs/calculate", json={
+            "entry_time": "2026-10-17 12:00:00",
+            "exit_time": "2026-10-17 12:10:00",
+        })
+        self.assertEqual(res_grace.status_code, 200)
+        self.assertEqual(res_grace.json()["total_due_dzd"], 0.0)
+        self.assertTrue(res_grace.json()["is_grace_period"])
+
+        # 2. 2-hour stay (100 + 50 = 150 DZD)
+        res_2h = self.client.post("/api/tariffs/calculate", json={
+            "entry_time": "2026-10-17 12:00:00",
+            "exit_time": "2026-10-17 13:45:00",
+        })
+        self.assertEqual(res_2h.status_code, 200)
+        self.assertEqual(res_2h.json()["total_due_dzd"], 150.0)
+        self.assertEqual(res_2h.json()["billable_hours"], 2)
+
+        # 3. PMR 50% discount on 2-hour stay (150 * 0.5 = 75 DZD)
+        res_pmr = self.client.post("/api/tariffs/calculate", json={
+            "entry_time": "2026-10-17 12:00:00",
+            "exit_time": "2026-10-17 13:45:00",
+            "is_pmr": True,
+        })
+        self.assertEqual(res_pmr.status_code, 200)
+        self.assertEqual(res_pmr.json()["total_due_dzd"], 75.0)
+        self.assertTrue(res_pmr.json()["is_pmr"])
+
+        # 4. Lost ticket flat fee (1500 DZD)
+        res_lost = self.client.post("/api/tariffs/calculate", json={
+            "entry_time": "2026-10-17 12:00:00",
+            "exit_time": "2026-10-17 14:00:00",
+            "is_lost_ticket": True,
+            "flat_lost_ticket": True,
+        })
+        self.assertEqual(res_lost.status_code, 200)
+        self.assertEqual(res_lost.json()["total_due_dzd"], 1500.0)
+
+        # 5. Invalid date format
+        res_err = self.client.post("/api/tariffs/calculate", json={
+            "entry_time": "INVALID-DATE",
+        })
+        self.assertEqual(res_err.status_code, 400)
+
 
 if __name__ == "__main__":
     unittest.main()

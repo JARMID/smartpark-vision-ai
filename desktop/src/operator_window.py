@@ -6,7 +6,7 @@ threat HUD siren alerts, biometric triage modal, cashier POS,
 ESC/POS thermal ticket printing, and trilingual Day/Night localization.
 """
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import json
 import os
 import sys
@@ -205,11 +205,88 @@ class DesktopBridgeApi:
             "message": f"Paiement {payment_method} enregistre. Monnaie rendue: {tx.change_dzd:.0f} DZD. Barriere de sortie ouverte.",
         }
 
-    def close_shift(self) -> Dict[str, Any]:
-        """Compile shift report."""
-        report = self.pos_manager.close_shift()
+    def close_shift(self, denomination_counts: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+        """Compile shift report with physical cash denomination reconciliation."""
+        report = self.pos_manager.close_shift(denomination_counts=denomination_counts)
         self.audio_synth.play_success_chime()
         return report
+
+    def issue_lost_ticket(
+        self,
+        plate_number: str,
+        flat_rate: bool = True,
+        is_pmr: bool = False,
+    ) -> Dict[str, Any]:
+        """
+        Process a lost ticket resolution for a vehicle plate.
+        Calculates fee (flat 1500 DZD or accrued + 500 DZD surcharge),
+        prints replacement thermal ticket, and creates local SQLite entry.
+        """
+        clean_plate = plate_number.strip().upper() if plate_number else "INCONNU"
+        now = datetime.now()
+        entry_time = None
+
+        if not flat_rate:
+            db_ticket = self.pos_manager.db.find_ticket_by_barcode(clean_plate)
+            if db_ticket and "entry_time" in db_ticket:
+                try:
+                    entry_time = datetime.strptime(db_ticket["entry_time"], "%Y-%m-%d %H:%M:%S")
+                except Exception:
+                    pass
+
+        if entry_time:
+            calc = self.scanner_decoder.tariff_engine.calculate_fee(
+                entry_time=entry_time,
+                exit_time=now,
+                is_pmr=is_pmr,
+                is_lost_ticket=True,
+                flat_lost_ticket=False,
+            )
+        else:
+            calc = self.scanner_decoder.tariff_engine.calculate_fee(
+                entry_time=now - timedelta(hours=2),
+                exit_time=now,
+                is_pmr=is_pmr,
+                is_lost_ticket=True,
+                flat_lost_ticket=True,
+            )
+
+        due_dzd = calc["total_due_dzd"]
+        ticket = self.printer_engine.generate_ticket(clean_plate, lane_id="CAISSE-01")
+        ticket.zone_name = "REMPLACEMENT (TICKET PERDU)"
+        ticket.tariff_hourly_dzd = due_dzd
+
+        svg_preview = self.printer_engine.render_svg_ticket(ticket)
+        text_preview = self.printer_engine.render_text_preview(ticket)
+
+        try:
+            self.pos_manager.db.create_local_ticket(
+                plate_number=ticket.plate_number,
+                lane_id=ticket.lane_id,
+                zone_name=ticket.zone_name,
+                tariff_due_dzd=due_dzd,
+                ticket_id=ticket.ticket_id,
+                barcode_value=ticket.barcode_value,
+            )
+        except Exception:
+            pass
+
+        self.audio_synth.play_warning_beep(1)
+
+        return {
+            "success": True,
+            "ticket_id": ticket.ticket_id,
+            "barcode_value": ticket.barcode_value,
+            "plate_number": clean_plate,
+            "total_due_dzd": due_dzd,
+            "base_amount_dzd": calc.get("base_amount_dzd", due_dzd),
+            "discount_dzd": calc.get("discount_dzd", 0.0),
+            "breakdown": calc.get("breakdown", "Forfait Ticket Perdu"),
+            "is_pmr": is_pmr,
+            "svg_preview": svg_preview,
+            "text_preview": text_preview,
+            "message": f"Ticket de remplacement généré pour {clean_plate}. Montant: {due_dzd:.0f} DZD.",
+        }
 
     def get_audit_data(self) -> Dict[str, Any]:
         """Fetch local SQLite transaction history, barrier logs, and active shift status."""
@@ -945,7 +1022,8 @@ def get_desktop_ui_html() -> str:
           </div>
         </div>
 
-        <div style="margin-top: 14px;">
+        <div style="margin-top: 14px; display:flex; flex-direction:column; gap:8px;">
+          <button class="btn-secondary" style="width:100%; border-color:#F59E0B; color:#F59E0B; font-weight:700;" onclick="showLostTicketModal()" id="btnLostTicket">⚠️ Régularisation Ticket Perdu</button>
           <button class="btn-secondary" style="width:100%;" onclick="closeShiftZReport()" id="btnZReport">Clôture de Caisse (Rapport Z)</button>
         </div>
       </div>
@@ -1025,6 +1103,92 @@ def get_desktop_ui_html() -> str:
     </div>
   </div>
 
+  <!-- Lost Ticket Modal -->
+  <div id="lostTicketModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:200; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:12px; width:460px; max-width:90%; padding:20px;">
+      <h3 style="margin-top:0; color:#F59E0B; display:flex; align-items:center; gap:8px;">
+        <span>⚠️ Régularisation Ticket Perdu</span>
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;">
+        Calcul automatique du forfait municipal ou recherche horodatée en base de données locale.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Numéro d'immatriculation du véhicule :</label>
+        <input type="text" id="lostPlateInput" class="form-input" placeholder="ex: 104822 119 16" value="104822 119 16">
+      </div>
+      <div style="margin-bottom:12px; display:flex; flex-direction:column; gap:8px; font-size:12px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="lostFlatRateCheck" checked>
+          <span>Appliquer forfait administratif standard (1 500 DZD)</span>
+        </label>
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer;">
+          <input type="checkbox" id="lostPmrCheck">
+          <span>Véhicule PMR / Carte d'invalidité (Remise 50%)</span>
+        </label>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:16px;">
+        <button class="btn-secondary" onclick="closeLostTicketModal()">Annuler</button>
+        <button class="btn-action" style="background:#F59E0B; color:#0F172A; font-weight:700;" onclick="submitLostTicket()">Générer Ticket de Sortie</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Z-Report Denomination Reconciliation Modal -->
+  <div id="zReportModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.8); z-index:200; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:12px; width:480px; max-width:95%; padding:20px;">
+      <h3 style="margin-top:0; color:#38BDF8; display:flex; align-items:center; gap:8px;">
+        <span>📊 Clôture de Caisse &amp; Décompte Physique</span>
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:12px;">
+        Saisie des coupures physiques pour calcul automatique de l'écart de caisse avant certification Z.
+      </p>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-bottom:12px;">
+        <div>
+          <label class="form-label" style="font-size:11px;">Billets 2000 DZD :</label>
+          <input type="number" id="denom2000" class="form-input" placeholder="0" min="0" oninput="updatePhysicalCashCount()">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">Billets 1000 DZD :</label>
+          <input type="number" id="denom1000" class="form-input" placeholder="0" min="0" oninput="updatePhysicalCashCount()">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">Billets 500 DZD :</label>
+          <input type="number" id="denom500" class="form-input" placeholder="0" min="0" oninput="updatePhysicalCashCount()">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">Pièces 200 DZD :</label>
+          <input type="number" id="denom200" class="form-input" placeholder="0" min="0" oninput="updatePhysicalCashCount()">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">Pièces 100 DZD :</label>
+          <input type="number" id="denom100" class="form-input" placeholder="0" min="0" oninput="updatePhysicalCashCount()">
+        </div>
+        <div>
+          <label class="form-label" style="font-size:11px;">Pièces 50 DZD :</label>
+          <input type="number" id="denom50" class="form-input" placeholder="0" min="0" oninput="updatePhysicalCashCount()">
+        </div>
+      </div>
+      <div style="padding:10px; background:var(--bg-surface-elevated); border:1px solid var(--border-color); border-radius:6px; margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:4px;">
+          <span>Espèces Comptées :</span>
+          <strong id="valPhysicalCashCounted">0 DZD</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; color:var(--text-muted); margin-bottom:4px;">
+          <span>Solde Théorique Attendu :</span>
+          <strong id="valExpectedDrawerCash">-- DZD</strong>
+        </div>
+        <div style="display:flex; justify-content:space-between; font-size:12px; font-weight:700;">
+          <span>Écart de Caisse :</span>
+          <strong id="valCashVariance" style="color:#10B981;">0 DZD (Parfait)</strong>
+        </div>
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn-secondary" onclick="closeZReportModal()">Annuler</button>
+        <button class="btn-action" style="background:#10B981;" onclick="submitZReportFinal()">Valider &amp; Clôturer Shift</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Bottom Quick Hotkeys Reference Bar -->
   <footer>
     <div>
@@ -1069,6 +1233,7 @@ def get_desktop_ui_html() -> str:
         lblChangeDue: "Monnaie à Rendre :",
         btnCash: "Espèces (P)",
         btnCard: "Carte CIB",
+        btnLostTicket: "⚠️ Régularisation Ticket Perdu",
         btnZReport: "Clôture de Caisse (Rapport Z)",
         btnExportAudit: "Exporter CSV",
         auditSearchPlaceholder: "Rechercher par plaque ou reçu...",
@@ -1107,6 +1272,7 @@ def get_desktop_ui_html() -> str:
         lblChangeDue: "Change Due:",
         btnCash: "Cash (P)",
         btnCard: "CIB Card",
+        btnLostTicket: "⚠️ Lost Ticket Resolution",
         btnZReport: "End-of-Shift Z-Report",
         btnTheme: "Day / Night Mode (D)",
         btnLang: "Language: EN (L)",
@@ -1143,6 +1309,7 @@ def get_desktop_ui_html() -> str:
         lblChangeDue: "المبلغ المتبقي للإرجاع:",
         btnCash: "نقداً (P)",
         btnCard: "بطاقة CIB",
+        btnLostTicket: "⚠️ تسوية تذكرة ضائعة",
         btnZReport: "إغلاق الصندوق (تقرير Z)",
         btnTheme: "وضع النهار / الليل (D)",
         btnLang: "اللغة: العربية (L)",
@@ -1182,6 +1349,7 @@ def get_desktop_ui_html() -> str:
       if (document.getElementById('lblChangeDue')) document.getElementById('lblChangeDue').innerText = dict.lblChangeDue;
       document.getElementById('btnCash').innerText = dict.btnCash;
       document.getElementById('btnCard').innerText = dict.btnCard;
+      if (document.getElementById('btnLostTicket')) document.getElementById('btnLostTicket').innerText = dict.btnLostTicket;
       document.getElementById('btnZReport').innerText = dict.btnZReport;
       document.getElementById('btnTheme').innerText = dict.btnTheme;
       document.getElementById('btnLang').innerText = dict.btnLang;
@@ -1532,18 +1700,130 @@ def get_desktop_ui_html() -> str:
       }
     }
 
+    function showLostTicketModal() {
+      document.getElementById('lostTicketModal').style.display = 'flex';
+    }
+
+    function closeLostTicketModal() {
+      document.getElementById('lostTicketModal').style.display = 'none';
+    }
+
+    async function submitLostTicket() {
+      const plate = document.getElementById('lostPlateInput').value.trim() || '104822 119 16';
+      const flat = document.getElementById('lostFlatRateCheck').checked;
+      const pmr = document.getElementById('lostPmrCheck').checked;
+      closeLostTicketModal();
+
+      let res;
+      if (window.pywebview && window.pywebview.api) {
+        res = await window.pywebview.api.issue_lost_ticket(plate, flat, pmr);
+      } else {
+        res = {
+          success: true,
+          ticket_id: "TKT-LOST-2026",
+          barcode_value: "9910010482218",
+          plate_number: plate,
+          total_due_dzd: flat ? (pmr ? 750.0 : 1500.0) : (pmr ? 325.0 : 650.0),
+          breakdown: "Forfait Ticket Perdu",
+          message: "Ticket de remplacement généré.",
+        };
+      }
+
+      if (res && res.success) {
+        currentScanData = {
+          is_valid: true,
+          ticket_id: res.ticket_id,
+          plate_snippet: res.plate_number,
+          total_due_dzd: res.total_due_dzd,
+          elapsed_minutes: 120,
+        };
+        switchTab('pos');
+        document.getElementById('valPlate').innerText = res.plate_number;
+        document.getElementById('valDuration').innerText = "RÉGULARISATION";
+        document.getElementById('valRate').innerText = res.breakdown || "Forfait Ticket Perdu";
+        document.getElementById('valTotal').innerText = res.total_due_dzd.toFixed(0) + " DZD";
+        if (document.getElementById('tenderedAmountInput')) {
+          document.getElementById('tenderedAmountInput').value = res.total_due_dzd;
+          calculateChangeDue();
+        }
+        document.getElementById('scanResultCard').style.display = 'block';
+        if (res.svg_preview && document.getElementById('ticketPreviewArea')) {
+          document.getElementById('ticketPreviewArea').innerHTML = res.svg_preview;
+        }
+      }
+    }
+
+    let currentExpectedDrawer = 0;
+
     async function closeShiftZReport() {
+      if (window.pywebview && window.pywebview.api) {
+        try {
+          const data = await window.pywebview.api.get_audit_data();
+          if (data && data.shift) {
+            currentExpectedDrawer = data.shift.expected_drawer_dzd || 0;
+            document.getElementById('valExpectedDrawerCash').innerText = currentExpectedDrawer.toFixed(0) + " DZD";
+          }
+        } catch(e) {}
+      }
+      document.getElementById('zReportModal').style.display = 'flex';
+      updatePhysicalCashCount();
+    }
+
+    function closeZReportModal() {
+      document.getElementById('zReportModal').style.display = 'none';
+    }
+
+    function updatePhysicalCashCount() {
+      const c2000 = parseInt(document.getElementById('denom2000').value) || 0;
+      const c1000 = parseInt(document.getElementById('denom1000').value) || 0;
+      const c500 = parseInt(document.getElementById('denom500').value) || 0;
+      const c200 = parseInt(document.getElementById('denom200').value) || 0;
+      const c100 = parseInt(document.getElementById('denom100').value) || 0;
+      const c50 = parseInt(document.getElementById('denom50').value) || 0;
+
+      const total = (c2000 * 2000) + (c1000 * 1000) + (c500 * 500) + (c200 * 200) + (c100 * 100) + (c50 * 50);
+      document.getElementById('valPhysicalCashCounted').innerText = total.toFixed(0) + " DZD";
+
+      const diff = total - currentExpectedDrawer;
+      const diffElem = document.getElementById('valCashVariance');
+      if (diff === 0) {
+        diffElem.innerText = "0 DZD (Parfait)";
+        diffElem.style.color = "#10B981";
+      } else if (diff > 0) {
+        diffElem.innerText = "+" + diff.toFixed(0) + " DZD (Excédent)";
+        diffElem.style.color = "#38BDF8";
+      } else {
+        diffElem.innerText = diff.toFixed(0) + " DZD (Déficit)";
+        diffElem.style.color = "#EF4444";
+      }
+    }
+
+    async function submitZReportFinal() {
+      closeZReportModal();
+      const denominationCounts = {
+        "2000": parseInt(document.getElementById('denom2000').value) || 0,
+        "1000": parseInt(document.getElementById('denom1000').value) || 0,
+        "500": parseInt(document.getElementById('denom500').value) || 0,
+        "200": parseInt(document.getElementById('denom200').value) || 0,
+        "100": parseInt(document.getElementById('denom100').value) || 0,
+        "50": parseInt(document.getElementById('denom50').value) || 0,
+      };
+
       let rep;
       if (window.pywebview && window.pywebview.api) {
-        rep = await window.pywebview.api.close_shift();
+        rep = await window.pywebview.api.close_shift(denominationCounts);
+        const varMsg = rep.cash_variance_dzd !== undefined ? ("\\nÉcart de caisse: " + rep.cash_variance_dzd + " DZD (" + rep.variance_status + ")") : "";
         alert("RAPPORT Z GÉNÉRÉ AVEC SUCCÈS:\\n" +
               "Recettes Espèces: " + rep.total_cash_revenue_dzd + " DZD\\n" +
               "Recettes Carte: " + rep.total_card_revenue_dzd + " DZD\\n" +
               "Total Encaissé: " + rep.total_revenue_dzd + " DZD\\n" +
+              "Espèces Physiques: " + rep.physical_cash_counted_dzd + " DZD" + varMsg + "\\n" +
               "Hash d'audit: " + rep.audit_hash);
       } else {
         alert("Clôture de shift Z-Report effectuée.");
       }
+      updateSyncBadge();
+      refreshAuditData();
     }
 
     async function resolveTriage(decision) {

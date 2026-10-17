@@ -20,6 +20,7 @@ from src.main import GateOrchestrator, GateDecisionResult
 from src.compliance.law_25_11_audit import Law2511ComplianceEngine
 from src.payment.chargily_v2_client import ChargilyV2PaymentClient
 from src.camera.edge_stream_manager import EdgeStreamManager
+from src.tariff_engine import TariffEngine, TariffSchedule
 
 app = FastAPI(title="Smart Park Sovereign Server", version="2.0.0")
 
@@ -37,6 +38,7 @@ DB_PATH = os.environ.get("SMARTPARK_DB_PATH", default_db)
 orchestrator = GateOrchestrator(db_path=DB_PATH, simulation_mode=True)
 compliance_engine = Law2511ComplianceEngine()
 chargily_client = ChargilyV2PaymentClient()
+tariff_engine = TariffEngine()
 PROCESSED_WEBHOOK_IDS = set()
 
 # Initialize Multi-Channel Camera Stream Manager
@@ -278,6 +280,15 @@ class PosSyncBatchRequest(BaseModel):
     cashier_id: str = "AGENT-MEZIANE"
     transactions: List[Dict[str, Any]] = []
     barrier_logs: List[Dict[str, Any]] = []
+
+
+class TariffCalculationRequest(BaseModel):
+    entry_time: str
+    exit_time: Optional[str] = None
+    is_vip: bool = False
+    is_pmr: bool = False
+    is_lost_ticket: bool = False
+    flat_lost_ticket: bool = False
 
 
 def get_real_hardware_metrics():
@@ -976,6 +987,49 @@ async def sync_pos_batch(req: PosSyncBatchRequest):
     }
 
 
+@app.get("/api/tariffs/rules")
+def get_tariff_rules():
+    """Return active tariff rules, tiered rate breakdown, and discount parameters."""
+    return tariff_engine.get_schedule_summary()
+
+
+@app.post("/api/tariffs/calculate")
+def calculate_tariff(req: TariffCalculationRequest):
+    """Calculate progressive tiered parking dues from entry and exit timestamps."""
+    try:
+        entry_clean = req.entry_time.replace("Z", "").replace("T", " ").strip()
+        if "." in entry_clean:
+            entry_dt = datetime.strptime(entry_clean.split(".")[0], "%Y-%m-%d %H:%M:%S")
+        elif len(entry_clean) == 16:
+            entry_dt = datetime.strptime(entry_clean, "%Y-%m-%d %H:%M")
+        else:
+            entry_dt = datetime.strptime(entry_clean[:19], "%Y-%m-%d %H:%M:%S")
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=f"Invalid entry_time format. Use YYYY-MM-DD HH:MM:SS: {e}")
+
+    exit_dt = None
+    if req.exit_time:
+        try:
+            exit_clean = req.exit_time.replace("Z", "").replace("T", " ").strip()
+            if "." in exit_clean:
+                exit_dt = datetime.strptime(exit_clean.split(".")[0], "%Y-%m-%d %H:%M:%S")
+            elif len(exit_clean) == 16:
+                exit_dt = datetime.strptime(exit_clean, "%Y-%m-%d %H:%M")
+            else:
+                exit_dt = datetime.strptime(exit_clean[:19], "%Y-%m-%d %H:%M:%S")
+        except Exception as e:
+            raise HTTPException(status_code=400, detail=f"Invalid exit_time format. Use YYYY-MM-DD HH:MM:SS: {e}")
+
+    return tariff_engine.calculate_fee(
+        entry_time=entry_dt,
+        exit_time=exit_dt,
+        is_vip=req.is_vip,
+        is_pmr=req.is_pmr,
+        is_lost_ticket=req.is_lost_ticket,
+        flat_lost_ticket=req.flat_lost_ticket,
+    )
+
+
 @app.post("/api/compliance/dpia")
 def generate_dpia_report(req: DpiaGenerateRequest):
     return compliance_engine.generate_dpia(
@@ -1235,6 +1289,47 @@ def export_audit_log_csv():
         media_type="text/csv",
         headers={"Content-Disposition": f"attachment; filename={filename}"}
     )
+
+
+@app.get("/api/reports/occupancy-trend")
+def get_occupancy_trend():
+    """
+    Returns 24-hour occupancy trends, peak hours, and turnover volume
+    for analytics dashboards and smart allocation.
+    """
+    total_slots = len(PARKING_SLOTS)
+    # 24-hour profile typical for Algiers municipal parking
+    hourly_occupancy_curve = [
+        0.12, 0.08, 0.05, 0.05, 0.08, 0.15,
+        0.35, 0.65, 0.88, 0.94, 0.92, 0.85,
+        0.78, 0.82, 0.90, 0.95, 0.88, 0.72,
+        0.58, 0.45, 0.38, 0.28, 0.20, 0.15,
+    ]
+    hourly_data = []
+    current_hour = datetime.now().hour
+
+    for h in range(24):
+        ratio = hourly_occupancy_curve[h]
+        occupied_count = int(round(ratio * total_slots))
+        hourly_data.append({
+            "hour": f"{h:02d}:00",
+            "occupied": occupied_count,
+            "available": total_slots - occupied_count,
+            "occupancy_rate_percent": round(ratio * 100, 1),
+            "is_current_hour": (h == current_hour),
+        })
+
+    peak_hour = max(hourly_data, key=lambda x: x["occupied"])
+
+    return {
+        "facility_name": "Smart Park Alger Centre",
+        "total_slots": total_slots,
+        "date": datetime.now().strftime("%Y-%m-%d"),
+        "peak_hour": peak_hour["hour"],
+        "peak_occupancy_percent": peak_hour["occupancy_rate_percent"],
+        "hourly_trend": hourly_data,
+        "daily_turnover_estimated_dzd": 48500.0,
+    }
 
 
 # WebSocket Endpoint for Live Browser Telemetry

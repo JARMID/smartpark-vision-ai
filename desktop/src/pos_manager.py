@@ -169,8 +169,8 @@ class CashierPosManager:
 
         return tx
 
-    def close_shift(self) -> Dict[str, Any]:
-        """Close active shift and compile certified Z-Report."""
+    def close_shift(self, denomination_counts: Optional[Dict[str, int]] = None) -> Dict[str, Any]:
+        """Close active shift and compile certified Z-Report with cash variance verification."""
         if not self.active_shift:
             raise ValueError("No active shift found to close.")
 
@@ -178,6 +178,27 @@ class CashierPosManager:
         self.active_shift.closed_at = now
         closing_drawer_cash = round(self.active_shift.opening_float_dzd + self.active_shift.total_cash_collected_dzd, 2)
         total_revenue = round(self.active_shift.total_cash_collected_dzd + self.active_shift.total_card_collected_dzd, 2)
+
+        physical_cash = closing_drawer_cash
+        variance = 0.0
+        variance_status = "NON_COMPTE"
+        if denomination_counts:
+            counted = 0.0
+            for denom, count in denomination_counts.items():
+                try:
+                    d_val = float(denom)
+                    c_val = int(count)
+                    counted += d_val * c_val
+                except (ValueError, TypeError):
+                    pass
+            physical_cash = round(counted, 2)
+            variance = round(physical_cash - closing_drawer_cash, 2)
+            if variance == 0.0:
+                variance_status = "PARFAIT (ECART 0 DZD)"
+            elif variance > 0.0:
+                variance_status = f"EXCEDENT (+{variance:.0f} DZD)"
+            else:
+                variance_status = f"DEFICIT ({variance:.0f} DZD)"
 
         # Generate cryptographic audit hash
         audit_payload = (
@@ -210,6 +231,10 @@ class CashierPosManager:
             "total_exemptions_dzd": self.active_shift.total_exemptions_dzd,
             "total_revenue_dzd": total_revenue,
             "expected_drawer_cash_dzd": closing_drawer_cash,
+            "physical_cash_counted_dzd": physical_cash,
+            "cash_variance_dzd": variance,
+            "variance_status": variance_status,
+            "denomination_breakdown": denomination_counts or {},
             "tickets_processed": self.active_shift.tickets_settled_count,
             "audit_hash": db_hash,
             "regulatory_status": "CONFORME FISCALITE ET ANPDP",

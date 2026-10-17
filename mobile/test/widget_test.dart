@@ -90,6 +90,79 @@ void main() {
     controller.dispose();
   });
 
+  test('VehicleLocation progressive tariff tiered calculation test', () {
+    final now = DateTime.now();
+
+    // 1. Grace period: 10 min -> 0 DZD
+    final locGrace = VehicleLocation(
+      slotNumber: 'B01',
+      zoneName: 'Zone B',
+      floorLevel: 'Niveau 0',
+      parkedAt: now.subtract(const Duration(minutes: 10)),
+      latitude: 36.75,
+      longitude: 3.05,
+      sectionName: 'Allee Nord',
+    );
+    final breakGrace = locGrace.calculateProgressiveTariff();
+    expect(breakGrace.isGracePeriod, isTrue);
+    expect(breakGrace.totalDueDzd, equals(0.0));
+
+    // 2. 2-hour duration (75 min) -> 100 + 50 = 150 DZD
+    final loc2h = VehicleLocation(
+      slotNumber: 'B01',
+      zoneName: 'Zone B',
+      floorLevel: 'Niveau 0',
+      parkedAt: now.subtract(const Duration(minutes: 75)),
+      latitude: 36.75,
+      longitude: 3.05,
+      sectionName: 'Allee Nord',
+    );
+    final break2h = loc2h.calculateProgressiveTariff();
+    expect(break2h.isGracePeriod, isFalse);
+    expect(break2h.totalDueDzd, equals(150.0));
+    expect(break2h.billableHours, equals(2));
+
+    // 3. 5-hour duration (280 min) -> 100 + 3*50 + 1*30 = 280 DZD
+    final loc5h = VehicleLocation(
+      slotNumber: 'B01',
+      zoneName: 'Zone B',
+      floorLevel: 'Niveau 0',
+      parkedAt: now.subtract(const Duration(minutes: 280)),
+      latitude: 36.75,
+      longitude: 3.05,
+      sectionName: 'Allee Nord',
+    );
+    final break5h = loc5h.calculateProgressiveTariff();
+    expect(break5h.totalDueDzd, equals(280.0));
+    expect(break5h.billableHours, equals(5));
+
+    // 4. 20-hour duration -> 100 + 3*50 + 16*30 = 730 DZD
+    final loc20h = VehicleLocation(
+      slotNumber: 'B01',
+      zoneName: 'Zone B',
+      floorLevel: 'Niveau 0',
+      parkedAt: now.subtract(const Duration(hours: 20)),
+      latitude: 36.75,
+      longitude: 3.05,
+      sectionName: 'Allee Nord',
+    );
+    final break20h = loc20h.calculateProgressiveTariff();
+    expect(break20h.totalDueDzd, equals(730.0));
+
+    // 5. Daily cap test: 23 hours -> 100 + 150 + 19*30 = 820 capped at 800 DZD
+    final locCap = VehicleLocation(
+      slotNumber: 'B01',
+      zoneName: 'Zone B',
+      floorLevel: 'Niveau 0',
+      parkedAt: now.subtract(const Duration(hours: 23)),
+      latitude: 36.75,
+      longitude: 3.05,
+      sectionName: 'Allee Nord',
+    );
+    final breakCap = locCap.calculateProgressiveTariff();
+    expect(breakCap.totalDueDzd, equals(800.0));
+  });
+
   testWidgets('DeckMapScreen and StallGridWidget empty category state', (WidgetTester tester) async {
     await tester.pumpWidget(MaterialApp(
       home: Scaffold(

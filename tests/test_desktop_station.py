@@ -126,6 +126,51 @@ class TestBarcodeScannerDecoder(unittest.TestCase):
         self.assertEqual(result.plate_number_snippet, "104822 119 16")
         self.assertEqual(result.total_due_dzd, 200.0)
 
+    def test_progressive_tariff_calculation(self):
+        progressive_decoder = BarcodeScannerDecoder(hourly_rate_dzd=100.0, grace_period_min=15, progressive=True)
+        now = datetime.now()
+        entry_time = now - timedelta(minutes=75)
+        res = progressive_decoder._build_scan_result(
+            is_valid=True,
+            barcode_raw="TEST",
+            plate_snippet="104822",
+            entry_time=entry_time,
+            exit_time=now,
+            msg="Progressive check",
+        )
+        self.assertEqual(res.total_due_dzd, 150.0)
+        self.assertEqual(res.base_amount_dzd, 150.0)
+        self.assertIn("tarif progressif", res.breakdown)
+
+    def test_pmr_and_lost_ticket_calculation(self):
+        progressive_decoder = BarcodeScannerDecoder(hourly_rate_dzd=100.0, grace_period_min=15, progressive=True)
+        now = datetime.now()
+        entry_time = now - timedelta(minutes=75)
+        res_pmr = progressive_decoder._build_scan_result(
+            is_valid=True,
+            barcode_raw="TEST",
+            plate_snippet="104822",
+            entry_time=entry_time,
+            exit_time=now,
+            msg="PMR check",
+            is_pmr=True,
+        )
+        self.assertEqual(res_pmr.total_due_dzd, 75.0)
+        self.assertEqual(res_pmr.discount_dzd, 75.0)
+        self.assertTrue(res_pmr.is_pmr)
+
+        res_lost = progressive_decoder._build_scan_result(
+            is_valid=True,
+            barcode_raw="TEST",
+            plate_snippet="104822",
+            entry_time=entry_time,
+            exit_time=now,
+            msg="Lost check",
+            is_lost_ticket=True,
+        )
+        self.assertEqual(res_lost.total_due_dzd, 650.0)  # 150 stay + 500 penalty = 650 DZD
+        self.assertTrue(res_lost.is_lost_ticket)
+
 
 class TestAudioThreatSynthesizer(unittest.TestCase):
     def test_wav_buffer_synthesis(self):
@@ -473,6 +518,47 @@ class TestDesktopDatabaseAndHardware(unittest.TestCase):
         self.assertEqual(stats["pending_transactions"], 0)
         self.assertEqual(stats["synced_transactions"], 1)
         self.assertTrue(stats["is_fully_synced"])
+
+    def test_issue_lost_ticket(self):
+        bridge = DesktopBridgeApi(server_url="http://127.0.0.1:8080")
+        try:
+            # 1. Standard flat fee lost ticket
+            res_flat = bridge.issue_lost_ticket("104822 119 16", flat_rate=True, is_pmr=False)
+            self.assertTrue(res_flat["success"])
+            self.assertEqual(res_flat["total_due_dzd"], 1500.0)
+            self.assertTrue(res_flat["ticket_id"].startswith("TKT-"))
+            self.assertEqual(len(res_flat["barcode_value"]), 13)
+
+            # 2. PMR discounted lost ticket (50% of 1500 = 750 DZD)
+            res_pmr = bridge.issue_lost_ticket("08412 00 16", flat_rate=True, is_pmr=True)
+            self.assertTrue(res_pmr["success"])
+            self.assertEqual(res_pmr["total_due_dzd"], 750.0)
+            self.assertEqual(res_pmr["discount_dzd"], 750.0)
+            self.assertTrue(res_pmr["is_pmr"])
+        finally:
+            bridge.pos_manager.db.close()
+
+    def test_close_shift_with_denomination_breakdown(self):
+        bridge = DesktopBridgeApi(server_url="http://127.0.0.1:8080")
+        try:
+            bridge.pos_manager.open_shift("CASHIER-DENOM", opening_float_dzd=5000.0)
+            # Settle 500 DZD payment
+            tkt = bridge.print_ticket("104822 119 16")
+            bridge.settle_payment(tkt["ticket_id"], "104822 119 16", 500.0, payment_method="CASH", tendered_dzd=500.0)
+
+            # Expected in drawer: 5000 + 500 = 5500 DZD
+            denoms = {
+                "2000": 2,  # 4000
+                "1000": 1,  # 1000
+                "500": 1,   # 500
+            }  # Total 5500 DZD
+            report = bridge.close_shift(denomination_counts=denoms)
+            self.assertEqual(report["expected_drawer_cash_dzd"], 5500.0)
+            self.assertEqual(report["physical_cash_counted_dzd"], 5500.0)
+            self.assertEqual(report["cash_variance_dzd"], 0.0)
+            self.assertIn("PARFAIT", report["variance_status"])
+        finally:
+            bridge.pos_manager.db.close()
 
 
 if __name__ == "__main__":
