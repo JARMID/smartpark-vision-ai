@@ -31,7 +31,7 @@ class SqliteBufferQueue:
         self._init_db()
 
     def _init_db(self):
-        with self.conn:
+        with self._lock, self.conn:
             self.conn.execute("PRAGMA journal_mode=WAL;")
             self.conn.execute("PRAGMA synchronous=NORMAL;")
 
@@ -93,7 +93,7 @@ class SqliteBufferQueue:
         snapshot_path: Optional[str] = None,
     ) -> int:
         """Enqueue an access event into the local write-ahead log."""
-        with self.conn:
+        with self._lock, self.conn:
             cursor = self.conn.execute(
                 """
                 INSERT INTO event_queue (
@@ -119,17 +119,18 @@ class SqliteBufferQueue:
 
     def get_pending_events(self, limit: int = 50) -> List[Dict[str, Any]]:
         """Fetch un-synced events ordered chronologically."""
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM event_queue 
-            WHERE sync_status = 'pending' 
-            ORDER BY id ASC 
-            LIMIT ?
-            """,
-            (limit,),
-        )
-        rows = cursor.fetchall()
-        return [dict(row) for row in rows]
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM event_queue 
+                WHERE sync_status = 'pending' 
+                ORDER BY id ASC 
+                LIMIT ?
+                """,
+                (limit,),
+            )
+            rows = cursor.fetchall()
+            return [dict(row) for row in rows]
 
     def mark_synced(self, event_ids: List[int]):
         """Mark a batch of events as successfully transmitted to Supabase."""
@@ -137,7 +138,7 @@ class SqliteBufferQueue:
             return
         now = time.time()
         placeholders = ",".join("?" for _ in event_ids)
-        with self.conn:
+        with self._lock, self.conn:
             self.conn.execute(
                 f"""
                 UPDATE event_queue 
@@ -152,7 +153,7 @@ class SqliteBufferQueue:
         if not event_ids:
             return
         placeholders = ",".join("?" for _ in event_ids)
-        with self.conn:
+        with self._lock, self.conn:
             self.conn.execute(
                 f"""
                 UPDATE event_queue 
@@ -166,7 +167,7 @@ class SqliteBufferQueue:
 
     def retry_failed_events(self) -> int:
         """Reset failed events back to pending status for retry."""
-        with self.conn:
+        with self._lock, self.conn:
             cursor = self.conn.execute(
                 """
                 UPDATE event_queue 
@@ -178,40 +179,42 @@ class SqliteBufferQueue:
 
     def get_queue_stats(self) -> Dict[str, int]:
         """Return counts of events grouped by sync status."""
-        cursor = self.conn.execute(
-            """
-            SELECT 
-                COUNT(*) as total,
-                SUM(CASE WHEN sync_status = 'pending' THEN 1 ELSE 0 END) as pending,
-                SUM(CASE WHEN sync_status = 'synced' THEN 1 ELSE 0 END) as synced,
-                SUM(CASE WHEN sync_status = 'failed' THEN 1 ELSE 0 END) as failed
-            FROM event_queue
-            """
-        )
-        row = cursor.fetchone()
-        return {
-            "total_events": row["total"] or 0,
-            "pending_events": row["pending"] or 0,
-            "synced_events": row["synced"] or 0,
-            "failed_events": row["failed"] or 0,
-        }
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT 
+                    COUNT(*) as total,
+                    SUM(CASE WHEN sync_status = 'pending' THEN 1 ELSE 0 END) as pending,
+                    SUM(CASE WHEN sync_status = 'synced' THEN 1 ELSE 0 END) as synced,
+                    SUM(CASE WHEN sync_status = 'failed' THEN 1 ELSE 0 END) as failed
+                FROM event_queue
+                """
+            )
+            row = cursor.fetchone()
+            return {
+                "total_events": row["total"] or 0,
+                "pending_events": row["pending"] or 0,
+                "synced_events": row["synced"] or 0,
+                "failed_events": row["failed"] or 0,
+            }
 
     def get_recent_events(self, limit: int = 20) -> List[Dict[str, Any]]:
         """Fetch recently logged events regardless of sync status."""
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM event_queue 
-            ORDER BY id DESC 
-            LIMIT ?
-            """,
-            (limit,),
-        )
-        return [dict(row) for row in cursor.fetchall()]
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM event_queue 
+                ORDER BY id DESC 
+                LIMIT ?
+                """,
+                (limit,),
+            )
+            return [dict(row) for row in cursor.fetchall()]
 
     def update_cached_whitelist(self, items: List[Dict[str, Any]]):
         """Update or insert local whitelist plates synced from Supabase."""
         now = time.time()
-        with self.conn:
+        with self._lock, self.conn:
             for item in items:
                 self.conn.execute(
                     """
@@ -235,14 +238,15 @@ class SqliteBufferQueue:
 
     def check_plate_in_cache(self, plate_raw: str) -> Optional[Dict[str, Any]]:
         """Query local whitelist for instant offline barrier decision."""
-        cursor = self.conn.execute(
-            """
-            SELECT * FROM cached_whitelist WHERE plate_raw = ? OR plate_formatted = ?
-            """,
-            (plate_raw, plate_raw),
-        )
-        row = cursor.fetchone()
-        return dict(row) if row else None
+        with self._lock:
+            cursor = self.conn.execute(
+                """
+                SELECT * FROM cached_whitelist WHERE plate_raw = ? OR plate_formatted = ?
+                """,
+                (plate_raw, plate_raw),
+            )
+            row = cursor.fetchone()
+            return dict(row) if row else None
 
     def purge_events_older_than(self, days: int = 30) -> int:
         """Purge events older than retention days complying with Law 25-11."""
@@ -268,4 +272,5 @@ class SqliteBufferQueue:
 
     def close(self):
         """Close SQLite database connection."""
-        self.conn.close()
+        with self._lock:
+            self.conn.close()

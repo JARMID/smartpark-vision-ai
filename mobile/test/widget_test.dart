@@ -318,7 +318,36 @@ void main() {
     await tester.tap(find.text('Confirmer le débit (200 DZD)'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Paiement Validé'), findsOneWidget);
+    expect(find.text('Reçu de Sortie'), findsOneWidget);
+    expect(find.text('JUSTIFICATIF DE STATIONNEMENT'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('PaymentScreen zero tariff displays franchise grace banner and validates departure', (WidgetTester tester) async {
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    await tester.pumpWidget(MaterialApp(
+      home: PaymentScreen(
+        controller: controller,
+        amountDzd: 0.0,
+        plateNumber: '00551 218 16',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Franchise Gratuite de 15 Minutes'), findsOneWidget);
+    expect(find.text('Valider la Franchise de Sortie'), findsOneWidget);
+
+    // Tap Validate grace departure
+    await tester.tap(find.text('Valider la Franchise de Sortie'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 700));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Reçu de Sortie'), findsOneWidget);
+    expect(find.text('FRANCHISE GRATUITE'), findsOneWidget);
 
     controller.dispose();
   });

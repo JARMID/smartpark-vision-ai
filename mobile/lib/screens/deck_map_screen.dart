@@ -198,6 +198,7 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
 
   void _onSlotTapped(BuildContext context, ParkingSlot slot) {
     widget.controller.selectSlot(slot);
+    bool isActionInFlight = false;
 
     showModalBottomSheet(
       context: context,
@@ -205,140 +206,178 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
       builder: (ctx) {
-        return Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        return StatefulBuilder(
+          builder: (modalContext, setModalState) {
+            return Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    'Emplacement ${slot.slotNumber}',
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        'Emplacement ${slot.slotNumber}',
+                        style: const TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: slot.isVacant
+                              ? Colors.green.withValues(alpha: 0.15)
+                              : Colors.red.withValues(alpha: 0.15),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          slot.status.toUpperCase(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: slot.isVacant ? Colors.green : Colors.red,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: slot.isVacant
-                          ? Colors.green.withValues(alpha: 0.15)
-                          : Colors.red.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      slot.status.toUpperCase(),
-                      style: TextStyle(
-                        fontSize: 12,
+                  const SizedBox(height: 12),
+                  Text(
+                    'Zone: ${slot.zoneName}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  Text(
+                    'Etage: ${slot.floorLevel}',
+                    style: const TextStyle(fontSize: 14),
+                  ),
+                  if (slot.plate != null)
+                    Text(
+                      'Véhicule: ${slot.plate}',
+                      style: const TextStyle(
+                        fontSize: 14,
                         fontWeight: FontWeight.bold,
-                        color: slot.isVacant ? Colors.green : Colors.red,
                       ),
                     ),
-                  ),
+                  const SizedBox(height: 16),
+                  const Divider(),
+                  const SizedBox(height: 8),
+                  if (slot.isVacant)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF0284C7),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: isActionInFlight
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.bookmark_add),
+                        label: Text(
+                          isActionInFlight
+                              ? 'Réservation en cours...'
+                              : 'Réserver cette place (Franchise 30 min)',
+                        ),
+                        onPressed: isActionInFlight
+                            ? null
+                            : () async {
+                                setModalState(() => isActionInFlight = true);
+                                final ok = await widget.controller.reserveSelectedSlot();
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ok
+                                            ? 'Place ${slot.slotNumber} réservée pour 30 minutes.'
+                                            : 'Échec de réservation.',
+                                      ),
+                                      backgroundColor: ok ? Colors.green : Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                    )
+                  else if (slot.isReserved)
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.amber.shade800,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        icon: isActionInFlight
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.bookmark_remove),
+                        label: Text(
+                          isActionInFlight
+                              ? 'Annulation en cours...'
+                              : 'Libérer cette réservation',
+                        ),
+                        onPressed: isActionInFlight
+                            ? null
+                            : () async {
+                                setModalState(() => isActionInFlight = true);
+                                final ok = await widget.controller.releaseSelectedSlot();
+                                if (ctx.mounted) {
+                                  Navigator.pop(ctx);
+                                }
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(
+                                      content: Text(
+                                        ok
+                                            ? 'Réservation de la place ${slot.slotNumber} annulée.'
+                                            : 'Échec de l\'annulation.',
+                                      ),
+                                      backgroundColor: ok ? Colors.green : Colors.red,
+                                    ),
+                                  );
+                                }
+                              },
+                      ),
+                    )
+                  else
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton(
+                        onPressed: () => Navigator.pop(ctx),
+                        child: const Text('Fermer'),
+                      ),
+                    ),
                 ],
               ),
-              const SizedBox(height: 12),
-              Text(
-                'Zone: ${slot.zoneName}',
-                style: const TextStyle(fontSize: 14),
-              ),
-              Text(
-                'Etage: ${slot.floorLevel}',
-                style: const TextStyle(fontSize: 14),
-              ),
-              if (slot.plate != null)
-                Text(
-                  'Véhicule: ${slot.plate}',
-                  style: const TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              const SizedBox(height: 16),
-              const Divider(),
-              const SizedBox(height: 8),
-              if (slot.isVacant)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0284C7),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    icon: const Icon(Icons.bookmark_add),
-                    label: const Text(
-                      'Réserver cette place (Franchise 30 min)',
-                    ),
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      final ok = await widget.controller.reserveSelectedSlot();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? 'Place ${slot.slotNumber} réservée pour 30 minutes.'
-                                  : 'Échec de réservation.',
-                            ),
-                            backgroundColor: ok ? Colors.green : Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                )
-              else if (slot.isReserved)
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.amber.shade800,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                    ),
-                    icon: const Icon(Icons.bookmark_remove),
-                    label: const Text('Libérer cette réservation'),
-                    onPressed: () async {
-                      Navigator.pop(ctx);
-                      final ok = await widget.controller.releaseSelectedSlot();
-                      if (context.mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text(
-                              ok
-                                  ? 'Réservation de la place ${slot.slotNumber} annulée.'
-                                  : 'Échec de l\'annulation.',
-                            ),
-                            backgroundColor: ok ? Colors.green : Colors.red,
-                          ),
-                        );
-                      }
-                    },
-                  ),
-                )
-              else
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton(
-                    onPressed: () => Navigator.pop(ctx),
-                    child: const Text('Fermer'),
-                  ),
-                ),
-            ],
-          ),
+            );
+          },
         );
       },
     );
