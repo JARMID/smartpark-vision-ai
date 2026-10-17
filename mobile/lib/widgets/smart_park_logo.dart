@@ -16,11 +16,16 @@ class SmartParkLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final iconWidget = SizedBox(
-      width: size,
-      height: size,
-      child: CustomPaint(
-        painter: _SmartParkLogoPainter(),
+    final iconWidget = Semantics(
+      label: 'Logo Smart Park',
+      child: ExcludeSemantics(
+        child: SizedBox(
+          width: size,
+          height: size,
+          child: CustomPaint(
+            painter: _SmartParkLogoPainter(),
+          ),
+        ),
       ),
     );
 

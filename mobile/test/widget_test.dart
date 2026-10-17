@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:smartpark_mobile/main.dart';
 import 'package:smartpark_mobile/state/parking_controller.dart';
 import 'package:smartpark_mobile/models/access_pass.dart';
+import 'package:smartpark_mobile/models/vehicle_location.dart';
+import 'package:smartpark_mobile/screens/car_finder_screen.dart';
 import 'package:smartpark_mobile/services/api_service.dart';
 
 void main() {
@@ -72,4 +74,76 @@ void main() {
 
     controller.dispose();
   });
+
+  testWidgets('CarFinderScreen grace period vs paid tariff', (WidgetTester tester) async {
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    // Initial vehicle is parked for 85 minutes -> Tariff > 0 DZD
+    await tester.pumpWidget(MaterialApp(
+      home: CarFinderScreen(controller: controller),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('EMPLACEMENT ACTUEL'), findsOneWidget);
+    expect(find.textContaining('Régler mon stationnement'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('CarFinderScreen null vehicle shows friendly empty state', (WidgetTester tester) async {
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    // In a new widget with a controller that has no vehicle
+    await tester.pumpWidget(MaterialApp(
+      home: CarFinderScreen(
+        controller: _NullVehicleMockController(),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Aucun véhicule stationné'), findsOneWidget);
+    expect(find.text('Aucun véhicule actif n\'est associé à votre compte actuellement.'), findsOneWidget);
+    controller.dispose();
+  });
+
+  testWidgets('CarFinderScreen grace period shows free exit authorized', (WidgetTester tester) async {
+    final controller = _GracePeriodMockController();
+
+    await tester.pumpWidget(MaterialApp(
+      home: CarFinderScreen(controller: controller),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sortie Gratuite Autorisée'), findsOneWidget);
+    expect(find.text('0 DZD (Franchise 15 min)'), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    controller.dispose();
+  });
 }
+
+class _NullVehicleMockController extends ParkingController {
+  _NullVehicleMockController() : super(service: SmartParkApiService(isMock: true), autoStartTicker: false);
+
+  @override
+  VehicleLocation? get myVehicle => null;
+}
+
+class _GracePeriodMockController extends ParkingController {
+  _GracePeriodMockController() : super(service: SmartParkApiService(isMock: true), autoStartTicker: false);
+
+  @override
+  VehicleLocation? get myVehicle => VehicleLocation(
+        slotNumber: 'B04',
+        zoneName: 'Zone B (Public)',
+        floorLevel: 'Niveau 0',
+        parkedAt: DateTime.now().subtract(const Duration(minutes: 8)), // 8 min < 15 min grace
+        latitude: 36.7538,
+        longitude: 3.0588,
+        sectionName: 'Allee Sud',
+      );
+}
+
+

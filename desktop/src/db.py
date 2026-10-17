@@ -314,18 +314,22 @@ class DesktopDatabase:
         lane_id: str = "LANE-01",
         zone_name: str = "Zone B (Visiteur)",
         tariff_due_dzd: float = 100.0,
+        ticket_id: Optional[str] = None,
+        barcode_value: Optional[str] = None,
     ) -> Dict[str, Any]:
         """Issue an active parking ticket and persist to local SQLite store."""
         now = datetime.now()
-        ticket_id = f"TKT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 100000:05d}-{uuid.uuid4().hex[:4].upper()}"
+        if not ticket_id:
+            ticket_id = f"TKT-{now.strftime('%Y%m%d')}-{int(now.timestamp()) % 100000:05d}-{uuid.uuid4().hex[:4].upper()}"
         now_iso = now.strftime("%Y-%m-%d %H:%M:%S")
 
-        # Generate GS1 13-digit barcode with check digit
-        clean_digits = "".join(filter(str.isdigit, plate_number)) or "16"
-        padded_seq = f"{int(now.timestamp()) % 100000000:08d}"
-        raw12 = f"99{padded_seq[:8]}{clean_digits[:2]:02s}"[:12]
-        checksum = self._calculate_ean13_checksum(raw12)
-        barcode_value = f"{raw12}{checksum}"
+        if not barcode_value:
+            # Generate GS1 13-digit barcode with check digit
+            clean_digits = "".join(filter(str.isdigit, plate_number)) or "16"
+            padded_seq = f"{int(now.timestamp()) % 100000000:08d}"
+            raw12 = f"99{padded_seq[:8]}{clean_digits[:2]:02s}"[:12]
+            checksum = self._calculate_ean13_checksum(raw12)
+            barcode_value = f"{raw12}{checksum}"
 
         with self._lock, self.conn:
             self.conn.execute(

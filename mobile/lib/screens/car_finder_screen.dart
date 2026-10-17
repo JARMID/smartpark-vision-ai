@@ -12,13 +12,45 @@ class CarFinderScreen extends StatelessWidget {
     final vehicle = controller.myVehicle;
 
     if (vehicle == null) {
-      return const Scaffold(
-        body: Center(child: Text('Aucun véhicule stationné actuellement.')),
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('Retrouver mon Véhicule'),
+        ),
+        body: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.05),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.directions_car_outlined, size: 48, color: Colors.grey),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Aucun véhicule stationné',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Aucun véhicule actif n\'est associé à votre compte actuellement.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 13, color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
     final duration = vehicle.elapsedDuration;
     final tariff = vehicle.calculateAccruedTariff();
+    final isGracePeriod = tariff == 0.0;
 
     return Scaffold(
       appBar: AppBar(
@@ -79,7 +111,11 @@ class CarFinderScreen extends StatelessWidget {
                   const SizedBox(height: 8),
                   _infoRow('Stationné Depuis', '${duration.inHours}h ${duration.inMinutes % 60}m'),
                   const SizedBox(height: 8),
-                  _infoRow('Tarif Estimé', '${tariff.toStringAsFixed(0)} DZD', isHighlight: true),
+                  _infoRow(
+                    'Tarif Estimé',
+                    isGracePeriod ? '0 DZD (Franchise 15 min)' : '${tariff.toStringAsFixed(0)} DZD',
+                    isHighlight: true,
+                  ),
                 ],
               ),
             ),
@@ -144,35 +180,74 @@ class CarFinderScreen extends StatelessWidget {
 
             const SizedBox(height: 24),
 
-            // Settle Parking Button
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10B981),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            // Settle Parking Button or Grace Period Notice
+            if (isGracePeriod)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFF10B981).withValues(alpha: 0.3)),
                 ),
-                icon: const Icon(Icons.payment),
-                label: Text(
-                  'Régler mon stationnement (${tariff.toStringAsFixed(0)} DZD)',
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => PaymentScreen(
-                        controller: controller,
-                        amountDzd: tariff > 0 ? tariff : 100.0,
-                        plateNumber: controller.accessPass?.plateNumber ?? '104822 119 16',
+                child: Column(
+                  children: [
+                    const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.check_circle, color: Color(0xFF10B981), size: 20),
+                        SizedBox(width: 8),
+                        Text(
+                          'Sortie Gratuite Autorisée',
+                          style: TextStyle(
+                            fontSize: 15,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF10B981),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Stationnement inférieur à 15 minutes. La barrière s\'ouvrira automatiquement à la borne de sortie par détection de plaque.',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade400,
                       ),
                     ),
-                  );
-                },
+                  ],
+                ),
+              )
+            else
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF10B981),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  icon: const Icon(Icons.payment),
+                  label: Text(
+                    'Régler mon stationnement (${tariff.toStringAsFixed(0)} DZD)',
+                    style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold),
+                  ),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => PaymentScreen(
+                          controller: controller,
+                          amountDzd: tariff,
+                          plateNumber: controller.accessPass?.plateNumber ?? '104822 119 16',
+                        ),
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
           ],
         ),
       ),

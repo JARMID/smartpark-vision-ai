@@ -27,13 +27,27 @@ class DesktopBridgeApi:
     Operates with full offline resilience, local SQLite persistence, and direct Modbus control.
     """
 
-    def __init__(self, server_url: str = "http://127.0.0.1:8080"):
+    def __init__(
+        self,
+        server_url: str = "http://127.0.0.1:8080",
+        booth_id: str = "BOOTH-01",
+        cashier_id: str = "AGENT-MEZIANE",
+        config: Optional[Dict[str, Any]] = None,
+    ):
         self.server_url = server_url
-        self.printer_engine = ThermalTicketEngine()
+        self.booth_id = booth_id
+        self.cashier_id = cashier_id
+        self.config = config or {}
+        facility_name = self.config.get("facility_name", "Smart Park Alger-Centre")
+        self.printer_engine = ThermalTicketEngine(facility_name=facility_name)
         self.scanner_decoder = BarcodeScannerDecoder()
         self.audio_synth = AudioThreatSynthesizer()
-        self.pos_manager = CashierPosManager(booth_id="BOOTH-01")
-        self.modbus_direct = DirectModbusController(host="192.168.10.200", port=502)
+        self.pos_manager = CashierPosManager(booth_id=self.booth_id)
+        modbus_cfg = self.config.get("direct_modbus", {})
+        mb_host = modbus_cfg.get("host", "192.168.10.200")
+        mb_port = modbus_cfg.get("port", 502)
+        mb_sim = modbus_cfg.get("simulation_mode", True)
+        self.modbus_direct = DirectModbusController(host=mb_host, port=mb_port, simulation_mode=mb_sim)
 
     def trigger_barrier(self, channel: int = 1, duration_ms: int = 500) -> Dict[str, Any]:
         """Trigger physical Modbus barrier relay via backend server or direct local TCP socket."""
@@ -110,11 +124,18 @@ class DesktopBridgeApi:
         else:
             self.audio_synth.play_warning_beep(2)
 
+        # Resolve actual ticket record from local SQLite if present
+        db_ticket = self.pos_manager.db.find_ticket_by_barcode(barcode_str)
+        ticket_id = db_ticket["ticket_id"] if db_ticket else (barcode_str if barcode_str.startswith("TKT-") else f"TKT-{barcode_str[:8]}")
+        plate = db_ticket["plate_number"] if db_ticket else result.plate_number_snippet
+        entry_time_str = db_ticket["entry_time"] if db_ticket else result.entry_time.strftime("%Y-%m-%d %H:%M:%S")
+
         return {
             "is_valid": result.is_valid,
+            "ticket_id": ticket_id,
             "barcode_raw": result.barcode_raw,
-            "plate_snippet": result.plate_number_snippet,
-            "entry_time": result.entry_time.strftime("%Y-%m-%d %H:%M:%S"),
+            "plate_snippet": plate,
+            "entry_time": entry_time_str,
             "exit_time": result.exit_time.strftime("%Y-%m-%d %H:%M:%S"),
             "elapsed_minutes": result.elapsed_minutes,
             "hourly_rate_dzd": result.hourly_rate_dzd,
@@ -129,6 +150,20 @@ class DesktopBridgeApi:
         success, msg = self.printer_engine.dispatch_print_job(ticket, target="simulation")
         svg_preview = self.printer_engine.render_svg_ticket(ticket)
         text_preview = self.printer_engine.render_text_preview(ticket)
+
+        # Persist to local SQLite store for offline tracking and settlement
+        try:
+            self.pos_manager.db.create_local_ticket(
+                plate_number=ticket.plate_number,
+                lane_id=ticket.lane_id,
+                zone_name=ticket.zone_name,
+                tariff_due_dzd=ticket.tariff_hourly_dzd,
+                ticket_id=ticket.ticket_id,
+                barcode_value=ticket.barcode_value,
+            )
+        except Exception:
+            pass
+
         self.audio_synth.play_success_chime()
         return {
             "success": success,
@@ -1225,9 +1260,10 @@ def get_desktop_ui_html() -> str:
 
     async function processPayment(method) {
       if (!currentScanData) return;
+      const ticketId = (currentScanData && currentScanData.ticket_id) ? currentScanData.ticket_id : "TKT-CURRENT";
       if (window.pywebview && window.pywebview.api) {
         await window.pywebview.api.settle_payment(
-          "TKT-CURRENT",
+          ticketId,
           currentScanData.plate_snippet,
           currentScanData.total_due_dzd,
           method,
@@ -1291,7 +1327,7 @@ def get_desktop_ui_html() -> str:
           barcodeGunBuffer = "";
           switchTab('pos');
           document.getElementById('barcodeInput').value = scannedCode;
-          submitBarcode();
+          executeScan();
           return;
         }
         barcodeGunBuffer = "";
@@ -1352,12 +1388,23 @@ def get_desktop_ui_html() -> str:
 </html>"""
 
 
-def launch_desktop_station(server_url: str = "http://127.0.0.1:8080", headless: bool = False):
+def launch_desktop_station(
+    server_url: str = "http://127.0.0.1:8080",
+    headless: bool = False,
+    booth_id: str = "BOOTH-01",
+    cashier_id: str = "AGENT-MEZIANE",
+    config: Optional[Dict[str, Any]] = None,
+):
     """
     Launch the desktop operator station window using pywebview.
     If headless=True or pywebview cannot create a display, starts in interactive CLI mode.
     """
-    bridge_api = DesktopBridgeApi(server_url=server_url)
+    bridge_api = DesktopBridgeApi(
+        server_url=server_url,
+        booth_id=booth_id,
+        cashier_id=cashier_id,
+        config=config,
+    )
     html_content = get_desktop_ui_html()
 
     if headless:

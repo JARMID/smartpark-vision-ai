@@ -186,9 +186,12 @@ class CashierPosManager:
         )
         z_hash = hashlib.sha256(audit_payload.encode("utf-8")).hexdigest()[:16].upper()
 
-        # Update SQLite
+        # Update SQLite and retrieve authoritative cryptographic audit hash
+        db_hash = f"SHA256-{z_hash}"
         try:
-            self.db.close_shift(self.active_shift.shift_id)
+            db_res = self.db.close_shift(self.active_shift.shift_id)
+            if db_res and "audit_hash" in db_res:
+                db_hash = db_res["audit_hash"]
         except Exception as err:
             import logging
             logging.getLogger("smartpark.pos").error(f"Failed to close shift in db: {err}")
@@ -208,7 +211,7 @@ class CashierPosManager:
             "total_revenue_dzd": total_revenue,
             "expected_drawer_cash_dzd": closing_drawer_cash,
             "tickets_processed": self.active_shift.tickets_settled_count,
-            "audit_hash": f"SHA256-{z_hash}",
+            "audit_hash": db_hash,
             "regulatory_status": "CONFORME FISCALITE ET ANPDP",
         }
 

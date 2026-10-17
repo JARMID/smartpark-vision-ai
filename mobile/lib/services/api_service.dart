@@ -5,40 +5,55 @@ import '../models/parking_slot.dart';
 
 class SmartParkApiService {
   final String baseUrl;
-  final http.Client? client;
+  final http.Client _httpClient;
   final bool isMock;
+  bool _isOffline = false;
+
+  bool get isOffline => _isOffline;
 
   SmartParkApiService({
     String? baseUrl,
-    this.client,
+    http.Client? client,
     this.isMock = false,
-  }) : baseUrl = (baseUrl != null && baseUrl.isNotEmpty)
+  })  : baseUrl = (baseUrl != null && baseUrl.isNotEmpty)
             ? baseUrl
-            : (kIsWeb ? Uri.base.origin : 'http://127.0.0.1:8080');
+            : (kIsWeb
+                ? Uri.base.origin
+                : (defaultTargetPlatform == TargetPlatform.android
+                    ? 'http://10.0.2.2:8080'
+                    : 'http://127.0.0.1:8080')),
+        _httpClient = client ?? http.Client();
+
+  void dispose() {
+    _httpClient.close();
+  }
 
   Future<List<ParkingSlot>> fetchSlots() async {
-    if (isMock) return _getMockSlots();
+    if (isMock) {
+      _isOffline = false;
+      return _getMockSlots();
+    }
     try {
-      final httpClient = client ?? http.Client();
-      final response = await httpClient
+      final response = await _httpClient
           .get(Uri.parse('$baseUrl/api/slots'))
           .timeout(const Duration(seconds: 2));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
+        _isOffline = false;
         return data.map((item) => ParkingSlot.fromJson(item)).toList();
       }
     } catch (_) {
       // Offline fallback dataset
     }
+    _isOffline = true;
     return _getMockSlots();
   }
 
   Future<bool> toggleSlotReservation(String slotNumber, bool isReserved) async {
     if (isMock) return true;
     try {
-      final httpClient = client ?? http.Client();
-      final response = await httpClient.post(
+      final response = await _httpClient.post(
         Uri.parse('$baseUrl/api/slots/toggle'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
@@ -60,8 +75,7 @@ class SmartParkApiService {
   }) async {
     if (!isMock) {
       try {
-        final httpClient = client ?? http.Client();
-        final response = await httpClient.post(
+        final response = await _httpClient.post(
           Uri.parse('$baseUrl/api/chargily/create-checkout'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
@@ -85,7 +99,7 @@ class SmartParkApiService {
       'currency': 'DZD',
       'plate': plate,
       'card_type': cardType,
-      'message': 'Session de paiement simulee (Mode autonome)',
+      'message': 'Session de paiement simulée (Mode autonome)',
     };
   }
 
@@ -95,8 +109,7 @@ class SmartParkApiService {
   }) async {
     if (!isMock) {
       try {
-        final httpClient = client ?? http.Client();
-        final response = await httpClient.post(
+        final response = await _httpClient.post(
           Uri.parse('$baseUrl/api/chargily/pay'),
           headers: {'Content-Type': 'application/json'},
           body: jsonEncode({
@@ -116,15 +129,14 @@ class SmartParkApiService {
       'status': 'SUCCESS',
       'receipt_number': 'REC-${DateTime.now().millisecondsSinceEpoch}',
       'timestamp': DateTime.now().toIso8601String(),
-      'message': 'Paiement confirme. Barriere debloquee.',
+      'message': 'Paiement confirmé. Barrière débloquée.',
     };
   }
 
   Future<bool> remoteBarrierOverride({int channel = 1}) async {
     if (isMock) return true;
     try {
-      final httpClient = client ?? http.Client();
-      final response = await httpClient.post(
+      final response = await _httpClient.post(
         Uri.parse('$baseUrl/api/barrier/override'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'channel': channel, 'duration_ms': 500}),
@@ -139,8 +151,7 @@ class SmartParkApiService {
   Future<Map<String, dynamic>> fetchSystemStatus() async {
     if (isMock) return _getMockStatus();
     try {
-      final httpClient = client ?? http.Client();
-      final response = await httpClient
+      final response = await _httpClient
           .get(Uri.parse('$baseUrl/api/status'))
           .timeout(const Duration(seconds: 2));
 

@@ -4,6 +4,7 @@ Runs the standalone desktop client for security booth guards and cashiers.
 """
 
 import argparse
+import json
 import sys
 import os
 
@@ -46,7 +47,13 @@ def main():
     print(f" Headless Mode:  {args.headless}")
     print("=" * 60)
 
-    bridge = launch_desktop_station(server_url=args.server, headless=args.headless)
+    bridge = launch_desktop_station(
+        server_url=args.server,
+        headless=args.headless,
+        booth_id=args.booth,
+        cashier_id=args.cashier,
+        config=cfg,
+    )
     if args.headless:
         print("[smartpark-desktop] Headless station operational. Running automated diagnostic test...")
         tkt = bridge.print_ticket("104822 119 16", lane_id=args.booth)

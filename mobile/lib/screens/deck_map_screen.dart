@@ -56,17 +56,76 @@ class _DeckMapScreenState extends State<DeckMapScreen> {
           ? const Center(child: CircularProgressIndicator())
           : Column(
               children: [
+                if (controller.apiService.isOffline)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    color: const Color(0xFFF59E0B).withValues(alpha: 0.15),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.cloud_off, size: 14, color: Color(0xFFF59E0B)),
+                        SizedBox(width: 8),
+                        Text(
+                          'Mode hors ligne (données locales synchronisées)',
+                          style: TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: Color(0xFFF59E0B)),
+                        ),
+                      ],
+                    ),
+                  ),
                 _buildZoneFilterBar(),
                 const SizedBox(height: 8),
                 Expanded(
-                  child: StallGridWidget(
-                    slots: filteredSlots,
-                    selectedSlotNumber: controller.selectedSlot?.slotNumber,
-                    onSlotSelected: (slot) => _onSlotTapped(context, slot),
+                  child: RefreshIndicator(
+                    onRefresh: () => controller.loadSlots(),
+                    color: const Color(0xFF00F2FE),
+                    backgroundColor: const Color(0xFF0F172A),
+                    child: filteredSlots.isEmpty
+                        ? _buildEmptyState()
+                        : StallGridWidget(
+                            slots: filteredSlots,
+                            selectedSlotNumber: controller.selectedSlot?.slotNumber,
+                            onSlotSelected: (slot) => _onSlotTapped(context, slot),
+                          ),
                   ),
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 48),
+      children: [
+        Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.05),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.local_parking, size: 48, color: Colors.grey),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Aucun emplacement trouvé',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                'Aucune place ne correspond au filtre de zone sélectionné.',
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 13, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 

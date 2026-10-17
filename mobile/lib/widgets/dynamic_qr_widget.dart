@@ -22,7 +22,7 @@ class DynamicQrWidget extends StatelessWidget {
       children: [
         Semantics(
           image: true,
-          label: 'Pass d\'accès QR dynamique sécurisé. Renouvellement automatique dans $secondsRemaining secondes.',
+          label: 'Pass d\'accès QR dynamique sécurisé.',
           child: Stack(
             alignment: Alignment.center,
             children: [
