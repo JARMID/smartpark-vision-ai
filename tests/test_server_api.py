@@ -106,15 +106,23 @@ class TestServerAPI(unittest.TestCase):
         self.assertTrue(exit_data["is_vip"])
 
     def test_barrier_manual_override(self):
-        # Valid channel 1
-        res1 = self.client.post("/api/barrier/override", json={"channel": 1, "duration_ms": 500})
+        # Valid channel 1 with custom operator and reason
+        res1 = self.client.post("/api/barrier/override", json={
+            "channel": 1,
+            "duration_ms": 500,
+            "operator_id": "OP-SEC-01",
+            "reason": "Accès pompier d'urgence",
+        })
         self.assertEqual(res1.status_code, 200)
         self.assertTrue(res1.json()["success"])
+        self.assertEqual(res1.json()["operator_id"], "OP-SEC-01")
+        self.assertEqual(res1.json()["reason"], "Accès pompier d'urgence")
 
-        # Valid channel 2 with duration clamping
+        # Valid channel 2 with duration clamping and defaults
         res2 = self.client.post("/api/barrier/override", json={"channel": 2, "duration_ms": 3000})
         self.assertEqual(res2.status_code, 200)
         self.assertTrue(res2.json()["success"])
+        self.assertEqual(res2.json()["operator_id"], "OP-STATION")
 
         # Invalid channel (e.g. 3) rejected with 400
         res_bad = self.client.post("/api/barrier/override", json={"channel": 3, "duration_ms": 500})

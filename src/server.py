@@ -222,6 +222,8 @@ class SimulateRequest(BaseModel):
 class BarrierOverrideRequest(BaseModel):
     channel: int = 1
     duration_ms: int = 500
+    reason: Optional[str] = "Déclenchement d'urgence"
+    operator_id: Optional[str] = "OP-STATION"
 
 
 class ChargilyCheckoutRequest(BaseModel):
@@ -442,15 +444,26 @@ async def override_barrier(req: BarrierOverrideRequest):
     res = orchestrator.barrier_controller.trigger_barrier_open(
         channel=req.channel, duration_ms=clamped_duration, force_override=True
     )
+    operator = req.operator_id or "OP-STATION"
+    reason = req.reason or "Déclenchement d'urgence"
     event_data = {
         "type": "BARRIER_MANUAL_OVERRIDE",
         "channel": req.channel,
         "duration_ms": clamped_duration,
         "timestamp": datetime.now().strftime("%H:%M:%S"),
         "success": res.success,
+        "operator_id": operator,
+        "reason": reason,
     }
     await ws_manager.broadcast(event_data)
-    return {"success": res.success, "message": res.message, "latency_ms": res.latency_ms}
+    return {
+        "success": res.success,
+        "message": res.message,
+        "latency_ms": res.latency_ms,
+        "channel": req.channel,
+        "operator_id": operator,
+        "reason": reason,
+    }
 
 
 @app.post("/api/simulate")
