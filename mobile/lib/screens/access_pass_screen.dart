@@ -193,7 +193,9 @@ class AccessPassScreen extends StatelessWidget {
     );
   }
 
-  void _triggerNfcSimulation(BuildContext context) {
+  void _triggerNfcSimulation(BuildContext context) async {
+    final success = await controller.simulateNfcAccess();
+    if (!context.mounted) return;
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -207,7 +209,7 @@ class AccessPassScreen extends StatelessWidget {
         content: Text(
           'Pass [${controller.accessPass?.passId}] validé par la borne.\n'
           'Plaque: ${controller.accessPass?.plateNumber}\n'
-          'Impulsion relais Modbus envoyée.\n'
+          'Impulsion relais Modbus: ${success ? "Succès (Voie 1 Ouverte)" : "Simulation Autonome"}.\n'
           'La barrière d\'entrée est ouverte.',
         ),
         actions: [

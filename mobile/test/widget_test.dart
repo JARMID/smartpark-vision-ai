@@ -6,6 +6,10 @@ import 'package:smartpark_mobile/state/parking_controller.dart';
 import 'package:smartpark_mobile/models/access_pass.dart';
 import 'package:smartpark_mobile/models/vehicle_location.dart';
 import 'package:smartpark_mobile/screens/car_finder_screen.dart';
+import 'package:smartpark_mobile/screens/access_pass_screen.dart';
+import 'package:smartpark_mobile/screens/payment_screen.dart';
+import 'package:smartpark_mobile/screens/patrol_scanner_screen.dart';
+import 'package:smartpark_mobile/widgets/stall_grid_widget.dart';
 import 'package:smartpark_mobile/services/api_service.dart';
 
 void main() {
@@ -75,6 +79,21 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('DeckMapScreen and StallGridWidget empty category state', (WidgetTester tester) async {
+    await tester.pumpWidget(MaterialApp(
+      home: Scaffold(
+        body: StallGridWidget(
+          slots: const [],
+          onSlotSelected: (_) {},
+        ),
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Aucune place disponible dans cette catégorie.'), findsOneWidget);
+    expect(find.byIcon(Icons.local_parking_outlined), findsOneWidget);
+  });
+
   testWidgets('CarFinderScreen grace period vs paid tariff', (WidgetTester tester) async {
     final mockService = SmartParkApiService(isMock: true);
     final controller = ParkingController(service: mockService, autoStartTicker: false);
@@ -119,6 +138,105 @@ void main() {
     expect(find.text('Sortie Gratuite Autorisée'), findsOneWidget);
     expect(find.text('0 DZD (Franchise 15 min)'), findsOneWidget);
     expect(find.byIcon(Icons.check_circle), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('AccessPassScreen NFC simulation triggers barrier pulse dialog', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    await tester.pumpWidget(MaterialApp(
+      home: AccessPassScreen(controller: controller),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Pass d'Accès Sans Contact"), findsOneWidget);
+    expect(find.text('Simuler Approche NFC Voie 1'), findsOneWidget);
+
+    await tester.tap(find.text('Simuler Approche NFC Voie 1'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Contact NFC Détecté'), findsOneWidget);
+    expect(find.textContaining('La barrière d\'entrée est ouverte'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('PaymentScreen card selection and confirmation flow', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    await tester.pumpWidget(MaterialApp(
+      home: PaymentScreen(
+        controller: controller,
+        amountDzd: 200.0,
+        plateNumber: '104822 119 16',
+      ),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('200 DZD'), findsOneWidget);
+    expect(find.text('104822 119 16'), findsOneWidget);
+    expect(find.text('Recevoir le code SMS OTP'), findsOneWidget);
+
+    // Tap CIB card selection
+    await tester.tap(find.text('Carte Interbancaire (CIB)'));
+    await tester.pumpAndSettle();
+
+    // Tap OTP request
+    await tester.tap(find.text('Recevoir le code SMS OTP'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Confirmer le débit (200 DZD)'), findsOneWidget);
+
+    // Tap Confirm payment
+    await tester.tap(find.text('Confirmer le débit (200 DZD)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Paiement Validé'), findsOneWidget);
+
+    controller.dispose();
+  });
+
+  testWidgets('PatrolScannerScreen ALPR plate checks and barrier override', (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
+    final mockService = SmartParkApiService(isMock: true);
+    final controller = ParkingController(service: mockService, autoStartTicker: false);
+
+    await tester.pumpWidget(MaterialApp(
+      home: PatrolScannerScreen(controller: controller),
+    ));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Patrouille & Contrôle ALPR'), findsOneWidget);
+
+    // Tap stolen vehicle chip
+    await tester.tap(find.text('00551 218 16 (Volé)'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('BLACKLIST_ALERT'), findsOneWidget);
+    expect(find.textContaining('Fiche de recherche active'), findsOneWidget);
+
+    // Test barrier override button
+    await tester.tap(find.byIcon(Icons.lock_open));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('Impulsion barrière envoyée avec succès'), findsOneWidget);
 
     controller.dispose();
   });

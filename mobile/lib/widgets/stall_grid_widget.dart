@@ -21,22 +21,43 @@ class StallGridWidget extends StatelessWidget {
         _buildLegend(context),
         const SizedBox(height: 12),
         Expanded(
-          child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            physics: const AlwaysScrollableScrollPhysics(),
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 2,
-              childAspectRatio: 1.6,
-              crossAxisSpacing: 12,
-              mainAxisSpacing: 12,
-            ),
-            itemCount: slots.length,
-            itemBuilder: (context, index) {
-              final slot = slots[index];
-              final isSelected = slot.slotNumber == selectedSlotNumber;
-              return _buildStallCard(context, slot, isSelected);
-            },
-          ),
+          child: slots.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.local_parking_outlined,
+                        size: 48,
+                        color: Colors.grey.withValues(alpha: 0.5),
+                      ),
+                      const SizedBox(height: 12),
+                      const Text(
+                        'Aucune place disponible dans cette catégorie.',
+                        style: TextStyle(color: Colors.grey, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                )
+              : GridView.builder(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    childAspectRatio: 1.6,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                  ),
+                  itemCount: slots.length,
+                  itemBuilder: (context, index) {
+                    final slot = slots[index];
+                    final isSelected = slot.slotNumber == selectedSlotNumber;
+                    return _buildStallCard(context, slot, isSelected);
+                  },
+                ),
         ),
       ],
     );
@@ -53,9 +74,21 @@ class StallGridWidget extends StatelessWidget {
         spacing: 12,
         runSpacing: 6,
         children: [
-          _legendChip(Icons.check_circle_outline, Colors.green, 'Libres: $vacantCount'),
-          _legendChip(Icons.directions_car, Colors.red, 'Occupées: $occupiedCount'),
-          _legendChip(Icons.bookmark_outline, Colors.amber, 'Réservées: $reservedCount'),
+          _legendChip(
+            Icons.check_circle_outline,
+            Colors.green,
+            'Libres: $vacantCount',
+          ),
+          _legendChip(
+            Icons.directions_car,
+            Colors.red,
+            'Occupées: $occupiedCount',
+          ),
+          _legendChip(
+            Icons.bookmark_outline,
+            Colors.amber,
+            'Réservées: $reservedCount',
+          ),
         ],
       ),
     );
@@ -69,13 +102,21 @@ class StallGridWidget extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color),
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: color,
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildStallCard(BuildContext context, ParkingSlot slot, bool isSelected) {
+  Widget _buildStallCard(
+    BuildContext context,
+    ParkingSlot slot,
+    bool isSelected,
+  ) {
     Color statusColor;
     Color statusBg;
     String statusLabel;
@@ -95,12 +136,15 @@ class StallGridWidget extends StatelessWidget {
     }
 
     final isVip = slot.isVip;
-    final semanticStatus = slot.isVacant ? "Libre" : (slot.isOccupied ? "Occupée" : "Réservée");
+    final semanticStatus = slot.isVacant
+        ? "Libre"
+        : (slot.isOccupied ? "Occupée" : "Réservée");
 
     return Semantics(
       button: true,
       selected: isSelected,
-      label: 'Place ${slot.slotNumber}, ${slot.zoneName}, statut $semanticStatus${slot.plate != null ? ", immatriculation ${slot.plate}" : ""}',
+      label:
+          'Place ${slot.slotNumber}, ${slot.zoneName}, statut $semanticStatus${slot.plate != null ? ", immatriculation ${slot.plate}" : ""}',
       child: InkWell(
         onTap: () => onSlotSelected(slot),
         borderRadius: BorderRadius.circular(12),
@@ -112,7 +156,9 @@ class StallGridWidget extends StatelessWidget {
             border: Border.all(
               color: isSelected
                   ? const Color(0xFF00F2FE)
-                  : (isVip ? const Color(0xFFA78BFA) : Theme.of(context).dividerColor),
+                  : (isVip
+                        ? const Color(0xFFA78BFA)
+                        : Theme.of(context).dividerColor),
               width: isSelected ? 2.5 : 1.2,
             ),
             boxShadow: isSelected
@@ -141,7 +187,10 @@ class StallGridWidget extends StatelessWidget {
                     ),
                   ),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 6,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: statusBg,
                       borderRadius: BorderRadius.circular(4),
@@ -164,7 +213,9 @@ class StallGridWidget extends StatelessWidget {
                     slot.zoneName,
                     style: TextStyle(
                       fontSize: 11,
-                      color: isVip ? const Color(0xFFA78BFA) : const Color(0xFF94A3B8),
+                      color: isVip
+                          ? const Color(0xFFA78BFA)
+                          : const Color(0xFF94A3B8),
                       fontWeight: isVip ? FontWeight.w700 : FontWeight.w500,
                     ),
                     maxLines: 1,

@@ -200,6 +200,8 @@ class DesktopBridgeApi:
             "success": True,
             "transaction_id": tx.transaction_id,
             "change_dzd": tx.change_dzd,
+            "amount_settled_dzd": tx.amount_dzd,
+            "tendered_dzd": tx.tendered_dzd,
             "message": f"Paiement {payment_method} enregistre. Monnaie rendue: {tx.change_dzd:.0f} DZD. Barriere de sortie ouverte.",
         }
 
@@ -831,6 +833,23 @@ def get_desktop_ui_html() -> str:
             <span id="valTotal">0 DZD</span>
           </div>
 
+          <!-- Cash Tendered & Change Due Section -->
+          <div style="margin-top: 10px; padding: 10px; background: var(--bg-surface-elevated); border: 1px solid var(--border-color); border-radius: 6px;">
+            <label class="form-label" style="font-size:11px; margin-bottom:4px;" id="lblTendered">Montant Reçu Espèces (DZD) :</label>
+            <div style="display:flex; gap:6px; align-items:center;">
+              <input type="number" id="tenderedAmountInput" class="form-input" style="padding:6px 8px; font-size:13px; font-weight:700;" placeholder="ex: 500" oninput="calculateChangeDue()">
+              <div style="display:flex; gap:4px;">
+                <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="setTenderedAmount(200)">200</button>
+                <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="setTenderedAmount(500)">500</button>
+                <button type="button" class="btn-secondary" style="padding:4px 8px; font-size:11px;" onclick="setTenderedAmount(1000)">1000</button>
+              </div>
+            </div>
+            <div class="tariff-row" style="margin-top:6px; font-weight:700; color:#10B981;">
+              <span id="lblChangeDue">Monnaie à Rendre :</span>
+              <strong id="valChangeDue">0 DZD</strong>
+            </div>
+          </div>
+
           <div style="margin-top: 12px; display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
             <button class="btn-action" style="background:#10B981;" onclick="processPayment('CASH')" id="btnCash">Espèces (P)</button>
             <button class="btn-action" style="background:#0284C7;" onclick="processPayment('CIB_TERMINAL')" id="btnCard">Carte CIB</button>
@@ -951,6 +970,8 @@ def get_desktop_ui_html() -> str:
         lblDuration: "Durée Stationnée:",
         lblRate: "Tarif Appliqué:",
         lblTotal: "Montant à Payer:",
+        lblTendered: "Montant Reçu Espèces (DZD) :",
+        lblChangeDue: "Monnaie à Rendre :",
         btnCash: "Espèces (P)",
         btnCard: "Carte CIB",
         btnZReport: "Clôture de Caisse (Rapport Z)",
@@ -980,6 +1001,8 @@ def get_desktop_ui_html() -> str:
         lblDuration: "Elapsed Duration:",
         lblRate: "Applied Tariff:",
         lblTotal: "Amount Due:",
+        lblTendered: "Cash Tendered (DZD):",
+        lblChangeDue: "Change Due:",
         btnCash: "Cash (P)",
         btnCard: "CIB Card",
         btnZReport: "End-of-Shift Z-Report",
@@ -1009,6 +1032,8 @@ def get_desktop_ui_html() -> str:
         lblDuration: "مدة الركن:",
         lblRate: "التعريفة المطبقة:",
         lblTotal: "المبلغ المستحق:",
+        lblTendered: "المبلغ المستلم نقداً (د.ج):",
+        lblChangeDue: "المبلغ المتبقي للإرجاع:",
         btnCash: "نقداً (P)",
         btnCard: "بطاقة CIB",
         btnZReport: "إغلاق الصندوق (تقرير Z)",
@@ -1041,6 +1066,8 @@ def get_desktop_ui_html() -> str:
       document.getElementById('lblDuration').innerText = dict.lblDuration;
       document.getElementById('lblRate').innerText = dict.lblRate;
       document.getElementById('lblTotal').innerText = dict.lblTotal;
+      if (document.getElementById('lblTendered')) document.getElementById('lblTendered').innerText = dict.lblTendered;
+      if (document.getElementById('lblChangeDue')) document.getElementById('lblChangeDue').innerText = dict.lblChangeDue;
       document.getElementById('btnCash').innerText = dict.btnCash;
       document.getElementById('btnCard').innerText = dict.btnCard;
       document.getElementById('btnZReport').innerText = dict.btnZReport;
@@ -1234,7 +1261,29 @@ def get_desktop_ui_html() -> str:
       } else {
         document.getElementById('valTotal').innerText = res.total_due_dzd.toFixed(0) + " DZD";
       }
+      if (document.getElementById('tenderedAmountInput')) {
+        document.getElementById('tenderedAmountInput').value = res.total_due_dzd > 0 ? res.total_due_dzd.toFixed(0) : "200";
+        calculateChangeDue();
+      }
       document.getElementById('scanResultCard').style.display = 'block';
+    }
+
+    function calculateChangeDue() {
+      const input = document.getElementById('tenderedAmountInput');
+      const tendered = parseFloat(input ? input.value : 0) || 0;
+      const total = (currentScanData && currentScanData.total_due_dzd) ? currentScanData.total_due_dzd : 0;
+      const change = Math.max(0, tendered - total);
+      const chgElem = document.getElementById('valChangeDue');
+      if (chgElem) chgElem.innerText = change.toFixed(0) + " DZD";
+      return { tendered, change };
+    }
+
+    function setTenderedAmount(val) {
+      const input = document.getElementById('tenderedAmountInput');
+      if (input) {
+        input.value = val;
+        calculateChangeDue();
+      }
     }
 
     function handleBarcodeEnter(e) {
@@ -1246,19 +1295,32 @@ def get_desktop_ui_html() -> str:
     async function processPayment(method) {
       if (!currentScanData) return;
       const ticketId = (currentScanData && currentScanData.ticket_id) ? currentScanData.ticket_id : "TKT-CURRENT";
+      const totalDue = currentScanData.total_due_dzd || 0;
+      let tendered = totalDue;
+      if (method === 'CASH') {
+        const inp = document.getElementById('tenderedAmountInput');
+        if (inp && inp.value) {
+          const val = parseFloat(inp.value);
+          if (!isNaN(val) && val >= totalDue) {
+            tendered = val;
+          }
+        }
+      }
       if (window.openExitBarrier) window.openExitBarrier();
       if (window.pywebview && window.pywebview.api) {
         await window.pywebview.api.settle_payment(
           ticketId,
           currentScanData.plate_snippet,
-          currentScanData.total_due_dzd,
+          totalDue,
           method,
-          currentScanData.total_due_dzd
+          tendered
         );
       }
-      alert("Paiement enregistré avec succès. La barrière de sortie est ouverte.");
+      const chgMsg = (method === 'CASH' && tendered > totalDue) ? (" | Monnaie: " + (tendered - totalDue).toFixed(0) + " DZD") : "";
+      alert("Paiement enregistré avec succès (" + method + chgMsg + "). La barrière de sortie est ouverte.");
       document.getElementById('scanResultCard').style.display = 'none';
       document.getElementById('barcodeInput').value = '';
+      if (document.getElementById('tenderedAmountInput')) document.getElementById('tenderedAmountInput').value = '';
     }
 
     async function printManualTicket() {

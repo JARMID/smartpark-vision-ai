@@ -266,6 +266,28 @@ class TestDesktopBridgeApi(unittest.TestCase):
         self.assertIn('initCam3()', html)
         self.assertIn('initCam4()', html)
 
+    def test_pos_tendered_amount_and_change_due_in_html_and_api(self):
+        from desktop.src.operator_window import get_desktop_ui_html
+        html = get_desktop_ui_html()
+        self.assertIn('id="tenderedAmountInput"', html)
+        self.assertIn('id="valChangeDue"', html)
+        self.assertIn('calculateChangeDue', html)
+        self.assertIn('setTenderedAmount', html)
+
+        # Test settlement change calculation
+        tkt = self.bridge.print_ticket("104822 119 16")
+        settle_res = self.bridge.settle_payment(
+            ticket_id=tkt["ticket_id"],
+            plate_number="104822 119 16",
+            amount_dzd=200.0,
+            payment_method="CASH",
+            tendered_dzd=500.0,
+        )
+        self.assertTrue(settle_res["success"])
+        self.assertEqual(settle_res["change_dzd"], 300.0)
+        self.assertEqual(settle_res["tendered_dzd"], 500.0)
+        self.assertEqual(settle_res["amount_settled_dzd"], 200.0)
+
 
 class TestDesktopDatabaseAndHardware(unittest.TestCase):
     def setUp(self):

@@ -184,6 +184,10 @@ class ParkingController extends ChangeNotifier {
     return await apiService.remoteBarrierOverride(channel: 1);
   }
 
+  Future<bool> simulateNfcAccess() async {
+    return await apiService.remoteBarrierOverride(channel: 1);
+  }
+
   void toggleTheme() {
     _themeMode = _themeMode == ThemeMode.dark ? ThemeMode.light : ThemeMode.dark;
     notifyListeners();
