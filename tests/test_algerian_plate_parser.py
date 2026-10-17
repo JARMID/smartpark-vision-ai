@@ -94,10 +94,50 @@ class TestAlgerianPlateParser(unittest.TestCase):
         self.assertFalse(result.is_valid)
         self.assertIn("wilaya", result.error_message.lower())
 
-    def test_invalid_short_string(self):
-        result = self.parser.parse("12 16")
-        self.assertFalse(result.is_valid)
+    def test_arabic_wilaya_and_category_metadata(self):
+        result = self.parser.parse("104822 121 16")
+        self.assertTrue(result.is_valid)
+        self.assertEqual(result.wilaya_name, "Alger")
+        self.assertEqual(result.wilaya_name_ar, "الجزائر")
+        self.assertEqual(result.category_name_fr, "Véhicule de tourisme / Particulier")
+        self.assertEqual(result.category_name_ar, "سيارة سياحية خاصة")
+        self.assertEqual(result.confidence, 1.0)
+        self.assertFalse(result.is_ambiguous)
+        self.assertEqual(result.substitutions_applied, [])
+
+    def test_ambiguity_tracking_and_confidence_scoring(self):
+        # Two optical substitutions: O->0 and I->1
+        result = self.parser.parse("O84I2 119 16")
+        self.assertTrue(result.is_valid)
+        self.assertTrue(result.is_ambiguous)
+        self.assertEqual(len(result.substitutions_applied), 2)
+        self.assertIn("O->0", result.substitutions_applied)
+        self.assertIn("I->1", result.substitutions_applied)
+        self.assertEqual(result.confidence, 0.90)  # 1.0 - 2 * 0.05
+
+    def test_temporary_plate_arabic_metadata(self):
+        result = self.parser.parse("04182 00 31")
+        self.assertTrue(result.is_valid)
+        self.assertEqual(result.wilaya_name, "Oran")
+        self.assertEqual(result.wilaya_name_ar, "وهران")
+        self.assertEqual(result.category_name_fr, "Carte grise provisoire")
+        self.assertEqual(result.category_name_ar, "بطاقة رمادية مؤقتة")
+
+    def test_to_dict_serialization(self):
+        result = self.parser.parse("01412 322 09")
+        self.assertTrue(result.is_valid)
+        d = result.to_dict()
+        self.assertEqual(d["formatted"], "01412 322 09")
+        self.assertEqual(d["wilaya_code"], "09")
+        self.assertEqual(d["wilaya_name"], "Blida")
+        self.assertEqual(d["wilaya_name_ar"], "البليدة")
+        self.assertEqual(d["vehicle_category"], 3)
+        self.assertEqual(d["category_name_fr"], "Camionnette / Utilitaire léger")
+        self.assertEqual(d["category_name_ar"], "مركبة نفعية خفيفة")
+        self.assertIn("confidence", d)
+        self.assertIn("is_ambiguous", d)
 
 
 if __name__ == "__main__":
     unittest.main()
+

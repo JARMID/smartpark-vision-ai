@@ -14,6 +14,7 @@ from src.alpr.algerian_plate_parser import AlgerianPlateParser, PlateType
 from src.face.ram_vector_index import RamVectorIndex, MatchDecision
 from src.sync.sqlite_buffer import SqliteBufferQueue
 from src.barrier.modbus_controller import ModbusBarrierController
+from src.tariff_engine import TariffEngine
 
 
 class GateDecisionResult(str, Enum):
@@ -49,6 +50,7 @@ class GateOrchestrator:
         self.barrier_controller = ModbusBarrierController(
             host=modbus_host, port=modbus_port, simulation_mode=simulation_mode
         )
+        self.tariff_engine = TariffEngine()
         self.liveness_threshold = liveness_threshold
         self.enable_antipassback = enable_antipassback
         # In-memory registry tracking vehicles currently inside the perimeter (key = cleaned plate digits)
@@ -256,6 +258,9 @@ class GateOrchestrator:
                 "full_name": face_search_res.full_name,
                 "plate": parsed_plate.formatted,
                 "wilaya": parsed_plate.wilaya_name,
+                "wilaya_name_ar": parsed_plate.wilaya_name_ar,
+                "category_fr": parsed_plate.category_name_fr,
+                "category_ar": parsed_plate.category_name_ar,
                 "face_distance": face_search_res.cosine_distance,
                 "latency_ms": elapsed_ms,
             }
@@ -292,6 +297,9 @@ class GateOrchestrator:
             "barrier_opened": trigger_res.success,
             "plate": parsed_plate.formatted,
             "wilaya": parsed_plate.wilaya_name,
+            "wilaya_name_ar": parsed_plate.wilaya_name_ar,
+            "category_fr": parsed_plate.category_name_fr,
+            "category_ar": parsed_plate.category_name_ar,
             "ticket_qr": ticket_code,
             "latency_ms": elapsed_ms,
         }
@@ -306,6 +314,7 @@ class GateOrchestrator:
         """
         Process a vehicle exit event.
         Releases vehicle from the active inside registry and actuates the exit barrier.
+        Calculates municipal progressive tariff fees via TariffEngine.
         """
         start_ts = time.time()
         parsed_plate = self.plate_parser.parse(raw_plate_text)
@@ -330,7 +339,14 @@ class GateOrchestrator:
         duration_min = max(1, int(duration_sec // 60))
 
         is_vip = prior.get("is_vip", False) if prior else False
-        fee_dzd = 0 if is_vip else max(100, int((duration_min / 60) * 100))
+        is_pmr = prior.get("is_pmr", False) if prior else False
+        if is_vip:
+            fee_dzd = 0
+            breakdown = None
+        else:
+            calc = self.tariff_engine.calculate_fee(duration_minutes=duration_min, is_pmr=is_pmr)
+            fee_dzd = calc.fee_dzd
+            breakdown = calc.to_dict()
 
         self.buffer_queue.enqueue_event(
             camera_id=camera_id,
@@ -345,8 +361,12 @@ class GateOrchestrator:
             "barrier_opened": trigger_res.success,
             "plate": parsed_plate.formatted,
             "wilaya": parsed_plate.wilaya_name,
+            "wilaya_name_ar": parsed_plate.wilaya_name_ar,
+            "category_fr": parsed_plate.category_name_fr,
+            "category_ar": parsed_plate.category_name_ar,
             "duration_minutes": duration_min,
             "fee_dzd": fee_dzd,
+            "tariff_breakdown": breakdown,
             "is_vip": is_vip,
             "was_registered_inside": was_inside,
             "latency_ms": elapsed_ms,

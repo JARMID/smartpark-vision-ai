@@ -560,6 +560,34 @@ class TestDesktopDatabaseAndHardware(unittest.TestCase):
         finally:
             bridge.pos_manager.db.close()
 
+    def test_get_gateway_info(self):
+        bridge = DesktopBridgeApi(
+            server_url="http://192.168.1.100:8080/",
+            booth_id="BOOTH-TEST-09",
+            cashier_id="AGENT-YACINE",
+        )
+        try:
+            info = bridge.get_gateway_info()
+            self.assertEqual(info["server_url"], "http://192.168.1.100:8080")
+            self.assertEqual(info["ws_url"], "ws://192.168.1.100:8080/ws")
+            self.assertEqual(info["booth_id"], "BOOTH-TEST-09")
+            self.assertEqual(info["cashier_id"], "AGENT-YACINE")
+        finally:
+            bridge.pos_manager.db.close()
+
+    def test_gateway_ws_badge_and_script_in_html(self):
+        from desktop.src.operator_window import get_desktop_ui_html
+        html = get_desktop_ui_html()
+        self.assertIn('id="gatewayWsBadge"', html)
+        self.assertIn('id="wsDot"', html)
+        self.assertIn('id="txtWsStatus"', html)
+        self.assertIn('initGatewayWebSocket', html)
+        self.assertIn('handleGatewayBroadcast', html)
+        self.assertIn('wsOnline', html)
+        self.assertIn('wsReconnecting', html)
+        self.assertIn('wsOffline', html)
+
 
 if __name__ == "__main__":
     unittest.main()
+

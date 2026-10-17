@@ -10,24 +10,27 @@ class AccessPassScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final pass = controller.accessPass;
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final pass = controller.accessPass;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Pass d\'Accès Sans Contact'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.nfc),
-            tooltip: 'Simuler détection NFC Borne',
-            onPressed: () => _triggerNfcSimulation(context),
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text('Pass d\'Accès Sans Contact'),
+            actions: [
+              IconButton(
+                icon: const Icon(Icons.nfc),
+                tooltip: 'Simuler détection NFC Borne',
+                onPressed: () => _triggerNfcSimulation(context),
+              ),
+            ],
           ),
-        ],
-      ),
-      body: pass == null
-          ? const Center(child: Text('Aucun pass actif'))
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
+          body: pass == null
+              ? const Center(child: Text('Aucun pass actif'))
+              : SingleChildScrollView(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
                 children: [
                   // Digital Driver Card
                   Container(
@@ -190,6 +193,8 @@ class AccessPassScreen extends StatelessWidget {
                 ],
               ),
             ),
+        );
+      },
     );
   }
 

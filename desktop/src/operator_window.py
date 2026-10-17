@@ -49,6 +49,17 @@ class DesktopBridgeApi:
         mb_sim = modbus_cfg.get("simulation_mode", True)
         self.modbus_direct = DirectModbusController(host=mb_host, port=mb_port, simulation_mode=mb_sim)
 
+    def get_gateway_info(self) -> Dict[str, Any]:
+        """Return gateway server connection metadata including derived WebSocket URL."""
+        clean_url = self.server_url.rstrip("/")
+        ws_url = clean_url.replace("http://", "ws://").replace("https://", "wss://") + "/ws"
+        return {
+            "server_url": clean_url,
+            "ws_url": ws_url,
+            "booth_id": self.booth_id,
+            "cashier_id": self.cashier_id,
+        }
+
     def trigger_barrier(self, channel: int = 1, duration_ms: int = 500) -> Dict[str, Any]:
         """Trigger physical Modbus barrier relay via backend server or direct local TCP socket."""
         import urllib.request
@@ -874,9 +885,13 @@ def get_desktop_ui_html() -> str:
         <div class="status-dot" id="syncDot" style="background-color: var(--accent-green);"></div>
         <span id="txtSyncStatus">SYNC: À JOUR</span>
       </div>
+      <div class="status-pill" id="gatewayWsBadge" title="Flux télémétrie WebSocket passerelle">
+        <div class="status-dot" id="wsDot" style="background-color: var(--accent-green);"></div>
+        <span id="txtWsStatus">PASSERELLE EN LIGNE</span>
+      </div>
       <div class="status-pill">
         <div class="status-dot"></div>
-        <span id="txtStatus">MODBUS &amp; RTSP EN LIGNE</span>
+        <span id="txtStatus">MODBUS DIRECT EN LIGNE</span>
       </div>
       <button class="btn-secondary" onclick="toggleTheme()" id="btnTheme">Mode Jour / Nuit (D)</button>
       <button class="btn-secondary" onclick="cycleLanguage()" id="btnLang">Langue: FR (L)</button>
@@ -1244,11 +1259,14 @@ def get_desktop_ui_html() -> str:
         threatText: "ALERTE SÉCURITÉ: VÉHICULE RECHERCHÉ OU TENTATIVE DE SPOOFING",
         syncOk: "SYNC: À JOUR",
         syncPending: "SYNC: {n} EN ATTENTE",
-        syncRunning: "SYNC EN COURS..."
+        syncRunning: "SYNC EN COURS...",
+        wsOnline: "PASSERELLE EN LIGNE",
+        wsReconnecting: "RECONNEXION...",
+        wsOffline: "MODE AUTONOME"
       },
       en: {
         title: "Guard Station & Dedicated POS",
-        status: "MODBUS & RTSP ONLINE",
+        status: "MODBUS DIRECT ONLINE",
         cam1: "CAM 1: Entry ALPR (Lane 1)",
         cam2: "CAM 2: Biometric Kiosk (Lane 1)",
         cam3: "CAM 3: Exit & Barrier (Lane 2)",
@@ -1281,11 +1299,14 @@ def get_desktop_ui_html() -> str:
         threatText: "SECURITY ALERT: WATCHLIST MATCH OR SPOOF ATTEMPT",
         syncOk: "SYNC: UP TO DATE",
         syncPending: "SYNC: {n} PENDING",
-        syncRunning: "SYNC IN PROGRESS..."
+        syncRunning: "SYNC IN PROGRESS...",
+        wsOnline: "GATEWAY ONLINE",
+        wsReconnecting: "RECONNECTING...",
+        wsOffline: "STANDALONE MODE"
       },
       ar: {
         title: "مركز الحراسة والصندوق المخصص",
-        status: "مودبوس و RTSP متصل",
+        status: "مودبوس مباشر متصل",
         cam1: "كاميرا 1: مدخل لوحات (المسلك 1)",
         cam2: "كاميرا 2: كشك التعرف على الوجه",
         cam3: "كاميرا 3: مخرج وحاجز (المسلك 2)",
@@ -1318,7 +1339,10 @@ def get_desktop_ui_html() -> str:
         threatText: "تنبيه أمني: سيارة مسروقة أو محاولة تزييف بيومتري",
         syncOk: "مزامنة: محدث",
         syncPending: "مزامنة: {n} معلق",
-        syncRunning: "جاري المزامنة..."
+        syncRunning: "جاري المزامنة...",
+        wsOnline: "البوابة متصلة",
+        wsReconnecting: "جارٍ إعادة الاتصال...",
+        wsOffline: "وضع مستقل"
       }
     };
 
@@ -1326,6 +1350,16 @@ def get_desktop_ui_html() -> str:
       const dict = I18N[currentLang];
       document.getElementById('txtTitle').innerText = dict.title;
       document.getElementById('txtStatus').innerText = dict.status;
+      if (document.getElementById('txtWsStatus')) {
+        const wsTxt = document.getElementById('txtWsStatus');
+        if (typeof gatewayWs !== 'undefined' && gatewayWs && gatewayWs.readyState === WebSocket.OPEN) {
+          wsTxt.innerText = dict.wsOnline;
+        } else if (typeof gatewayWs !== 'undefined' && gatewayWs && gatewayWs.readyState === WebSocket.CONNECTING) {
+          wsTxt.innerText = dict.wsReconnecting;
+        } else {
+          wsTxt.innerText = dict.wsOffline;
+        }
+      }
       document.getElementById('lblCam1').innerText = dict.cam1;
       document.getElementById('lblCam2').innerText = dict.cam2;
       document.getElementById('lblCam3').innerText = dict.cam3;
@@ -2577,12 +2611,106 @@ def get_desktop_ui_html() -> str:
       render();
     }
 
+    /* Real-Time WebSocket Telemetry Connection to Edge Gateway with Exponential Backoff */
+    let gatewayWs = null;
+    let wsReconnectAttempts = 0;
+    let wsHeartbeatTimer = null;
+
+    async function initGatewayWebSocket() {
+      let wsUrl = "ws://127.0.0.1:8080/ws";
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_gateway_info) {
+        try {
+          const info = await window.pywebview.api.get_gateway_info();
+          if (info && info.ws_url) {
+            wsUrl = info.ws_url;
+          }
+        } catch (e) {
+          console.warn("[SmartPark WS] Failed to fetch gateway info:", e);
+        }
+      }
+
+      const dot = document.getElementById('wsDot');
+      const txt = document.getElementById('txtWsStatus');
+
+      function updateWsIndicator(state) {
+        if (!dot || !txt) return;
+        const dict = I18N[currentLang] || I18N['fr'];
+        if (state === 'connected') {
+          dot.style.backgroundColor = 'var(--accent-green)';
+          txt.textContent = dict.wsOnline || 'PASSERELLE EN LIGNE';
+        } else if (state === 'reconnecting') {
+          dot.style.backgroundColor = 'var(--accent-yellow)';
+          txt.textContent = dict.wsReconnecting || 'RECONNEXION...';
+        } else {
+          dot.style.backgroundColor = '#64748B';
+          txt.textContent = dict.wsOffline || 'MODE AUTONOME';
+        }
+      }
+
+      try {
+        updateWsIndicator('reconnecting');
+        gatewayWs = new WebSocket(wsUrl);
+
+        gatewayWs.onopen = function() {
+          wsReconnectAttempts = 0;
+          updateWsIndicator('connected');
+          if (wsHeartbeatTimer) clearInterval(wsHeartbeatTimer);
+          wsHeartbeatTimer = setInterval(() => {
+            if (gatewayWs && gatewayWs.readyState === WebSocket.OPEN) {
+              gatewayWs.send(JSON.stringify({ type: 'PING', timestamp: Date.now() }));
+            }
+          }, 25000);
+        };
+
+        gatewayWs.onmessage = function(event) {
+          try {
+            const msg = JSON.parse(event.data);
+            handleGatewayBroadcast(msg);
+          } catch (err) {
+            console.error("[SmartPark WS] Message parse error:", err);
+          }
+        };
+
+        gatewayWs.onerror = function() {
+          if (gatewayWs) gatewayWs.close();
+        };
+
+        gatewayWs.onclose = function() {
+          if (wsHeartbeatTimer) clearInterval(wsHeartbeatTimer);
+          updateWsIndicator('disconnected');
+          const delay = Math.min(15000, Math.pow(2, Math.min(wsReconnectAttempts, 4)) * 1000 + Math.random() * 500);
+          wsReconnectAttempts++;
+          setTimeout(initGatewayWebSocket, delay);
+        };
+      } catch (err) {
+        updateWsIndicator('disconnected');
+        setTimeout(initGatewayWebSocket, 5000);
+      }
+    }
+
+    function handleGatewayBroadcast(msg) {
+      if (!msg || !msg.type) return;
+      if (msg.type === 'EXIT_CLEARED') {
+        if (typeof cam3DepartureStartTime !== 'undefined') {
+          cam3DepartureStartTime = performance.now();
+        }
+      } else if (msg.type === 'BARRIER_OVERRIDE') {
+        if (msg.data && msg.data.channel === 2 && typeof cam3DepartureStartTime !== 'undefined') {
+          cam3DepartureStartTime = performance.now();
+        }
+      } else if (msg.type === 'POS_SYNC_BATCH') {
+        updateSyncBadge();
+        refreshAuditData();
+      }
+    }
+
     applyTranslations();
     initCam1();
     initCam2();
     initCam3();
     initCam4();
     updateSyncBadge();
+    initGatewayWebSocket();
     setInterval(updateSyncBadge, 10000);
   </script>
 </body>

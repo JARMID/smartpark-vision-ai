@@ -267,6 +267,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Pass d'Accès Sans Contact"), findsOneWidget);
+    expect(find.text('Amine Hadj'), findsOneWidget);
+    expect(find.text('104822 119 16'), findsOneWidget);
+    expect(find.text('ABONNÉ VIP'), findsOneWidget);
+    expect(find.textContaining('Renouvellement dans'), findsOneWidget);
     expect(find.text('Simuler Approche NFC Voie 1'), findsOneWidget);
 
     await tester.tap(find.text('Simuler Approche NFC Voie 1'));

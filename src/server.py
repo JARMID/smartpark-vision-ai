@@ -751,10 +751,14 @@ async def process_vehicle_exit(req: VehicleExitRequest):
         "camera_id": req.camera_id,
         "plate": res.get("plate"),
         "wilaya": res.get("wilaya"),
+        "wilaya_name_ar": res.get("wilaya_name_ar"),
+        "category_fr": res.get("category_fr"),
+        "category_ar": res.get("category_ar"),
         "driver": "Sortie Validée",
         "result": "cleared_exit",
         "barrier_opened": res.get("barrier_opened"),
         "amount_paid_dzd": res.get("fee_dzd", 0),
+        "tariff_breakdown": res.get("tariff_breakdown"),
         "message": f"Véhicule sorti du périmètre ({res.get('duration_minutes', 0)} min - {res.get('fee_dzd', 0)} DZD)",
     }
     RECENT_EVENTS.insert(0, event)
