@@ -124,6 +124,22 @@ class DesktopDatabase:
                 """
             )
 
+            # 5. Operator TOTP Security Configuration
+            self.conn.execute(
+                """
+                CREATE TABLE IF NOT EXISTS operator_totp (
+                    operator_id TEXT PRIMARY KEY,
+                    operator_name TEXT NOT NULL,
+                    secret_key TEXT NOT NULL,
+                    is_enabled INTEGER NOT NULL DEFAULT 0,
+                    enforce_on_barrier INTEGER NOT NULL DEFAULT 0,
+                    last_verified_step INTEGER NOT NULL DEFAULT 0,
+                    created_at REAL NOT NULL,
+                    updated_at REAL NOT NULL
+                );
+                """
+            )
+
     # --- Cashier Shift Engine ---
 
     def get_or_open_shift(
@@ -470,6 +486,102 @@ class DesktopDatabase:
                 "synced_transactions": total - pending,
                 "is_fully_synced": pending == 0,
             }
+
+    # --- Operator TOTP 2FA Methods ---
+
+    def get_operator_totp(self, operator_id: str = "AGENT-MEZIANE") -> Optional[Dict[str, Any]]:
+        """Fetch TOTP registration for an operator."""
+        with self._lock:
+            cursor = self.conn.execute(
+                "SELECT * FROM operator_totp WHERE operator_id = ?",
+                (operator_id,),
+            )
+            row = cursor.fetchone()
+            if row:
+                return dict(row)
+            return None
+
+    def save_operator_totp(
+        self,
+        operator_id: str,
+        operator_name: str,
+        secret_key: str,
+        is_enabled: bool = False,
+        enforce_on_barrier: bool = False,
+    ) -> None:
+        """Register or update an operator TOTP secret key."""
+        now = time.time()
+        with self._lock, self.conn:
+            self.conn.execute(
+                """
+                INSERT INTO operator_totp (
+                    operator_id, operator_name, secret_key, is_enabled,
+                    enforce_on_barrier, last_verified_step, created_at, updated_at
+                ) VALUES (?, ?, ?, ?, ?, 0, ?, ?)
+                ON CONFLICT(operator_id) DO UPDATE SET
+                    operator_name = excluded.operator_name,
+                    secret_key = excluded.secret_key,
+                    is_enabled = excluded.is_enabled,
+                    enforce_on_barrier = excluded.enforce_on_barrier,
+                    updated_at = excluded.updated_at
+                """,
+                (
+                    operator_id,
+                    operator_name,
+                    secret_key,
+                    1 if is_enabled else 0,
+                    1 if enforce_on_barrier else 0,
+                    now,
+                    now,
+                ),
+            )
+
+    def update_operator_totp_status(
+        self,
+        operator_id: str,
+        is_enabled: bool,
+        enforce_on_barrier: Optional[bool] = None,
+        last_step: Optional[int] = None,
+    ) -> None:
+        """Update 2FA status, barrier enforcement policy, and replay protection step."""
+        now = time.time()
+        with self._lock, self.conn:
+            if enforce_on_barrier is not None and last_step is not None:
+                self.conn.execute(
+                    """
+                    UPDATE operator_totp
+                    SET is_enabled = ?, enforce_on_barrier = ?, last_verified_step = ?, updated_at = ?
+                    WHERE operator_id = ?
+                    """,
+                    (1 if is_enabled else 0, 1 if enforce_on_barrier else 0, last_step, now, operator_id),
+                )
+            elif enforce_on_barrier is not None:
+                self.conn.execute(
+                    """
+                    UPDATE operator_totp
+                    SET is_enabled = ?, enforce_on_barrier = ?, updated_at = ?
+                    WHERE operator_id = ?
+                    """,
+                    (1 if is_enabled else 0, 1 if enforce_on_barrier else 0, now, operator_id),
+                )
+            elif last_step is not None:
+                self.conn.execute(
+                    """
+                    UPDATE operator_totp
+                    SET is_enabled = ?, last_verified_step = ?, updated_at = ?
+                    WHERE operator_id = ?
+                    """,
+                    (1 if is_enabled else 0, last_step, now, operator_id),
+                )
+            else:
+                self.conn.execute(
+                    """
+                    UPDATE operator_totp
+                    SET is_enabled = ?, updated_at = ?
+                    WHERE operator_id = ?
+                    """,
+                    (1 if is_enabled else 0, now, operator_id),
+                )
 
     @staticmethod
     def _calculate_ean13_checksum(raw12: str) -> int:

@@ -120,6 +120,17 @@ Avoid opening insecure inbound ports (port forwarding on port 80/443/8080) on co
 * **Cloudflare Tunnel (cloudflared):** Free. Creates an outbound-only encrypted tunnel from the edge server to your domain (e.g., `api.smartpark-alger.dz`), routing mobile app requests without requiring a static public IP from Algérie Télécom.
 * **Tailscale:** Free mesh VPN connecting remote maintenance laptops and mobile patrol devices directly into the edge gateway.
 
+### 4.5 Supervisor Two-Factor Authentication: Google Authenticator (TOTP)
+
+To protect physical barriers and financial ledgers against unauthorized actions by temporary booth attendants or intruders, Smart Park includes native RFC 6238 Time-Based One-Time Password (TOTP) security:
+* **Smartphone Apps Supported:** Google Authenticator, Microsoft Authenticator, or 2FAS (available on Android and iOS).
+* **Pairing Workflow:**
+  1. Open the Desktop Operator Station header and click the `2FA GOOGLE` status badge.
+  2. Scan the displayed vector QR code with the Google Authenticator app on the supervisor smartphone.
+  3. Enter the 6-digit verification code to activate protection.
+* **100% Offline Capability:** TOTP relies exclusively on HMAC-SHA1 mathematical hash derivation from the Unix epoch clock divided into 30-second intervals. It requires zero internet access and zero SMS fees. The operator station and the smartphone verify codes synchronously even in an underground bunker without cellular reception.
+* **Protected Operations:** When enabled, manual emergency barrier opening (Spacebar / Emergency Pulse), cash drawer release, and statutory data purges mandate entering the active 6-digit code.
+
 ---
 
 ## 5. Physical Wiring and Electrical Interconnects

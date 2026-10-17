@@ -20,6 +20,20 @@ from desktop.src.audio_synthesizer import AudioThreatSynthesizer
 from desktop.src.pos_manager import CashierPosManager
 from desktop.src.modbus_direct import DirectModbusController
 
+# Ensure project root is in sys.path for security imports
+_PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+if _PROJECT_ROOT not in sys.path:
+    sys.path.insert(0, _PROJECT_ROOT)
+
+from src.security.totp import (
+    generate_totp_secret,
+    format_secret_display,
+    get_totp_provisioning_uri,
+    generate_totp_code,
+    verify_totp_code,
+    generate_qr_svg,
+)
+
 
 class DesktopBridgeApi:
     """
@@ -49,6 +63,18 @@ class DesktopBridgeApi:
         mb_sim = modbus_cfg.get("simulation_mode", True)
         self.modbus_direct = DirectModbusController(host=mb_host, port=mb_port, simulation_mode=mb_sim)
 
+        # Initialize or load operator TOTP security credentials
+        totp_rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+        if not totp_rec:
+            secret = generate_totp_secret()
+            self.pos_manager.db.save_operator_totp(
+                operator_id=self.cashier_id,
+                operator_name="Amine Meziane",
+                secret_key=secret,
+                is_enabled=False,
+                enforce_on_barrier=False,
+            )
+
     def get_gateway_info(self) -> Dict[str, Any]:
         """Return gateway server connection metadata including derived WebSocket URL."""
         clean_url = self.server_url.rstrip("/")
@@ -60,12 +86,133 @@ class DesktopBridgeApi:
             "cashier_id": self.cashier_id,
         }
 
-    def trigger_barrier(self, channel: int = 1, duration_ms: int = 500) -> Dict[str, Any]:
+    def get_totp_setup_info(self) -> Dict[str, Any]:
+        """Fetch TOTP configuration, provisioning URI, and SVG QR code for Google Authenticator."""
+        rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+        if not rec:
+            secret = generate_totp_secret()
+            self.pos_manager.db.save_operator_totp(
+                operator_id=self.cashier_id,
+                operator_name="Amine Meziane",
+                secret_key=secret,
+                is_enabled=False,
+                enforce_on_barrier=False,
+            )
+            rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+
+        secret = rec["secret_key"]
+        uri = get_totp_provisioning_uri(
+            secret=secret,
+            account_name=f"{self.cashier_id} ({rec['operator_name']})",
+        )
+        return {
+            "operator_id": self.cashier_id,
+            "operator_name": rec["operator_name"],
+            "secret": secret,
+            "secret_formatted": format_secret_display(secret),
+            "provisioning_uri": uri,
+            "qr_svg": generate_qr_svg(uri),
+            "is_enabled": bool(rec["is_enabled"]),
+            "enforce_on_barrier": bool(rec["enforce_on_barrier"]),
+        }
+
+    def verify_and_enable_totp(self, code: str, enforce_on_barrier: bool = True, timestamp: Optional[float] = None) -> Dict[str, Any]:
+        """Verify code from Google Authenticator and enable 2FA protection."""
+        rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+        if not rec:
+            return {"success": False, "message": "Profil de securite operateur non trouve"}
+
+        success, step = verify_totp_code(
+            secret=rec["secret_key"],
+            code=code,
+            timestamp=timestamp,
+            last_verified_step=rec.get("last_verified_step"),
+        )
+        if not success:
+            return {"success": False, "message": "Code Google Authenticator invalide ou expire"}
+
+        self.pos_manager.db.update_operator_totp_status(
+            operator_id=self.cashier_id,
+            is_enabled=True,
+            enforce_on_barrier=enforce_on_barrier,
+            last_step=step,
+        )
+        return {
+            "success": True,
+            "message": "Protection 2FA Google Authenticator activee avec succes",
+            "enforce_on_barrier": enforce_on_barrier,
+        }
+
+    def disable_totp(self, code: str, timestamp: Optional[float] = None) -> Dict[str, Any]:
+        """Disable 2FA protection after verifying valid code."""
+        rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+        if not rec:
+            return {"success": False, "message": "Profil non trouve"}
+
+        if not rec["is_enabled"]:
+            return {"success": True, "message": "Protection 2FA deja inactive"}
+
+        success, step = verify_totp_code(
+            secret=rec["secret_key"],
+            code=code,
+            timestamp=timestamp,
+            last_verified_step=rec.get("last_verified_step"),
+        )
+        if not success:
+            return {"success": False, "message": "Code Google Authenticator requis pour desactiver la protection"}
+
+        self.pos_manager.db.update_operator_totp_status(
+            operator_id=self.cashier_id,
+            is_enabled=False,
+            enforce_on_barrier=False,
+            last_step=step,
+        )
+        return {"success": True, "message": "Protection 2FA desactivee"}
+
+    def is_2fa_required_for_barrier(self) -> bool:
+        """Check if manual barrier override requires a TOTP code."""
+        rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+        if rec and rec["is_enabled"] and rec["enforce_on_barrier"]:
+            return True
+        return False
+
+    def trigger_barrier(self, channel: int = 1, duration_ms: int = 500, totp_code: Optional[str] = None, timestamp: Optional[float] = None) -> Dict[str, Any]:
         """Trigger physical Modbus barrier relay via backend server or direct local TCP socket."""
         import urllib.request
+
+        # Check local 2FA enforcement
+        rec = self.pos_manager.db.get_operator_totp(operator_id=self.cashier_id)
+        if rec and rec["is_enabled"] and rec["enforce_on_barrier"]:
+            if not totp_code:
+                return {
+                    "success": False,
+                    "requires_totp": True,
+                    "message": "Code Google Authenticator obligatoire pour declencher la barriere",
+                }
+            is_valid, step = verify_totp_code(
+                secret=rec["secret_key"],
+                code=totp_code,
+                timestamp=timestamp,
+                last_verified_step=rec.get("last_verified_step"),
+            )
+            if not is_valid:
+                return {
+                    "success": False,
+                    "requires_totp": True,
+                    "message": "Code Google Authenticator invalide ou expire",
+                }
+            self.pos_manager.db.update_operator_totp_status(
+                operator_id=self.cashier_id,
+                is_enabled=True,
+                last_step=step,
+            )
+
         self.audio_synth.play_success_chime()
         url = f"{self.server_url}/api/barrier/override"
-        payload = json.dumps({"channel": channel, "duration_ms": duration_ms}).encode("utf-8")
+        payload_dict = {"channel": channel, "duration_ms": duration_ms, "operator_id": self.cashier_id}
+        if totp_code:
+            payload_dict["totp_code"] = totp_code
+        payload = json.dumps(payload_dict).encode("utf-8")
         
         # Try backend server first, fallback to direct Modbus TCP
         server_ok = False
@@ -87,7 +234,7 @@ class DesktopBridgeApi:
             self.pos_manager.db.log_barrier_action(
                 channel=channel,
                 duration_ms=duration_ms,
-                reason="Impulsion manuelle poste operateur",
+                reason="Impulsion manuelle poste operateur (2FA Verifie)" if totp_code else "Impulsion manuelle poste operateur",
                 operator_name=cashier,
                 success=True,
             )
@@ -889,6 +1036,10 @@ def get_desktop_ui_html() -> str:
         <div class="status-dot" id="wsDot" style="background-color: var(--accent-green);"></div>
         <span id="txtWsStatus">PASSERELLE EN LIGNE</span>
       </div>
+      <div class="status-pill" id="totpBadge" onclick="showTotpModal()" style="cursor: pointer;" title="Sécurité Google Authenticator (2FA)">
+        <div class="status-dot" id="totpDot" style="background-color: #64748B;"></div>
+        <span id="txtTotpStatus">2FA GOOGLE: INACTIF</span>
+      </div>
       <div class="status-pill">
         <div class="status-dot"></div>
         <span id="txtStatus">MODBUS DIRECT EN LIGNE</span>
@@ -1200,6 +1351,74 @@ def get_desktop_ui_html() -> str:
       <div style="display:flex; justify-content:flex-end; gap:8px;">
         <button class="btn-secondary" onclick="closeZReportModal()">Annuler</button>
         <button class="btn-action" style="background:#10B981;" onclick="submitZReportFinal()">Valider &amp; Clôturer Shift</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Google Authenticator 2FA Setup Modal -->
+  <div id="totpModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:220; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-surface); border:1px solid var(--border-color); border-radius:12px; width:520px; max-width:95%; padding:24px; box-shadow:0 20px 40px rgba(0,0,0,0.6);">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+        <h3 style="margin:0; color:#38BDF8; display:flex; align-items:center; gap:8px;">
+          <span>🔐 Sécurité 2FA &bull; Google Authenticator</span>
+        </h3>
+        <button class="btn-secondary" onclick="closeTotpModal()" style="padding:4px 8px; font-size:12px;">✕</button>
+      </div>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:16px;">
+        Protégez le poste opérateur contre les manœuvres non autorisées. Scannez le code QR avec Google Authenticator ou Microsoft Authenticator sur votre smartphone.
+      </p>
+
+      <div style="display:flex; gap:16px; align-items:center; margin-bottom:16px;">
+        <div id="totpQrContainer" style="width:160px; height:160px; background:#FFFFFF; border-radius:8px; padding:8px; display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+          <span style="font-size:11px; color:#64748B;">Chargement QR...</span>
+        </div>
+        <div style="flex:1;">
+          <label class="form-label" style="font-size:11px; color:#94A3B8;">Clé de Configuration Manuelle :</label>
+          <div id="totpSecretKey" style="font-family:monospace; font-size:12px; font-weight:700; color:#10B981; background:var(--bg-surface-elevated); padding:8px; border-radius:6px; border:1px solid var(--border-color); letter-spacing:1px; word-break:break-all; margin-bottom:8px;">
+            ---- ---- ---- ----
+          </div>
+          <div style="font-size:11px; color:var(--text-muted); line-height:1.4;">
+            1. Ouvrez <strong>Google Authenticator</strong>.<br>
+            2. Appuyez sur <strong>+</strong> &gt; <strong>Scanner un code QR</strong>.<br>
+            3. Entrez le code à 6 chiffres ci-dessous.
+          </div>
+        </div>
+      </div>
+
+      <div style="background:var(--bg-surface-elevated); border:1px solid var(--border-color); border-radius:8px; padding:12px; margin-bottom:16px;">
+        <label style="display:flex; align-items:center; gap:8px; cursor:pointer; font-size:12px; margin-bottom:8px;">
+          <input type="checkbox" id="chkEnforceBarrier" checked>
+          <span>Exiger le code 2FA pour l'ouverture manuelle d'urgence (Barrière / Espace)</span>
+        </label>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <input type="text" id="inputTotpVerify" class="form-input" placeholder="Code 6 chiffres" maxlength="6" style="font-family:monospace; font-size:16px; letter-spacing:4px; text-align:center; max-width:200px;">
+          <button class="btn-action" id="btnActivateTotp" onclick="activateTotp()" style="background:#10B981; flex:1;">Activer la Protection 2FA</button>
+          <button class="btn-secondary" id="btnDeactivateTotp" onclick="deactivateTotp()" style="display:none; color:#EF4444; border-color:#EF4444;">Désactiver</button>
+        </div>
+      </div>
+
+      <div style="display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--text-muted);">
+        <span id="totpStatusLabel">Statut : Inactif</span>
+        <button class="btn-secondary" onclick="closeTotpModal()">Fermer</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Immediate 2FA Action Verification Prompt Modal -->
+  <div id="totpPromptModal" style="display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.85); z-index:230; align-items:center; justify-content:center;">
+    <div style="background:var(--bg-surface); border:1px solid #38BDF8; border-radius:12px; width:400px; max-width:90%; padding:20px; box-shadow:0 0 30px rgba(56,189,248,0.3);">
+      <h3 style="margin-top:0; color:#38BDF8; display:flex; align-items:center; gap:8px; font-size:16px;">
+        <span>🛡️ Autorisation Google Authenticator Requise</span>
+      </h3>
+      <p style="font-size:12px; color:var(--text-muted); margin-bottom:14px;" id="totpPromptMsg">
+        L'ouverture manuelle d'urgence de la barrière est protégée par 2FA. Entrez le code à 6 chiffres affiché sur votre smartphone.
+      </p>
+      <div style="margin-bottom:16px;">
+        <input type="text" id="inputTotpActionCode" class="form-input" placeholder="000000" maxlength="6" style="font-family:monospace; font-size:24px; letter-spacing:6px; text-align:center; font-weight:700; width:100%; box-sizing:border-box;" onkeydown="handleTotpActionKey(event)">
+      </div>
+      <div style="display:flex; justify-content:flex-end; gap:8px;">
+        <button class="btn-secondary" onclick="closeTotpPromptModal()">Annuler</button>
+        <button class="btn-action" style="background:#10B981;" onclick="submitTotpAction()">Confirmer &amp; Déclencher</button>
       </div>
     </div>
   </div>
@@ -1581,19 +1800,211 @@ def get_desktop_ui_html() -> str:
       }
     }
 
-    async function triggerManualBarrier() {
-      if (window.openExitBarrier) window.openExitBarrier();
-      if (window.pywebview && window.pywebview.api) {
-        await window.pywebview.api.trigger_barrier(1, 500);
+    /* --- Google Authenticator 2FA UI Handlers --- */
+    let currentTotpConfig = null;
+
+    async function updateTotpBadge() {
+      const dot = document.getElementById('totpDot');
+      const txt = document.getElementById('txtTotpStatus');
+      if (!dot || !txt) return;
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_totp_setup_info) {
+        try {
+          const res = await window.pywebview.api.get_totp_setup_info();
+          currentTotpConfig = res;
+          if (res && res.is_enabled) {
+            dot.style.backgroundColor = '#10B981';
+            txt.innerText = '2FA GOOGLE: ACTIF';
+            txt.style.color = '#10B981';
+          } else {
+            dot.style.backgroundColor = '#64748B';
+            txt.innerText = '2FA GOOGLE: INACTIF';
+            txt.style.color = 'var(--text-muted)';
+          }
+        } catch (e) {
+          console.error(e);
+        }
       }
-      const st = document.getElementById('gateStatus');
-      if (st) {
-        st.innerText = "BARRIÈRE: OUVERTE (IMPULSION)";
-        st.style.color = "#10B981";
-        setTimeout(() => {
-          st.innerText = "BARRIÈRE: FERMÉE";
-          st.style.color = "#38BDF8";
-        }, 3000);
+    }
+
+    async function showTotpModal() {
+      const modal = document.getElementById('totpModal');
+      if (!modal) return;
+      modal.style.display = 'flex';
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.get_totp_setup_info) {
+        try {
+          const res = await window.pywebview.api.get_totp_setup_info();
+          currentTotpConfig = res;
+          const qrContainer = document.getElementById('totpQrContainer');
+          const secretKeyDiv = document.getElementById('totpSecretKey');
+          const statusLbl = document.getElementById('totpStatusLabel');
+          const btnActivate = document.getElementById('btnActivateTotp');
+          const btnDeactivate = document.getElementById('btnDeactivateTotp');
+          const chkEnforce = document.getElementById('chkEnforceBarrier');
+
+          if (qrContainer && res.qr_svg) {
+            qrContainer.innerHTML = res.qr_svg;
+            const svgEl = qrContainer.querySelector('svg');
+            if (svgEl) {
+              svgEl.setAttribute('width', '140');
+              svgEl.setAttribute('height', '140');
+              svgEl.style.display = 'block';
+            }
+          }
+          if (secretKeyDiv) secretKeyDiv.innerText = res.secret_formatted || res.secret;
+          if (chkEnforce) chkEnforce.checked = res.enforce_on_barrier !== false;
+
+          if (res.is_enabled) {
+            if (statusLbl) {
+              statusLbl.innerHTML = '<span style="color:#10B981; font-weight:700;">● Protection Active (Google Authenticator)</span>';
+            }
+            if (btnActivate) btnActivate.innerText = 'Mettre à jour 2FA';
+            if (btnDeactivate) btnDeactivate.style.display = 'inline-block';
+          } else {
+            if (statusLbl) {
+              statusLbl.innerHTML = '<span style="color:#F59E0B; font-weight:700;">● Non configuré (Inactif)</span>';
+            }
+            if (btnActivate) btnActivate.innerText = 'Activer la Protection 2FA';
+            if (btnDeactivate) btnDeactivate.style.display = 'none';
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+    }
+
+    function closeTotpModal() {
+      const modal = document.getElementById('totpModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    async function activateTotp() {
+      const input = document.getElementById('inputTotpVerify');
+      const code = (input ? input.value : '').trim();
+      const enforce = document.getElementById('chkEnforceBarrier') ? document.getElementById('chkEnforceBarrier').checked : true;
+
+      if (!code || code.length !== 6 || !/^[0-9]+$/.test(code)) {
+        alert("Veuillez saisir le code à 6 chiffres affiché sur votre application Google Authenticator.");
+        if (input) input.focus();
+        return;
+      }
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.verify_and_enable_totp) {
+        try {
+          const res = await window.pywebview.api.verify_and_enable_totp(code, enforce);
+          if (res.success) {
+            alert(res.message);
+            if (input) input.value = '';
+            updateTotpBadge();
+            showTotpModal();
+          } else {
+            alert("Erreur: " + res.message);
+          }
+        } catch (e) {
+          alert("Erreur: " + e);
+        }
+      } else {
+        alert("Protection 2FA simulée activée avec succès.");
+        updateTotpBadge();
+      }
+    }
+
+    async function deactivateTotp() {
+      const code = prompt("Veuillez entrer le code actuel Google Authenticator pour désactiver la protection 2FA :");
+      if (!code) return;
+
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.disable_totp) {
+        try {
+          const res = await window.pywebview.api.disable_totp(code.trim());
+          if (res.success) {
+            alert(res.message);
+            updateTotpBadge();
+            showTotpModal();
+          } else {
+            alert("Erreur: " + res.message);
+          }
+        } catch (e) {
+          alert("Erreur: " + e);
+        }
+      } else {
+        alert("Protection 2FA désactivée.");
+        updateTotpBadge();
+      }
+    }
+
+    function showTotpPromptModal(customMsg = null) {
+      const modal = document.getElementById('totpPromptModal');
+      const msg = document.getElementById('totpPromptMsg');
+      const input = document.getElementById('inputTotpActionCode');
+      if (modal) modal.style.display = 'flex';
+      if (msg && customMsg) msg.innerText = customMsg;
+      if (input) {
+        input.value = '';
+        setTimeout(() => input.focus(), 50);
+      }
+    }
+
+    function closeTotpPromptModal() {
+      const modal = document.getElementById('totpPromptModal');
+      if (modal) modal.style.display = 'none';
+      const input = document.getElementById('inputTotpActionCode');
+      if (input) input.value = '';
+    }
+
+    function handleTotpActionKey(e) {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        submitTotpAction();
+      } else if (e.key === 'Escape') {
+        closeTotpPromptModal();
+      }
+    }
+
+    async function submitTotpAction() {
+      const input = document.getElementById('inputTotpActionCode');
+      const code = (input ? input.value : '').trim();
+      if (!code || code.length !== 6 || !/^[0-9]+$/.test(code)) {
+        alert("Veuillez saisir un code à 6 chiffres valide.");
+        if (input) input.focus();
+        return;
+      }
+      closeTotpPromptModal();
+      await triggerManualBarrier(code);
+    }
+
+    async function triggerManualBarrier(totpCode = null) {
+      if (window.pywebview && window.pywebview.api && window.pywebview.api.is_2fa_required_for_barrier) {
+        const needs2FA = await window.pywebview.api.is_2fa_required_for_barrier();
+        if (needs2FA && !totpCode) {
+          showTotpPromptModal();
+          return;
+        }
+      }
+
+      let res = { success: true };
+      if (window.pywebview && window.pywebview.api) {
+        res = await window.pywebview.api.trigger_barrier(1, 500, totpCode);
+        if (res && res.requires_totp) {
+          showTotpPromptModal(res.message);
+          return;
+        }
+      }
+
+      if (res && res.success) {
+        closeTotpPromptModal();
+        if (window.openExitBarrier) window.openExitBarrier();
+        const st = document.getElementById('gateStatus');
+        if (st) {
+          st.innerText = "BARRIÈRE: OUVERTE (IMPULSION)";
+          st.style.color = "#10B981";
+          setTimeout(() => {
+            st.innerText = "BARRIÈRE: FERMÉE";
+            st.style.color = "#38BDF8";
+          }, 3000);
+        }
+      } else {
+        alert(res.message || "Erreur lors de l'ouverture de la barrière");
       }
     }
 
@@ -1906,6 +2317,10 @@ def get_desktop_ui_html() -> str:
       else if (e.key === 'Escape') {
         dismissThreat();
         document.getElementById('triageModal').style.display = 'none';
+        closeLostTicketModal();
+        closeZReportModal();
+        closeTotpModal();
+        closeTotpPromptModal();
       }
       // Numbers 1-7: Trigger Scenarios
       else if (e.key >= '1' && e.key <= '7' && e.target.tagName !== 'INPUT') {
@@ -2710,8 +3125,10 @@ def get_desktop_ui_html() -> str:
     initCam3();
     initCam4();
     updateSyncBadge();
+    updateTotpBadge();
     initGatewayWebSocket();
     setInterval(updateSyncBadge, 10000);
+    setInterval(updateTotpBadge, 15000);
   </script>
 </body>
 </html>"""

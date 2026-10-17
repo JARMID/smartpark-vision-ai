@@ -21,6 +21,13 @@ from src.compliance.law_25_11_audit import Law2511ComplianceEngine
 from src.payment.chargily_v2_client import ChargilyV2PaymentClient
 from src.camera.edge_stream_manager import EdgeStreamManager
 from src.tariff_engine import TariffEngine, TariffSchedule
+from src.security.totp import (
+    totp_service,
+    generate_totp_code,
+    verify_totp_code,
+    get_totp_provisioning_uri,
+    generate_qr_svg,
+)
 
 app = FastAPI(title="Smart Park Sovereign Server", version="2.0.0")
 
@@ -224,6 +231,20 @@ class BarrierOverrideRequest(BaseModel):
     duration_ms: int = 500
     reason: Optional[str] = "Déclenchement d'urgence"
     operator_id: Optional[str] = "OP-STATION"
+    totp_code: Optional[str] = None
+
+
+class TotpVerifyRequest(BaseModel):
+    operator_id: str = "OP-SUPERVISOR"
+    code: str
+
+
+class TotpTogglePolicyRequest(BaseModel):
+    operator_id: str = "OP-SUPERVISOR"
+    code: str
+    enforce_barrier_override: Optional[bool] = None
+    enforce_compliance_purge: Optional[bool] = None
+    enforce_shift_close: Optional[bool] = None
 
 
 class ChargilyCheckoutRequest(BaseModel):
@@ -440,12 +461,23 @@ async def override_barrier(req: BarrierOverrideRequest):
             status_code=400,
             detail="Canal de barrière non valide (seuls les canaux 1 et 2 sont autorisés)",
         )
+    operator = req.operator_id or "OP-STATION"
+    reason = req.reason or "Déclenchement d'urgence"
+
+    # Verify Google Authenticator TOTP if 2FA policy is enforced
+    is_authorized, auth_msg = totp_service.verify_action(
+        operator_id=operator,
+        code=req.totp_code,
+        action_name="barrier_override",
+    )
+    if not is_authorized:
+        raise HTTPException(status_code=403, detail=auth_msg)
+
     clamped_duration = max(250, min(1500, req.duration_ms))
     res = orchestrator.barrier_controller.trigger_barrier_open(
         channel=req.channel, duration_ms=clamped_duration, force_override=True
     )
-    operator = req.operator_id or "OP-STATION"
-    reason = req.reason or "Déclenchement d'urgence"
+    totp_flag = req.totp_code is not None and is_authorized
     event_data = {
         "type": "BARRIER_MANUAL_OVERRIDE",
         "channel": req.channel,
@@ -454,6 +486,7 @@ async def override_barrier(req: BarrierOverrideRequest):
         "success": res.success,
         "operator_id": operator,
         "reason": reason,
+        "totp_verified": totp_flag,
     }
     await ws_manager.broadcast(event_data)
     return {
@@ -463,6 +496,7 @@ async def override_barrier(req: BarrierOverrideRequest):
         "channel": req.channel,
         "operator_id": operator,
         "reason": reason,
+        "totp_verified": totp_flag,
     }
 
 
@@ -1094,8 +1128,72 @@ def create_breach_triage(req: BreachTriageCreateRequest):
 
 
 @app.post("/api/compliance/purge")
-def run_compliance_purge():
+def run_compliance_purge(totp_code: Optional[str] = None):
+    if totp_service.enforce_for_compliance_purge and totp_service._secrets.get("OP-SUPERVISOR", {}).get("is_enabled"):
+        is_ok, msg = totp_service.verify_action("OP-SUPERVISOR", totp_code, "compliance_purge")
+        if not is_ok:
+            raise HTTPException(status_code=403, detail=msg)
     return compliance_engine.execute_rolling_purge_plan(RECENT_EVENTS)
+
+
+# --- Google Authenticator TOTP Security Endpoints ---
+
+@app.get("/api/auth/totp/setup")
+def setup_totp(
+    operator_id: str = "OP-SUPERVISOR",
+    operator_name: str = "Superviseur General",
+):
+    """
+    Generate or retrieve Google Authenticator registration payload,
+    including Base32 secret, otpauth provisioning URI, and SVG QR code.
+    """
+    return totp_service.get_or_create_operator_secret(
+        operator_id=operator_id,
+        operator_name=operator_name,
+    )
+
+
+@app.post("/api/auth/totp/verify")
+def verify_totp(req: TotpVerifyRequest):
+    """
+    Verify a 6-digit code from Google Authenticator and activate 2FA for the operator.
+    """
+    success, msg = totp_service.verify_and_activate(
+        operator_id=req.operator_id,
+        code=req.code,
+    )
+    if not success:
+        raise HTTPException(status_code=400, detail=msg)
+    return {
+        "success": True,
+        "message": msg,
+        "operator_id": req.operator_id,
+    }
+
+
+@app.post("/api/auth/totp/toggle")
+def toggle_totp_policy(req: TotpTogglePolicyRequest):
+    """
+    Update 2FA security enforcement policies across barrier overrides and purges.
+    """
+    if req.enforce_barrier_override is not None:
+        totp_service.enforce_for_barrier_override = req.enforce_barrier_override
+    if req.enforce_compliance_purge is not None:
+        totp_service.enforce_for_compliance_purge = req.enforce_compliance_purge
+    if req.enforce_shift_close is not None:
+        totp_service.enforce_for_shift_close = req.enforce_shift_close
+
+    return {
+        "success": True,
+        "message": "Politique de securite 2FA mise a jour",
+        "policy": totp_service.get_status(),
+    }
+
+
+@app.get("/api/auth/totp/status")
+def get_totp_status():
+    """Get global TOTP 2FA security policy and enrollment status."""
+    return totp_service.get_status()
 
 
 @app.post("/api/chargily/webhook")
