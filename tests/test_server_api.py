@@ -460,8 +460,27 @@ class TestServerAPI(unittest.TestCase):
         })
         self.assertEqual(res_err.status_code, 400)
 
+    def test_edge_sync_stats_and_retry_endpoints(self):
+        # 1. GET /api/sync/stats
+        res_stats = self.client.get("/api/sync/stats")
+        self.assertEqual(res_stats.status_code, 200)
+        data = res_stats.json()
+        self.assertEqual(data["status"], "success")
+        self.assertIn("queue_stats", data)
+        self.assertIn("active_inside_count", data)
+        self.assertIn("total_events", data["queue_stats"])
+        self.assertIn("pending_events", data["queue_stats"])
+
+        # 2. POST /api/sync/retry
+        res_retry = self.client.post("/api/sync/retry")
+        self.assertEqual(res_retry.status_code, 200)
+        retry_data = res_retry.json()
+        self.assertEqual(retry_data["status"], "success")
+        self.assertIn("reset_count", retry_data)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 
 

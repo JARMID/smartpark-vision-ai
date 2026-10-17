@@ -50,13 +50,23 @@ class SqliteBufferQueue:
                     snapshot_path TEXT,
                     created_at REAL NOT NULL,
                     sync_status TEXT NOT NULL DEFAULT 'pending',
-                    synced_at REAL
+                    synced_at REAL,
+                    retry_count INTEGER NOT NULL DEFAULT 0,
+                    error_message TEXT
                 );
                 """
             )
             self.conn.execute(
                 "CREATE INDEX IF NOT EXISTS idx_event_queue_status ON event_queue(sync_status);"
             )
+
+            # Schema migration check
+            cursor = self.conn.execute("PRAGMA table_info(event_queue);")
+            columns = [col[1] for col in cursor.fetchall()]
+            if "retry_count" not in columns:
+                self.conn.execute("ALTER TABLE event_queue ADD COLUMN retry_count INTEGER NOT NULL DEFAULT 0;")
+            if "error_message" not in columns:
+                self.conn.execute("ALTER TABLE event_queue ADD COLUMN error_message TEXT;")
 
             # Table for cached authorized vehicles
             self.conn.execute(
@@ -136,6 +146,67 @@ class SqliteBufferQueue:
                 """,
                 [now] + event_ids,
             )
+
+    def mark_failed(self, event_ids: List[int], reason: str = "", max_retries: int = 5):
+        """Mark a batch of events as failed or increment retry counter."""
+        if not event_ids:
+            return
+        placeholders = ",".join("?" for _ in event_ids)
+        with self.conn:
+            self.conn.execute(
+                f"""
+                UPDATE event_queue 
+                SET retry_count = retry_count + 1,
+                    error_message = ?,
+                    sync_status = CASE WHEN retry_count + 1 >= ? THEN 'failed' ELSE 'pending' END
+                WHERE id IN ({placeholders})
+                """,
+                [reason, max_retries] + event_ids,
+            )
+
+    def retry_failed_events(self) -> int:
+        """Reset failed events back to pending status for retry."""
+        with self.conn:
+            cursor = self.conn.execute(
+                """
+                UPDATE event_queue 
+                SET sync_status = 'pending', retry_count = 0 
+                WHERE sync_status = 'failed'
+                """
+            )
+            return cursor.rowcount
+
+    def get_queue_stats(self) -> Dict[str, int]:
+        """Return counts of events grouped by sync status."""
+        cursor = self.conn.execute(
+            """
+            SELECT 
+                COUNT(*) as total,
+                SUM(CASE WHEN sync_status = 'pending' THEN 1 ELSE 0 END) as pending,
+                SUM(CASE WHEN sync_status = 'synced' THEN 1 ELSE 0 END) as synced,
+                SUM(CASE WHEN sync_status = 'failed' THEN 1 ELSE 0 END) as failed
+            FROM event_queue
+            """
+        )
+        row = cursor.fetchone()
+        return {
+            "total_events": row["total"] or 0,
+            "pending_events": row["pending"] or 0,
+            "synced_events": row["synced"] or 0,
+            "failed_events": row["failed"] or 0,
+        }
+
+    def get_recent_events(self, limit: int = 20) -> List[Dict[str, Any]]:
+        """Fetch recently logged events regardless of sync status."""
+        cursor = self.conn.execute(
+            """
+            SELECT * FROM event_queue 
+            ORDER BY id DESC 
+            LIMIT ?
+            """,
+            (limit,),
+        )
+        return [dict(row) for row in cursor.fetchall()]
 
     def update_cached_whitelist(self, items: List[Dict[str, Any]]):
         """Update or insert local whitelist plates synced from Supabase."""

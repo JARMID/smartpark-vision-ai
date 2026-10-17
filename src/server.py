@@ -991,6 +991,29 @@ async def sync_pos_batch(req: PosSyncBatchRequest):
     }
 
 
+@app.get("/api/sync/stats")
+def get_edge_sync_stats():
+    """Return edge buffer queue depth, pending sync telemetry, and active vehicles."""
+    stats = orchestrator.buffer_queue.get_queue_stats()
+    return {
+        "status": "success",
+        "queue_stats": stats,
+        "active_inside_count": len(orchestrator.active_inside_vehicles),
+        "timestamp": datetime.now().isoformat(),
+    }
+
+
+@app.post("/api/sync/retry")
+def retry_failed_sync_events():
+    """Reset failed edge buffer events back to pending status for transmission retry."""
+    count = orchestrator.buffer_queue.retry_failed_events()
+    return {
+        "status": "success",
+        "reset_count": count,
+        "message": f"{count} événements réinitialisés en file d'attente de synchronisation.",
+    }
+
+
 @app.get("/api/tariffs/rules")
 def get_tariff_rules():
     """Return active tariff rules, tiered rate breakdown, and discount parameters."""

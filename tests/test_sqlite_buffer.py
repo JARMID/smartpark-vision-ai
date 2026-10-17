@@ -79,6 +79,47 @@ class TestSqliteBufferQueue(unittest.TestCase):
         missing = self.queue.check_plate_in_cache("9999999999")
         self.assertIsNone(missing)
 
+    def test_mark_failed_and_retry(self):
+        e1 = self.queue.enqueue_event(
+            camera_id="cam-01", plate_number="08412 119 16", ocr_confidence=0.98, action_taken="auto_cleared"
+        )
+        # Mark failed with max_retries=2
+        self.queue.mark_failed([e1], reason="Timeout connecting to cloud", max_retries=2)
+        pending = self.queue.get_pending_events()
+        self.assertEqual(len(pending), 1)  # Still pending because retry 1 < 2
+
+        # Second failure reaches threshold
+        self.queue.mark_failed([e1], reason="Connection refused", max_retries=2)
+        pending_after = self.queue.get_pending_events()
+        self.assertEqual(len(pending_after), 0)  # Now marked failed
+
+        # Verify retry_failed_events restores it
+        reset_count = self.queue.retry_failed_events()
+        self.assertEqual(reset_count, 1)
+        pending_restored = self.queue.get_pending_events()
+        self.assertEqual(len(pending_restored), 1)
+        self.assertEqual(pending_restored[0]["id"], e1)
+
+    def test_queue_stats_and_recent(self):
+        e1 = self.queue.enqueue_event(
+            camera_id="cam-01", plate_number="104822 119 16", ocr_confidence=0.95, action_taken="auto_cleared"
+        )
+        e2 = self.queue.enqueue_event(
+            camera_id="cam-02", plate_number="08412 00 16", ocr_confidence=0.92, action_taken="manual_cleared"
+        )
+        self.queue.mark_synced([e1])
+
+        stats = self.queue.get_queue_stats()
+        self.assertEqual(stats["total_events"], 2)
+        self.assertEqual(stats["pending_events"], 1)
+        self.assertEqual(stats["synced_events"], 1)
+        self.assertEqual(stats["failed_events"], 0)
+
+        recent = self.queue.get_recent_events(limit=5)
+        self.assertEqual(len(recent), 2)
+        self.assertEqual(recent[0]["id"], e2)
+
 
 if __name__ == "__main__":
     unittest.main()
+
